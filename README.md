@@ -3,7 +3,7 @@
 # 🧠 noidea
 ### Smart Git Assistant with AI Commit Suggestions & Fun Feedback
 
-<img src="assets/images/banner.png" alt="noidea banner" width="600">
+<img src="assets/header.png" alt="noidea banner" width="600">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.18+-00ADD8?logo=go)](https://golang.org/doc/go1.18)
