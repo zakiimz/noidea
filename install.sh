@@ -111,7 +111,7 @@ fi
 
 # Interactive configuration setup
 setup_config() {
-    CONFIG_FILE="$CONFIG_DIR/config.toml"
+    CONFIG_FILE="$CONFIG_DIR/config.json"
     echo -e "\n${CYAN}Setting up noidea configuration...${NC}"
     
     # Check if config already exists and ask about overwriting
@@ -124,16 +124,23 @@ setup_config() {
         fi
     fi
     
-    # Initialize empty config file with sections
+    # Create empty JSON config
     cat > "$CONFIG_FILE" << EOF
-# noidea configuration file
-# Created by install.sh
-
-[llm]
-# AI integration settings
-
-[moai]
-# Feedback and personality settings
+{
+  "llm": {
+    "enabled": false,
+    "provider": "xai",
+    "api_key": "",
+    "model": "grok-2-1212",
+    "temperature": 0.7
+  },
+  "moai": {
+    "use_lint": false,
+    "faces_mode": "random",
+    "personality": "snarky_reviewer",
+    "personality_file": "$CONFIG_DIR/personalities.json"
+  }
+}
 EOF
 
     # LLM Settings
@@ -141,7 +148,8 @@ EOF
     read -p "Enable AI-powered features? (y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        sed -i '/\[llm\]/a enabled = true' "$CONFIG_FILE"
+        # Use sed to update JSON values
+        sed -i 's/"enabled": false/"enabled": true/g' "$CONFIG_FILE"
         
         # Provider selection
         echo -e "\nSelect AI provider:"
@@ -153,45 +161,38 @@ EOF
         
         case $provider_choice in
             1)
-                sed -i '/\[llm\]/a provider = "xai"' "$CONFIG_FILE"
-                read -p "Enter your xAI API key (or leave blank to add later): " api_key
-                if [ -n "$api_key" ]; then
-                    sed -i "/\[llm\]/a api_key = \"$api_key\"" "$CONFIG_FILE"
-                fi
-                sed -i '/\[llm\]/a model = "grok-2-1212"' "$CONFIG_FILE"
+                sed -i 's/"provider": "xai"/"provider": "xai"/g' "$CONFIG_FILE"
+                sed -i 's/"model": "grok-2-1212"/"model": "grok-2-1212"/g' "$CONFIG_FILE"
                 ;;
             2)
-                sed -i '/\[llm\]/a provider = "openai"' "$CONFIG_FILE"
-                read -p "Enter your OpenAI API key (or leave blank to add later): " api_key
-                if [ -n "$api_key" ]; then
-                    sed -i "/\[llm\]/a api_key = \"$api_key\"" "$CONFIG_FILE"
-                fi
-                sed -i '/\[llm\]/a model = "gpt-3.5-turbo"' "$CONFIG_FILE"
+                sed -i 's/"provider": "xai"/"provider": "openai"/g' "$CONFIG_FILE"
+                sed -i 's/"model": "grok-2-1212"/"model": "gpt-3.5-turbo"/g' "$CONFIG_FILE"
                 ;;
             3)
-                sed -i '/\[llm\]/a provider = "deepseek"' "$CONFIG_FILE"
-                read -p "Enter your DeepSeek API key (or leave blank to add later): " api_key
-                if [ -n "$api_key" ]; then
-                    sed -i "/\[llm\]/a api_key = \"$api_key\"" "$CONFIG_FILE"
-                fi
-                sed -i '/\[llm\]/a model = "deepseek-chat"' "$CONFIG_FILE"
+                sed -i 's/"provider": "xai"/"provider": "deepseek"/g' "$CONFIG_FILE"
+                sed -i 's/"model": "grok-2-1212"/"model": "deepseek-chat"/g' "$CONFIG_FILE"
                 ;;
             *)
-                sed -i '/\[llm\]/a provider = "xai"' "$CONFIG_FILE"
-                sed -i '/\[llm\]/a model = "grok-2-1212"' "$CONFIG_FILE"
-                echo -e "${YELLOW}Invalid choice. Using xAI as default.${NC}"
+                # Default case, keep xAI
                 ;;
         esac
+        
+        # API Key
+        read -p "Enter your API key (required for AI features): " api_key
+        if [ -n "$api_key" ]; then
+            # Properly escape the API key for sed
+            api_key_escaped=$(echo "$api_key" | sed 's/[\/&]/\\&/g')
+            sed -i "s/\"api_key\": \"\"/\"api_key\": \"$api_key_escaped\"/g" "$CONFIG_FILE"
+        else
+            echo -e "${YELLOW}⚠️  Warning: No API key provided. AI features will not work properly.${NC}"
+            echo -e "${YELLOW}   You can add your API key later by editing $CONFIG_FILE${NC}"
+        fi
         
         # Temperature setting
         read -p "Creative temperature (0.0-1.0, default 0.7): " temperature
         if [ -n "$temperature" ]; then
-            sed -i "/\[llm\]/a temperature = $temperature" "$CONFIG_FILE"
-        else
-            sed -i '/\[llm\]/a temperature = 0.7' "$CONFIG_FILE"
+            sed -i "s/\"temperature\": 0.7/\"temperature\": $temperature/g" "$CONFIG_FILE"
         fi
-    else
-        sed -i '/\[llm\]/a enabled = false' "$CONFIG_FILE"
     fi
     
     # Personality Settings
@@ -205,17 +206,16 @@ EOF
     
     case $personality_choice in
         1)
-            sed -i '/\[moai\]/a personality = "snarky_reviewer"' "$CONFIG_FILE"
+            sed -i 's/"personality": "snarky_reviewer"/"personality": "snarky_reviewer"/g' "$CONFIG_FILE"
             ;;
         2)
-            sed -i '/\[moai\]/a personality = "supportive_mentor"' "$CONFIG_FILE"
+            sed -i 's/"personality": "snarky_reviewer"/"personality": "supportive_mentor"/g' "$CONFIG_FILE"
             ;;
         3)
-            sed -i '/\[moai\]/a personality = "git_expert"' "$CONFIG_FILE"
+            sed -i 's/"personality": "snarky_reviewer"/"personality": "git_expert"/g' "$CONFIG_FILE"
             ;;
         *)
-            sed -i '/\[moai\]/a personality = "snarky_reviewer"' "$CONFIG_FILE"
-            echo -e "${YELLOW}Invalid choice. Using Snarky Code Reviewer as default.${NC}"
+            # Default case, keep snarky_reviewer
             ;;
     esac
     
@@ -230,28 +230,18 @@ EOF
     
     case $face_choice in
         1)
-            sed -i '/\[moai\]/a faces_mode = "random"' "$CONFIG_FILE"
+            sed -i 's/"faces_mode": "random"/"faces_mode": "random"/g' "$CONFIG_FILE"
             ;;
         2)
-            sed -i '/\[moai\]/a faces_mode = "sequential"' "$CONFIG_FILE"
+            sed -i 's/"faces_mode": "random"/"faces_mode": "sequential"/g' "$CONFIG_FILE"
             ;;
         3)
-            sed -i '/\[moai\]/a faces_mode = "mood"' "$CONFIG_FILE"
+            sed -i 's/"faces_mode": "random"/"faces_mode": "mood"/g' "$CONFIG_FILE"
             ;;
         *)
-            sed -i '/\[moai\]/a faces_mode = "random"' "$CONFIG_FILE"
-            echo -e "${YELLOW}Invalid choice. Using random mode as default.${NC}"
+            # Default case, keep random
             ;;
     esac
-    
-    # Include history setting
-    read -p "Include commit history in feedback analysis? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        sed -i '/\[moai\]/a include_history = true' "$CONFIG_FILE"
-    else
-        sed -i '/\[moai\]/a include_history = false' "$CONFIG_FILE"
-    fi
     
     # Set ownership if running as sudo
     if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
@@ -307,6 +297,21 @@ fi
 # Output success message
 echo -e "${GREEN}✅ noidea has been successfully installed!${NC}"
 echo ""
+
+# Check if API key is set
+if grep -q '"api_key": ""' "$CONFIG_DIR/config.json" 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  Important: No API key is configured.${NC}"
+    echo "For the best experience with commit message suggestions,"
+    echo "you need to set up an API key in your configuration:"
+    echo ""
+    echo "  Run: noidea config --init"
+    echo "  Or edit: $CONFIG_DIR/config.json directly"
+    echo ""
+    echo "Without an API key, commit message suggestions will use a simple local algorithm"
+    echo "that's less detailed than the AI-powered suggestions."
+    echo ""
+fi
+
 echo "To use noidea in a Git repository:"
 echo "  1. cd /path/to/your/repo"
 echo "  2. noidea init                 # Set up Git hooks"

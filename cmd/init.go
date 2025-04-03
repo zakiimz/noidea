@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/AccursedGalaxy/noidea/internal/config"
 	"github.com/AccursedGalaxy/noidea/internal/git"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -95,5 +96,21 @@ var initCmd = &cobra.Command{
 		execPath, _ := os.Executable()
 		fmt.Println(color.GreenString("Success!"), "noidea hooks installed - executable at:", execPath)
 		fmt.Println(color.BlueString("Note:"), "To change settings, run 'git config noidea.suggest [true|false]'")
+		
+		// Load config and check if API key is set
+		cfg := config.LoadConfig()
+		if cfg.LLM.Enabled && cfg.LLM.APIKey == "" {
+			fmt.Println()
+			fmt.Println(color.YellowString("⚠️  Warning:"), "LLM is enabled but no API key is configured.")
+			fmt.Println("     For better commit message suggestions, configure your API key:")
+			fmt.Println("     Run 'noidea config --init' or edit ~/.noidea/config.json")
+			fmt.Println()
+			fmt.Println("     Without an API key, commit suggestions will use a simple local algorithm")
+			fmt.Println("     that's less detailed than the AI-powered suggestions.")
+		} else if !cfg.LLM.Enabled && enableSuggestions {
+			fmt.Println()
+			fmt.Println(color.BlueString("💡 Tip:"), "For better commit message suggestions, enable AI integration:")
+			fmt.Println("     Run 'noidea config --init' to configure AI settings.")
+		}
 	},
 }

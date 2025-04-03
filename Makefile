@@ -40,13 +40,22 @@ install: build
 	@echo "Installing $(BINARY) to $(BINDIR)..."
 	mkdir -p $(BINDIR)
 	cp $(BINARY) $(BINDIR)/
+	@echo "Setting up configuration directory..."
 	mkdir -p $(REAL_HOME)/.noidea
+	@# Create default config.json file if it doesn't exist
+	@if [ ! -f "$(REAL_HOME)/.noidea/config.json" ]; then \
+		echo "Creating default config.json file..."; \
+		echo '{"llm":{"enabled":false,"provider":"xai","api_key":"","model":"grok-2-1212","temperature":0.7},"moai":{"use_lint":false,"faces_mode":"random","personality":"snarky_reviewer","personality_file":"$(REAL_HOME)/.noidea/personalities.json"}}' > $(REAL_HOME)/.noidea/config.json; \
+		echo "⚠️  No API key is set. Edit $(REAL_HOME)/.noidea/config.json to add your API key."; \
+		echo "   Without an API key, AI-powered features like commit message suggestions will use local fallback mode."; \
+	fi
 	@# Fix ownership if running as root
 	@if [ $$(id -u) -eq 0 ] && [ -n "$(SUDO_USER)" ]; then \
 		chown -R $(SUDO_USER) $(REAL_HOME)/.noidea; \
 	fi
 	@echo "✅ Installation complete."
 	@echo "Run 'noidea init' in any repository to set up git hooks."
+	@echo "Run 'noidea config --init' for interactive configuration setup."
 
 # Create release binaries for multiple platforms
 release:
