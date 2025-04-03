@@ -1,5 +1,21 @@
 package cmd
 
+// suggest.go - Commit message suggestion functionality
+//
+// This file implements the 'suggest' command for generating conventional commit messages.
+// Conventional commit format follows the pattern: <type>[(scope)]: <description>
+//
+// Common types include:
+// - feat: A new feature
+// - fix: A bug fix
+// - docs: Documentation changes
+// - style: Code style changes (formatting, etc)
+// - refactor: Code changes that neither fix bugs nor add features
+// - test: Adding or fixing tests
+// - chore: Maintenance tasks, dependencies, etc
+//
+// Example: feat(auth): implement password reset functionality
+
 import (
 	"bufio"
 	"fmt"
