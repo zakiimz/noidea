@@ -164,31 +164,38 @@ This helps maintain a clear and informative commit history, regardless of the pe
 				// Handle interactive mode
 				handleInteractiveMode(suggestion, commitMsgFileFlag)
 			} else {
-				// Just print the suggestion
-				fmt.Println(color.GreenString("✨ Suggested commit message:"))
+				// Check if we're being called from a git hook (via --file flag)
+				isFromGitHook := commitMsgFileFlag != ""
+				
+				// Only print the message preview when NOT called from a git hook
+				// or if called directly by the user
+				if !isFromGitHook {
+					// Just print the suggestion
+					fmt.Println(color.GreenString("✨ Suggested commit message:"))
 
-				// Handle multi-line commit messages with better formatting
-				lines := strings.Split(suggestion, "\n")
-				if len(lines) > 1 {
-					// Print the first line (subject) in white
-					fmt.Println(color.HiWhiteString(lines[0]))
+					// Handle multi-line commit messages with better formatting
+					lines := strings.Split(suggestion, "\n")
+					if len(lines) > 1 {
+						// Print the first line (subject) in white
+						fmt.Println(color.HiWhiteString(lines[0]))
 
-					// Print the rest with proper formatting
-					for i := 1; i < len(lines); i++ {
-						if lines[i] == "" {
-							// Print empty lines as is
-							fmt.Println()
-						} else {
-							// Print content lines in white but not highlighted
-							fmt.Println(color.WhiteString(lines[i]))
+						// Print the rest with proper formatting
+						for i := 1; i < len(lines); i++ {
+							if lines[i] == "" {
+								// Print empty lines as is
+								fmt.Println()
+							} else {
+								// Print content lines in white but not highlighted
+								fmt.Println(color.WhiteString(lines[i]))
+							}
 						}
+					} else {
+						// Single line message
+						fmt.Println(color.HiWhiteString(suggestion))
 					}
-				} else {
-					// Single line message
-					fmt.Println(color.HiWhiteString(suggestion))
-				}
 
-				fmt.Println(color.HiBlackString(divider))
+					fmt.Println(color.HiBlackString(divider))
+				}
 
 				// If we have a commit message file, write to it
 				if commitMsgFileFlag != "" {
@@ -197,7 +204,8 @@ This helps maintain a clear and informative commit history, regardless of the pe
 						fmt.Println(color.RedString("❌ Error:"), "Failed to write commit message:", err)
 						return
 					}
-					fmt.Println(color.GreenString("✅ Commit message suggestion applied"))
+					// Success message only (the hook will handle the full display)
+					fmt.Println(color.GreenString("✅ Commit message generated successfully"))
 				}
 			}
 		}
