@@ -10,7 +10,7 @@ import (
 
 // Version information
 var (
-	Version   = "v0.1.1" // Will be overridden during build
+	Version   = "v0.1.2" // Will be overridden during build
 	BuildDate = "dev"   // Will be overridden during build
 	Commit    = "none"  // Will be overridden during build
 )
