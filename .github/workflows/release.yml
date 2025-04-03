@@ -38,40 +38,25 @@ jobs:
           # If no previous tag, get all commits
           if [ -z "$PREV_TAG" ]; then
             CHANGELOG=$(git log --pretty=format:"* %s (%h)" ${{ steps.get_version.outputs.VERSION }})
-            COMMITS_FOR_HIGHLIGHTS=$(git log --pretty=format:"%s (%h)" ${{ steps.get_version.outputs.VERSION }})
+            COMMITS_FOR_HIGHLIGHTS=$(git log --pretty=format:"%s%n%b" ${{ steps.get_version.outputs.VERSION }})
           else
             CHANGELOG=$(git log --pretty=format:"* %s (%h)" $PREV_TAG..${{ steps.get_version.outputs.VERSION }})
-            COMMITS_FOR_HIGHLIGHTS=$(git log --pretty=format:"%s (%h)" $PREV_TAG..${{ steps.get_version.outputs.VERSION }})
+            COMMITS_FOR_HIGHLIGHTS=$(git log --pretty=format:"%s%n%b" $PREV_TAG..${{ steps.get_version.outputs.VERSION }})
           fi
           
           # Save raw changelog to file
           echo "$CHANGELOG" > changelog_raw.md
           
-          # Create a concise list of key changes for the highlights section
-          # First look for conventional commit prefixes
-          HIGHLIGHT_COMMITS=$(echo "$COMMITS_FOR_HIGHLIGHTS" | grep -E 'feat:|fix:|BREAKING CHANGE:|perf:|refactor:' | head -5)
-          
-          # If no commits match the pattern, just take the first few commits
-          if [ -z "$HIGHLIGHT_COMMITS" ]; then
-            HIGHLIGHT_COMMITS=$(echo "$COMMITS_FOR_HIGHLIGHTS" | head -5)
-          fi
-          
           # Install GitHub CLI Copilot extension if not already installed
           gh extension install github/gh-copilot &>/dev/null || true
           
           # Start building the changelog file
-          echo "## User-Friendly Overview" > changelog.md
+          echo "## Overview" > changelog.md
           echo "" >> changelog.md
           
           # Use GitHub Copilot to generate a user-friendly description
           # Create detailed prompt for GitHub Copilot
-          if [ -z "$PREV_TAG" ]; then
-            FULL_COMMITS=$(git log --pretty=format:"%s%n%b" ${{ steps.get_version.outputs.VERSION }})
-          else
-            FULL_COMMITS=$(git log --pretty=format:"%s%n%b" $PREV_TAG..${{ steps.get_version.outputs.VERSION }})
-          fi
-          
-          PROMPT="Based on these commit messages for version ${{ steps.get_version.outputs.VERSION }}, write a brief, user-friendly paragraph (maximum 4 sentences) explaining what this release does and why it matters to non-technical users. Focus on features, improvements, and fixes from an end-user perspective. Do not mention commit hashes or technical implementation details. Start immediately with the explanation:\n\n$FULL_COMMITS"
+          PROMPT="Based on these commit messages for version ${{ steps.get_version.outputs.VERSION }}, write a brief, user-friendly paragraph (maximum 4 sentences) explaining what this release does and why it matters to non-technical users. Focus on features, improvements, and fixes from an end-user perspective. Do not mention commit hashes or technical implementation details. Start immediately with the explanation:\n\n$COMMITS_FOR_HIGHLIGHTS"
           
           # Try to use GitHub Copilot to generate the summary
           AI_SUMMARY=$(echo "$PROMPT" | gh copilot suggest --timeout 30s 2>/dev/null || echo "")
@@ -83,11 +68,6 @@ jobs:
             echo "$AI_SUMMARY" >> changelog.md
           fi
           
-          echo "" >> changelog.md
-          echo "## Key Highlights" >> changelog.md
-          echo "" >> changelog.md
-          echo "Most important changes in this release:" >> changelog.md
-          echo "$HIGHLIGHT_COMMITS" >> changelog.md
           echo "" >> changelog.md
           echo "## What's Changed" >> changelog.md
           echo "" >> changelog.md
