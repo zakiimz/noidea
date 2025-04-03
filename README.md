@@ -1,17 +1,33 @@
 <div align="center">
 
 # 🧠 noidea
-### Smart Git Assistant with AI Commit Suggestions & Fun Feedback
+
+<p align="center">
+  <b>Smart Git Assistant with AI-powered commits and sassy feedback</b>
+</p>
 
 <img src="assets/header.png" alt="noidea banner" width="600">
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go Version](https://img.shields.io/badge/Go-1.18+-00ADD8?logo=go)](https://golang.org/doc/go1.18)
-[![Made with](https://img.shields.io/badge/Made%20with-noidea-orange)](https://github.com/AccursedGalaxy/noidea)
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://golang.org/doc/go1.18"><img src="https://img.shields.io/badge/Go-1.18+-00ADD8?logo=go" alt="Go Version"></a>
+  <a href="https://github.com/AccursedGalaxy/noidea"><img src="https://img.shields.io/badge/Made%20with-noidea-orange" alt="Made with noidea"></a>
+</p>
 
-> Intelligent commit suggestions with a side of sass. Be productive while being judged by a Moai.
+<p align="center">
+  <i>Intelligent commit suggestions with a side of sass.<br>Be productive while being judged by a Moai.</i>
+</p>
 
-[Features](#-features) • [Installation](#-getting-started) • [Usage](#-usage) • [Configuration](#-configuration) • [Documentation](https://accursedgalaxy.github.io/noidea/) • [Contributing](#-contributing)
+<p align="center">
+  <b>
+    <a href="#-features">Features</a> •
+    <a href="#-getting-started">Installation</a> •
+    <a href="#-usage">Usage</a> •
+    <a href="#-configuration">Configuration</a> •
+    <a href="https://accursedgalaxy.github.io/noidea/">Documentation</a> •
+    <a href="#-contributing">Contributing</a>
+  </b>
+</p>
 
 </div>
 
