@@ -16,6 +16,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Preserve the real user and their home directory
@@ -108,6 +109,158 @@ if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
     chown -R "$SUDO_USER" "$CONFIG_DIR"
 fi
 
+# Interactive configuration setup
+setup_config() {
+    CONFIG_FILE="$CONFIG_DIR/config.toml"
+    echo -e "\n${CYAN}Setting up noidea configuration...${NC}"
+    
+    # Check if config already exists and ask about overwriting
+    if [ -f "$CONFIG_FILE" ]; then
+        read -p "Configuration file already exists. Overwrite? (y/n): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}Keeping existing configuration.${NC}"
+            return
+        fi
+    fi
+    
+    # Initialize empty config file with sections
+    cat > "$CONFIG_FILE" << EOF
+# noidea configuration file
+# Created by install.sh
+
+[llm]
+# AI integration settings
+
+[moai]
+# Feedback and personality settings
+EOF
+
+    # LLM Settings
+    echo -e "\n${CYAN}📚 AI Integration${NC}"
+    read -p "Enable AI-powered features? (y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        sed -i '/\[llm\]/a enabled = true' "$CONFIG_FILE"
+        
+        # Provider selection
+        echo -e "\nSelect AI provider:"
+        echo "1) xAI (Grok models)"
+        echo "2) OpenAI"
+        echo "3) DeepSeek (experimental)"
+        read -p "Choose a provider (1-3): " provider_choice
+        echo
+        
+        case $provider_choice in
+            1)
+                sed -i '/\[llm\]/a provider = "xai"' "$CONFIG_FILE"
+                read -p "Enter your xAI API key (or leave blank to add later): " api_key
+                if [ -n "$api_key" ]; then
+                    sed -i "/\[llm\]/a api_key = \"$api_key\"" "$CONFIG_FILE"
+                fi
+                sed -i '/\[llm\]/a model = "grok-2-1212"' "$CONFIG_FILE"
+                ;;
+            2)
+                sed -i '/\[llm\]/a provider = "openai"' "$CONFIG_FILE"
+                read -p "Enter your OpenAI API key (or leave blank to add later): " api_key
+                if [ -n "$api_key" ]; then
+                    sed -i "/\[llm\]/a api_key = \"$api_key\"" "$CONFIG_FILE"
+                fi
+                sed -i '/\[llm\]/a model = "gpt-3.5-turbo"' "$CONFIG_FILE"
+                ;;
+            3)
+                sed -i '/\[llm\]/a provider = "deepseek"' "$CONFIG_FILE"
+                read -p "Enter your DeepSeek API key (or leave blank to add later): " api_key
+                if [ -n "$api_key" ]; then
+                    sed -i "/\[llm\]/a api_key = \"$api_key\"" "$CONFIG_FILE"
+                fi
+                sed -i '/\[llm\]/a model = "deepseek-chat"' "$CONFIG_FILE"
+                ;;
+            *)
+                sed -i '/\[llm\]/a provider = "xai"' "$CONFIG_FILE"
+                sed -i '/\[llm\]/a model = "grok-2-1212"' "$CONFIG_FILE"
+                echo -e "${YELLOW}Invalid choice. Using xAI as default.${NC}"
+                ;;
+        esac
+        
+        # Temperature setting
+        read -p "Creative temperature (0.0-1.0, default 0.7): " temperature
+        if [ -n "$temperature" ]; then
+            sed -i "/\[llm\]/a temperature = $temperature" "$CONFIG_FILE"
+        else
+            sed -i '/\[llm\]/a temperature = 0.7' "$CONFIG_FILE"
+        fi
+    else
+        sed -i '/\[llm\]/a enabled = false' "$CONFIG_FILE"
+    fi
+    
+    # Personality Settings
+    echo -e "\n${CYAN}🤖 Personality Settings${NC}"
+    echo "Choose a default personality for AI feedback:"
+    echo "1) Snarky Code Reviewer (witty and sarcastic)"
+    echo "2) Supportive Mentor (encouraging and positive)"
+    echo "3) Git Expert (technical and professional)"
+    read -p "Choose a personality (1-3): " personality_choice
+    echo
+    
+    case $personality_choice in
+        1)
+            sed -i '/\[moai\]/a personality = "snarky_reviewer"' "$CONFIG_FILE"
+            ;;
+        2)
+            sed -i '/\[moai\]/a personality = "supportive_mentor"' "$CONFIG_FILE"
+            ;;
+        3)
+            sed -i '/\[moai\]/a personality = "git_expert"' "$CONFIG_FILE"
+            ;;
+        *)
+            sed -i '/\[moai\]/a personality = "snarky_reviewer"' "$CONFIG_FILE"
+            echo -e "${YELLOW}Invalid choice. Using Snarky Code Reviewer as default.${NC}"
+            ;;
+    esac
+    
+    # Moai face settings
+    echo -e "\n${CYAN}🗿 Moai Settings${NC}"
+    echo "Choose how Moai faces are selected:"
+    echo "1) Random (randomized faces)"
+    echo "2) Sequential (cycle through all faces)"
+    echo "3) Mood (try to match face to commit context)"
+    read -p "Choose face selection mode (1-3): " face_choice
+    echo
+    
+    case $face_choice in
+        1)
+            sed -i '/\[moai\]/a faces_mode = "random"' "$CONFIG_FILE"
+            ;;
+        2)
+            sed -i '/\[moai\]/a faces_mode = "sequential"' "$CONFIG_FILE"
+            ;;
+        3)
+            sed -i '/\[moai\]/a faces_mode = "mood"' "$CONFIG_FILE"
+            ;;
+        *)
+            sed -i '/\[moai\]/a faces_mode = "random"' "$CONFIG_FILE"
+            echo -e "${YELLOW}Invalid choice. Using random mode as default.${NC}"
+            ;;
+    esac
+    
+    # Include history setting
+    read -p "Include commit history in feedback analysis? (y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        sed -i '/\[moai\]/a include_history = true' "$CONFIG_FILE"
+    else
+        sed -i '/\[moai\]/a include_history = false' "$CONFIG_FILE"
+    fi
+    
+    # Set ownership if running as sudo
+    if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+        chown "$SUDO_USER" "$CONFIG_FILE"
+    fi
+    
+    echo -e "${GREEN}✓${NC} Configuration saved to $CONFIG_FILE"
+}
+
 # Create scripts directory in the config directory
 SCRIPTS_INSTALL_DIR="$CONFIG_DIR/scripts"
 mkdir -p "$SCRIPTS_INSTALL_DIR"
@@ -122,6 +275,9 @@ chmod +x "$SCRIPTS_INSTALL_DIR/"*.sh "$SCRIPTS_INSTALL_DIR/prepare-commit-msg" 2
 if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
     chown -R "$SUDO_USER" "$SCRIPTS_INSTALL_DIR"
 fi
+
+# Set up configuration interactively
+setup_config
 
 # Build the binary
 echo "Building noidea..."
