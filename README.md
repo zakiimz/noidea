@@ -1,6 +1,19 @@
-# 🧠 noidea — Smart Git Assistant with AI Commit Suggestions & Fun Feedback
+<div align="center">
+
+# 🧠 noidea
+### Smart Git Assistant with AI Commit Suggestions & Fun Feedback
+
+<img src="docs/assets/images/banner.png" alt="noidea banner" width="600">
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/Go-1.18+-00ADD8?logo=go)](https://golang.org/doc/go1.18)
+[![Made with](https://img.shields.io/badge/Made%20with-noidea-orange)](https://github.com/AccursedGalaxy/noidea)
 
 > Intelligent commit suggestions with a side of sass. Be productive while being judged by a Moai.
+
+[Features](#-features) • [Installation](#-getting-started) • [Usage](#-usage) • [Configuration](#-configuration) • [Documentation](https://accursedgalaxy.github.io/noidea/) • [Contributing](#-contributing)
+
+</div>
 
 **noidea** is a lightweight Git extension that enhances your workflow with AI-powered features:
 
@@ -9,6 +22,10 @@
 ✅ **Fun Feedback** - Enjoy entertaining responses from a judgmental Moai after each commit  
 
 Every `git commit` becomes both more productive and more entertaining. Whether you need help crafting the perfect commit message or just want to be roasted for your 3 AM code, noidea has you covered.
+
+<div align="center">
+<img src="docs/assets/images/demo.gif" alt="noidea in action" width="80%">
+</div>
 
 ---
 
@@ -37,6 +54,19 @@ feat(user-auth): implement password reset functionality with email verification
 ───────────────────────────────────────────────────
 ```
 
+<details>
+<summary>👀 See noidea in action</summary>
+
+<h3>Commit Message Suggestions</h3>
+<img src="docs/assets/images/suggest.png" alt="Commit message suggestions" width="80%">
+
+<h3>Post-Commit Moai Feedback</h3>
+<img src="docs/assets/images/moai.png" alt="Moai feedback" width="80%">
+
+<h3>Weekly Summary Analysis</h3>
+<img src="docs/assets/images/summary.png" alt="Weekly summary" width="80%">
+</details>
+
 ---
 
 ## 🚀 Getting Started
@@ -45,7 +75,8 @@ feat(user-auth): implement password reset functionality with email verification
 
 Choose one of these methods to install noidea:
 
-#### 1. One-Line Installation (Recommended)
+<details open>
+<summary><b>1. One-Line Installation (Recommended)</b></summary>
 
 ```bash
 # Install to /usr/local/bin (may require sudo)
@@ -54,8 +85,10 @@ curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinst
 # Or with sudo for system-wide installation
 curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | sudo bash
 ```
+</details>
 
-#### 2. Quick Installation Script
+<details>
+<summary><b>2. Quick Installation Script</b></summary>
 
 ```bash
 # Clone the repository
@@ -67,8 +100,10 @@ cd noidea
 # Or specify a custom location
 ./install.sh ~/bin
 ```
+</details>
 
-#### 3. Using Make
+<details>
+<summary><b>3. Using Make</b></summary>
 
 ```bash
 # Clone the repository
@@ -80,8 +115,10 @@ sudo make install
 # Or specify a custom prefix
 make install PREFIX=~/.local
 ```
+</details>
 
-#### 4. Manual Installation
+<details>
+<summary><b>4. Manual Installation</b></summary>
 
 ```bash
 # Clone the repository
@@ -94,10 +131,13 @@ go build -o noidea
 # Move it to a directory in your PATH
 sudo cp noidea /usr/local/bin/
 ```
+</details>
 
-#### 5. Pre-built Binaries (Coming Soon)
+<details>
+<summary><b>5. Pre-built Binaries (Coming Soon)</b></summary>
 
 We'll soon provide pre-built binaries for various platforms on our releases page.
+</details>
 
 ### Setting Up In Your Repository
 
@@ -122,9 +162,11 @@ git config noidea.suggest true
 
 Now, when you commit, noidea will suggest a message for you!
 
----
-
 ## 📋 Features
+
+<div align="center">
+<img src="docs/assets/images/features.png" alt="noidea features overview" width="80%">
+</div>
 
 ### Post-Commit Feedback
 
@@ -247,15 +289,24 @@ noidea suggest --history 20
 noidea suggest --full-diff
 ```
 
----
-
 ## 🧠 AI Integration
 
 noidea supports AI-powered feedback using LLM providers that offer OpenAI-compatible APIs:
 
-- xAI (Grok models)
-- OpenAI
-- DeepSeek (coming soon)
+<div class="provider-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
+  <div style="text-align: center;">
+    <img src="docs/assets/images/xai-logo.png" alt="xAI" width="100">
+    <p>xAI (Grok)</p>
+  </div>
+  <div style="text-align: center;">
+    <img src="docs/assets/images/openai-logo.png" alt="OpenAI" width="100">
+    <p>OpenAI</p>
+  </div>
+  <div style="text-align: center;">
+    <img src="docs/assets/images/deepseek-logo.png" alt="DeepSeek" width="100">
+    <p>DeepSeek (coming soon)</p>
+  </div>
+</div>
 
 To enable AI integration:
 
@@ -291,10 +342,24 @@ To enable AI integration:
 
 noidea supports multiple AI personalities to provide different types of feedback:
 
-- **Snarky Code Reviewer** - A sarcastic, witty code reviewer (default)
-- **Supportive Mentor** - Encouraging and positive feedback 
-- **Git Expert** - Technical feedback based on Git best practices
-- **Motivational Speaker** - Over-the-top enthusiasm for your commits!
+<div class="personality-cards" style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+  <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; width: 24%;">
+    <h3>😈 Snarky Code Reviewer</h3>
+    <p>A sarcastic, witty code reviewer that doesn't hold back</p>
+  </div>
+  <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; width: 24%;">
+    <h3>🤗 Supportive Mentor</h3>
+    <p>Encouraging and positive feedback to keep you motivated</p>
+  </div>
+  <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; width: 24%;">
+    <h3>🧑‍💻 Git Expert</h3>
+    <p>Technical feedback based on Git best practices</p>
+  </div>
+  <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; width: 24%;">
+    <h3>🚀 Motivational Speaker</h3>
+    <p>Over-the-top enthusiasm for your commits!</p>
+  </div>
+</div>
 
 > **Note:** Personalities affect post-commit feedback and analysis, but commit message suggestions (via `noidea suggest`) always use a professional format regardless of the selected personality.
 
@@ -338,8 +403,6 @@ temperature = 0.7
 ```
 
 Reference the example file at `personalities.toml.example` for more details.
-
----
 
 ## 🔧 Configuration
 
@@ -405,7 +468,24 @@ export OPENAI_API_KEY=your_api_key_here
 export DEEPSEEK_API_KEY=your_api_key_here
 ```
 
----
+## 📚 Documentation
+
+For more detailed information, check out our [full documentation site](https://accursedgalaxy.github.io/noidea/).
+
+<div align="center">
+<a href="https://accursedgalaxy.github.io/noidea/" target="_blank">
+  <img src="docs/assets/images/docs-preview.png" alt="Documentation Preview" width="80%">
+</a>
+</div>
+
+We've created a comprehensive documentation site using GitHub Pages that includes:
+
+- Detailed tutorials
+- Command reference
+- Configuration guide
+- API documentation for integration
+- Troubleshooting tips
+- Advanced usage examples
 
 ## 💡 Feature Status
 
@@ -423,13 +503,9 @@ export DEEPSEEK_API_KEY=your_api_key_here
 | Commit streak insights    | 🔜 Coming Soon  |
 | Cross-platform releases   | 🔜 Coming Soon  |
 
----
-
 ## 🤯 Why tho?
 
 Because Git is too serious. Coding is chaos. Let's embrace it.
-
----
 
 ## 🧪 Contributing
 
@@ -439,7 +515,9 @@ PRs are welcome. Open an issue or just drop a meme.
 
 Check out our test suite in the `tests/` directory to ensure your changes work as expected.
 
----
+<div align="center">
+<img src="docs/assets/images/contribute.png" alt="Contributing" width="50%">
+</div>
 
 ## 🪦 Disclaimer
 
@@ -448,4 +526,10 @@ It will, however, make it more entertaining.
 
 ---
 
-Made with `noidea` and late-night energy.
+<div align="center">
+Made with <code>noidea</code> and late-night energy.
+
+<a href="https://github.com/AccursedGalaxy/noidea/stargazers"><img src="https://img.shields.io/github/stars/AccursedGalaxy/noidea?style=social" alt="GitHub stars"></a>
+<a href="https://github.com/AccursedGalaxy/noidea/network/members"><img src="https://img.shields.io/github/forks/AccursedGalaxy/noidea?style=social" alt="GitHub forks"></a>
+<a href="https://github.com/AccursedGalaxy/noidea/issues"><img src="https://img.shields.io/github/issues/AccursedGalaxy/noidea" alt="GitHub issues"></a>
+</div>
