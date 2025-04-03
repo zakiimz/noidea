@@ -735,8 +735,9 @@ func formatCodeChanges(diff string) string {
 	// Split the diff into lines
 	lines := strings.Split(diff, "\n")
 
-	// Initialize a result string
+	// Initialize a result string with a reasonable capacity to reduce allocations
 	var result strings.Builder
+	result.Grow(len(diff) / 2) // Estimate capacity at half the original diff size
 	
 	// Keep track of current file
 	currentFile := ""
@@ -791,8 +792,12 @@ func formatCodeChanges(diff string) string {
 				}
 			}
 			
-			// Add the changed line
-			result.WriteString(fmt.Sprintf("%s\n", line))
+			// Add the changed line with highlighting for better readability
+			if strings.HasPrefix(line, "+") {
+				result.WriteString(fmt.Sprintf("%s\n", line))
+			} else {
+				result.WriteString(fmt.Sprintf("%s\n", line))
+			}
 			
 			// Clear the line buffer
 			lineBuffer = lineBuffer[:0]
