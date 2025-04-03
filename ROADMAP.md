@@ -96,12 +96,12 @@
 **🔹 Goal:** Provide actionable and interesting insights into commit history patterns using LLM analysis.
 
 #### ✅ Tasks:
-- [ ] Git History Collection:
-  - [ ] Create `HistoryCollector` module in `internal/history/`
-  - [ ] Implement flexible date range filtering (past 7 days, past X commits)
-  - [ ] Extract commit metadata (messages, authors, timestamps, files changed)
-  - [ ] Add diff summarization for contextual understanding
-  - [ ] Implement caching to reduce repeat Git operations
+- [x] Git History Collection:
+  - [x] Create `HistoryCollector` module in `internal/history/`
+  - [x] Implement flexible date range filtering (past 7 days, past X commits)
+  - [x] Extract commit metadata (messages, authors, timestamps, files changed)
+  - [x] Add diff summarization for contextual understanding
+  - [x] Implement caching to reduce repeat Git operations
 - [ ] Weekly Summary Feature:
   - [ ] Add `noidea summary` command with time range options
   - [ ] Design comprehensive prompt for weekly work analysis
