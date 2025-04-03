@@ -43,9 +43,16 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 	lines := strings.Split(ctx.Diff, "\n")
 	var filesChanged []string
 	var fileExtensions = make(map[string]int)
-
-	for _, line := range lines {
-		if strings.HasPrefix(line, "+++ b/") {
+	
+	// Track function and method additions/changes
+	var functionChanges []string
+	
+	// Parse the diff to extract semantic information
+	
+	for i, line := range lines {
+		if strings.HasPrefix(line, "diff --git") {
+			// Just detect the file boundary, no need to track the current file
+		} else if strings.HasPrefix(line, "+++ b/") {
 			file := strings.TrimPrefix(line, "+++ b/")
 			filesChanged = append(filesChanged, file)
 
@@ -53,6 +60,34 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 			ext := filepath.Ext(file)
 			if ext != "" {
 				fileExtensions[ext]++
+			}
+		} else if strings.HasPrefix(line, "+func ") && !strings.HasPrefix(line, "+++") {
+			// Capture added function declarations
+			funcDecl := strings.TrimPrefix(line, "+func ")
+			funcName := strings.Split(funcDecl, "(")[0]
+			funcName = strings.TrimSpace(funcName)
+			if funcName != "" {
+				functionChanges = append(functionChanges, funcName)
+			}
+		} else if i > 0 && strings.HasPrefix(line, "+") && strings.Contains(line, " struct {") {
+			// Capture added struct declarations
+			prevLine := lines[i-1]
+			if strings.HasPrefix(prevLine, "+type ") {
+				typeLine := strings.TrimPrefix(prevLine, "+type ")
+				structName := strings.Split(typeLine, " ")[0]
+				if structName != "" {
+					functionChanges = append(functionChanges, "struct "+structName)
+				}
+			}
+		} else if i > 0 && strings.HasPrefix(line, "+") && strings.Contains(line, " interface {") {
+			// Capture added interface declarations
+			prevLine := lines[i-1]
+			if strings.HasPrefix(prevLine, "+type ") {
+				typeLine := strings.TrimPrefix(prevLine, "+type ")
+				interfaceName := strings.Split(typeLine, " ")[0]
+				if interfaceName != "" {
+					functionChanges = append(functionChanges, "interface "+interfaceName)
+				}
 			}
 		}
 	}
@@ -92,17 +127,41 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 		}
 	}
 
-	// Generate basic message based on files and line stats
-	if len(filesChanged) == 0 {
-		return typePrefix + ": update code", nil
+	// Generate more specific message based on the detected changes
+	if len(functionChanges) > 0 {
+		if len(functionChanges) == 1 {
+			// Single function change
+			return typePrefix + ": add " + functionChanges[0] + " function", nil
+		} else if len(functionChanges) <= 3 {
+			// Multiple function changes, but not too many to list
+			return typePrefix + ": add " + strings.Join(functionChanges[:len(functionChanges)-1], ", ") + 
+				" and " + functionChanges[len(functionChanges)-1] + " functions", nil 
+		} else {
+			// Too many function changes to list individually
+			return typePrefix + ": add multiple new functions including " + functionChanges[0], nil
+		}
+	} else if len(filesChanged) == 0 {
+		return typePrefix + ": update code structure", nil
 	} else if len(filesChanged) == 1 {
 		filename := filepath.Base(filesChanged[0])
-		return typePrefix + ": update " + filename, nil
+		if addedLines > 50 && removedLines < 10 {
+			return typePrefix + ": add new functionality to " + filename, nil
+		} else if removedLines > 50 && addedLines < 10 {
+			return typePrefix + ": remove unused code from " + filename, nil
+		} else if addedLines > 0 && removedLines > 0 {
+			return typePrefix + ": refactor code in " + filename, nil
+		} else {
+			return typePrefix + ": make changes to " + filename, nil
+		}
 	} else if removedLines > addedLines*2 {
-		return "refactor: simplify code in multiple files", nil
+		return "refactor: simplify code across multiple files", nil
 	} else if addedLines > removedLines*2 {
-		return typePrefix + ": implement new functionality", nil
+		if addedLines > 100 {
+			return typePrefix + ": implement major new functionality", nil
+		} else {
+			return typePrefix + ": add new features", nil
+		}
 	} else {
-		return typePrefix + ": update multiple files", nil
+		return typePrefix + ": update implementation in multiple files", nil
 	}
 }

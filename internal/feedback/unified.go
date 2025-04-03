@@ -1006,6 +1006,8 @@ func formatSemanticChanges(semantics map[string]interface{}) string {
 
 // analyzeCodeStructure performs deeper analysis of code structure in the diff
 // to identify structural changes like interface implementations, struct modifications, etc.
+// This function scans the diff for type definitions, interfaces, structs, and constants
+// to provide more semantic understanding of the code changes.
 func analyzeCodeStructure(diff string) map[string]interface{} {
 	result := make(map[string]interface{})
 	
