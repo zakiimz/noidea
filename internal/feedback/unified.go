@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/AccursedGalaxy/noidea/internal/personality"
@@ -543,12 +544,16 @@ Analysis of changes:
 CODE CHANGES DETAIL:
 %s
 
+SEMANTIC ANALYSIS:
+%s
+
 Past commit messages for limited context (do not rely heavily on these patterns):
 %s
 
 Based primarily on the ACTUAL CODE CHANGES shown above, suggest a concise, descriptive commit message that accurately describes what was modified in the code. Focus on specific function changes, parameters, logic modifications, or features added/removed:`,
 		diffContext,
 		formatCodeChanges(ctx.Diff),
+		formatSemanticChanges(extractCodeSemantics(ctx.Diff)),
 		formatCommitList(ctx.CommitHistory))
 
 	// Create the chat completion request
@@ -827,5 +832,150 @@ func formatCodeChanges(diff string) string {
 		}
 	}
 
+	return result.String()
+}
+
+// extractCodeSemantics analyzes the diff to identify key semantic changes
+// for better commit message suggestions
+func extractCodeSemantics(diff string) map[string]interface{} {
+	result := make(map[string]interface{})
+	
+	// Track function additions/modifications/removals
+	functionChanges := make(map[string]string)
+	
+	// Track package/import changes
+	importChanges := make([]string, 0)
+	
+	// Track meaningful variable declarations
+	variableChanges := make(map[string]string)
+	
+	// Split the diff into lines
+	lines := strings.Split(diff, "\n")
+	
+	// State tracking
+	currentFile := ""
+	inImportBlock := false
+	
+	// Regex patterns for semantic analysis
+	functionPattern := regexp.MustCompile(`^[+-](func\s+\w+)`)
+	methodPattern := regexp.MustCompile(`^[+-](func\s+\([^)]+\)\s+\w+)`)
+	importPattern := regexp.MustCompile(`^[+-]\s*import\s+(?:\w+\s+)?"([^"]+)"`)
+	variablePattern := regexp.MustCompile(`^[+-]\s*(\w+)\s*:?=\s*(.+)$`)
+	
+	for _, line := range lines {
+		// Track current file
+		if strings.HasPrefix(line, "diff --git") {
+			parts := strings.Fields(line)
+			if len(parts) >= 3 {
+				filePath := strings.TrimPrefix(parts[2], "a/")
+				currentFile = filePath
+			}
+			inImportBlock = false
+			continue
+		}
+		
+		// Skip metadata lines
+		if strings.HasPrefix(line, "index ") || 
+		   strings.HasPrefix(line, "+++") || 
+		   strings.HasPrefix(line, "---") ||
+		   strings.HasPrefix(line, "@@") {
+			continue
+		}
+		
+		// Detect import block
+		if strings.Contains(line, "import (") {
+			inImportBlock = true
+		} else if inImportBlock && strings.Contains(line, ")") {
+			inImportBlock = false
+		}
+		
+		// Check for function changes
+		if matches := functionPattern.FindStringSubmatch(line); len(matches) > 1 {
+			op := string(line[0])
+			funcDecl := matches[1]
+			functionChanges[funcDecl] = op
+		}
+		
+		// Check for method changes
+		if matches := methodPattern.FindStringSubmatch(line); len(matches) > 1 {
+			op := string(line[0])
+			methodDecl := matches[1]
+			functionChanges[methodDecl] = op
+		}
+		
+		// Check for import changes
+		if matches := importPattern.FindStringSubmatch(line); len(matches) > 1 {
+			importChanges = append(importChanges, matches[1])
+		} else if inImportBlock && (strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-")) {
+			// For multi-line import blocks
+			importLine := strings.TrimLeft(strings.TrimSpace(line[1:]), "\"")
+			importLine = strings.TrimRight(importLine, "\"")
+			if importLine != "" && !strings.HasPrefix(importLine, "//") {
+				importChanges = append(importChanges, importLine)
+			}
+		}
+		
+		// Check for variable changes
+		if matches := variablePattern.FindStringSubmatch(line); len(matches) > 1 {
+			varName := matches[1]
+			varValue := matches[2]
+			variableChanges[varName] = varValue
+		}
+	}
+	
+	// Store the collected changes
+	result["files"] = []string{currentFile}
+	result["functions"] = functionChanges
+	result["imports"] = importChanges
+	result["variables"] = variableChanges
+	
+	return result
+}
+
+// Add a new helper function to format the semantic changes
+func formatSemanticChanges(semantics map[string]interface{}) string {
+	var result strings.Builder
+	
+	// Format files
+	if files, ok := semantics["files"].([]string); ok && len(files) > 0 {
+		result.WriteString("Modified files:\n")
+		for _, file := range files {
+			result.WriteString(fmt.Sprintf("- %s\n", file))
+		}
+		result.WriteString("\n")
+	}
+	
+	// Format function changes
+	if functions, ok := semantics["functions"].(map[string]string); ok && len(functions) > 0 {
+		result.WriteString("Function changes:\n")
+		for funcName, op := range functions {
+			if op == "+" {
+				result.WriteString(fmt.Sprintf("- Added: %s\n", funcName))
+			} else if op == "-" {
+				result.WriteString(fmt.Sprintf("- Removed: %s\n", funcName))
+			} else {
+				result.WriteString(fmt.Sprintf("- Modified: %s\n", funcName))
+			}
+		}
+		result.WriteString("\n")
+	}
+	
+	// Format import changes
+	if imports, ok := semantics["imports"].([]string); ok && len(imports) > 0 {
+		result.WriteString("Import changes:\n")
+		for _, imp := range imports {
+			result.WriteString(fmt.Sprintf("- %s\n", imp))
+		}
+		result.WriteString("\n")
+	}
+	
+	// Format variable changes
+	if variables, ok := semantics["variables"].(map[string]string); ok && len(variables) > 0 {
+		result.WriteString("Variable changes:\n")
+		for varName, varValue := range variables {
+			result.WriteString(fmt.Sprintf("- %s = %s\n", varName, varValue))
+		}
+	}
+	
 	return result.String()
 }
