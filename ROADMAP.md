@@ -24,16 +24,16 @@
 **🔹 Goal:** Use AI to give fun, context-aware Git commit feedback.
 
 #### ✅ Tasks:
-- [ ] Define `FeedbackEngine` interface (abstraction for LLM agent)
-- [ ] Implement OpenAI-compatible backend using `openai-go` or `ollama`, `openfga`, etc.
-- [ ] Capture basic commit context:
+- [x] Define `FeedbackEngine` interface (abstraction for LLM agent)
+- [x] Implement OpenAI-compatible backend using `openai-go` or `ollama`, `openfga`, etc.
+- [x] Capture basic commit context:
   - Latest commit message
   - Timestamp
   - Commit diff (optional)
-- [ ] Craft base prompt:
+- [x] Craft base prompt:
   _"You are a snarky but insightful Git expert. Given the following commit message and time of day, give a short and funny, but helpful comment."_
-- [ ] Add `--ai` flag to `noidea moai` or auto-toggle via config
-- [ ] Fallback to local jokes if no API key is provided
+- [x] Add `--ai` flag to `noidea moai` or auto-toggle via config
+- [x] Fallback to local jokes if no API key is provided
 
 ---
 

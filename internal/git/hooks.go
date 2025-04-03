@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/AccursedGalaxy/noidea/internal/config"
 )
 
 // FindGitDir finds the .git directory from the current path
@@ -65,6 +67,13 @@ func InstallPostCommitHook(hooksDir string) error {
 		return err
 	}
 	
+	// Check if AI should be enabled by default
+	cfg := config.LoadConfig()
+	aiFlag := ""
+	if cfg.LLMEnabled {
+		aiFlag = "--ai"
+	}
+	
 	// Create the post-commit hook content
 	hookContent := fmt.Sprintf(`#!/bin/sh
 #
@@ -76,11 +85,11 @@ func InstallPostCommitHook(hooksDir string) error {
 COMMIT_MSG=$(git log -1 --pretty=%%B)
 
 # Call noidea with the commit message (using absolute path)
-%s moai "$COMMIT_MSG"
+%s moai %s "$COMMIT_MSG"
 
 # Always exit with success so git continues normally
 exit 0
-`, execPath)
+`, execPath, aiFlag)
 	
 	// Write the hook file
 	if err := os.WriteFile(postCommitPath, []byte(hookContent), 0755); err != nil {
