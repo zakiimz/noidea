@@ -7,6 +7,9 @@
 # 2. Runs the installer
 # 3. Cleans up the temporary files
 #
+# Note: For a more personalized setup with interactive configuration options,
+# it's recommended to clone the repository and run install.sh directly.
+#
 # Usage:
 #   curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | bash
 #   # Or with sudo:

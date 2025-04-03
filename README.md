@@ -23,6 +23,8 @@
 
 Every `git commit` becomes both more productive and more entertaining. Whether you need help crafting the perfect commit message or just want to be roasted for your 3 AM code, noidea has you covered.
 
+Setup is quick and personalized with our interactive installation script that guides you through choosing your AI provider, default personality, and other preferences.
+
 <div align="center">
 <img src="docs/assets/images/demo.gif" alt="noidea in action" width="80%">
 </div>
@@ -76,19 +78,7 @@ feat(user-auth): implement password reset functionality with email verification
 Choose one of these methods to install noidea:
 
 <details open>
-<summary><b>1. One-Line Installation (Recommended)</b></summary>
-
-```bash
-# Install to /usr/local/bin (may require sudo)
-curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | bash
-
-# Or with sudo for system-wide installation
-curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | sudo bash
-```
-</details>
-
-<details>
-<summary><b>2. Quick Installation Script</b></summary>
+<summary><b>1. Using the Installation Script (Recommended)</b></summary>
 
 ```bash
 # Clone the repository
@@ -99,6 +89,26 @@ cd noidea
 ./install.sh
 # Or specify a custom location
 ./install.sh ~/bin
+```
+
+The installation script provides an interactive setup experience where you can configure:
+- AI provider selection (xAI, OpenAI, DeepSeek)
+- Default personality choice
+- Moai face selection mode
+- And other preferences
+
+This is the recommended method as it ensures all components are properly configured.
+</details>
+
+<details>
+<summary><b>2. One-Line Quick Installation</b></summary>
+
+```bash
+# Install to /usr/local/bin (may require sudo)
+curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | bash
+
+# Or with sudo for system-wide installation
+curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | sudo bash
 ```
 </details>
 
