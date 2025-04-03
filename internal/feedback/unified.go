@@ -343,7 +343,13 @@ Follow these guidelines:
     - Note new imports or dependencies added
     - Pay attention to variable names, error handling, and structural changes 
 16. Your commit message should be so specific that someone reading it can understand exactly what code changes were made
-    without looking at the diff`
+    without looking at the diff
+17. MOST CRITICALLY IMPORTANT: When you see a file name and new functions in the SEMANTIC ANALYSIS section, use that information 
+    in your commit message. If a new function like 'extractCodeSemantics' was added, include that specific function name 
+    in your commit message rather than just saying "update file.go" or "add new functions"
+18. BAD EXAMPLE: "feat: update unified.go"
+    GOOD EXAMPLE: "feat: add extractCodeSemantics function for improved commit suggestions"
+    The difference is specificity about WHAT changed, not just THAT something changed`
 
 	// Prepare the diff context - enhanced with file analysis
 	diffContext := `
