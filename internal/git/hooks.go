@@ -59,22 +59,28 @@ func InstallPostCommitHook(hooksDir string) error {
 		return err
 	}
 	
+	// Get the absolute path to the noidea executable
+	execPath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	
 	// Create the post-commit hook content
-	hookContent := `#!/bin/sh
+	hookContent := fmt.Sprintf(`#!/bin/sh
 #
 # noidea - Post-commit hook
 # This hook calls the 'noidea moai' command after each commit
 # to show a Moai face with feedback about your commit.
 
 # Get the last commit message
-COMMIT_MSG=$(git log -1 --pretty=%B)
+COMMIT_MSG=$(git log -1 --pretty=%%B)
 
-# Call noidea with the commit message
-noidea moai "$COMMIT_MSG"
+# Call noidea with the commit message (using absolute path)
+%s moai "$COMMIT_MSG"
 
 # Always exit with success so git continues normally
 exit 0
-`
+`, execPath)
 	
 	// Write the hook file
 	if err := os.WriteFile(postCommitPath, []byte(hookContent), 0755); err != nil {
