@@ -306,7 +306,7 @@ func (e *UnifiedFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (str
 Your task is to suggest a high-quality commit message based on the staged changes.
 Follow these guidelines:
 1. IMPORTANT: Focus primarily on the ACTUAL CHANGES in the diff, not on past commit patterns
-2. When changes span MULTIPLE CATEGORIES (docs, code, build files, etc.), make sure to reflect ALL major aspects
+2. Write EXTREMELY CONCISE and FOCUSED commit messages - be brief but precise
 3. Use the conventional commits format (type: description) when appropriate
    - docs: for documentation changes
    - feat: for new features
@@ -316,40 +316,19 @@ Follow these guidelines:
    - test: for adding or fixing tests
    - chore: for routine maintenance tasks
    - build: for changes to build system or dependencies
-4. For mixed changes, choose the most significant type or use a broader scope like "feat" or "chore"
-5. When changes involve multiple components use a scope that encompasses all of them (e.g., "build+docs")
-6. Be specific about what changed, making sure your message accurately reflects the actual modifications
-7. Keep the first line under 72 characters
-8. Use present tense (e.g., "add feature" not "added feature")
-9. ALWAYS generate a MULTI-LINE commit message for significant changes or modifications affecting multiple files:
-   - First line: Short, descriptive summary following conventional format (type: description)
-   - Second line: BLANK line (must be empty)
-   - Following lines: Detailed explanation of the changes with specifics about:
-     * What files or components were modified
-     * Why the changes were made
-     * Any important technical details
-     * Group related changes into paragraphs with empty lines between them
-10. For simple changes affecting a single file or making minor modifications, a single line message is sufficient
-11. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations, reasoning, or markdown formatting
-12. NEVER just write generic messages like "feat: update file.go" or "chore: update config.go". Instead:
-    - ALWAYS describe WHAT specifically changed in the file (e.g., "feat: add new output format options to personality.go")
-    - Mention specific functions, classes, or components that were modified
-    - Include the purpose or impact of the change (e.g., "fix: correct error handling in config parsing function")
-13. Analyze the diff content to identify the actual changes made to the code/files, not just which files were changed
-14. If a file was updated, specify what functionality was added, removed, or modified within that file
-15. CRITICALLY IMPORTANT: Examine the CODE CHANGES DETAIL section closely. This contains the actual code changes with context.
-    - Look for specific function names that were modified
-    - Identify parameter changes, logic updates, or new functionality
-    - Note new imports or dependencies added
-    - Pay attention to variable names, error handling, and structural changes 
-16. Your commit message should be so specific that someone reading it can understand exactly what code changes were made
-    without looking at the diff
-17. MOST CRITICALLY IMPORTANT: When you see a file name and new functions in the SEMANTIC ANALYSIS section, use that information 
-    in your commit message. If a new function like 'extractCodeSemantics' was added, include that specific function name 
-    in your commit message rather than just saying "update file.go" or "add new functions"
-18. BAD EXAMPLE: "feat: update unified.go"
-    GOOD EXAMPLE: "feat: add extractCodeSemantics function for improved commit suggestions"
-    The difference is specificity about WHAT changed, not just THAT something changed`
+4. Keep the first line under 50 characters whenever possible, never exceed 72 characters
+5. For multi-line commits, ensure each additional line is CONCISE and FOCUSED on essential details only
+6. Use present tense (e.g., "add feature" not "added feature")
+7. For simple changes affecting a single file or making minor modifications, a single line message is sufficient
+8. For complex changes, use a multi-line format:
+   - First line: Extremely concise summary (type: description)
+   - Second line: BLANK line
+   - Following lines: BRIEF explanation with ONLY essential details - be economical with words
+9. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations or markdown
+10. Avoid generic messages - be specific but BRIEF about what changed
+11. When describing functionality changes, focus on the MOST SIGNIFICANT aspects only
+12. Ruthlessly eliminate unnecessary words and details - every word must justify its inclusion
+13. MOST IMPORTANT: Be concise and to the point - developers should understand the changes without reading a lengthy message`
 
 	// Prepare the diff context - enhanced with file analysis
 	diffContext := `
@@ -543,7 +522,7 @@ Analysis of changes:
 	}
 
 	// Create a user prompt focused on commit message generation with emphasis on changes
-	userPrompt := fmt.Sprintf(`I need a specific and detailed commit message for these staged changes.
+	userPrompt := fmt.Sprintf(`I need a CONCISE and focused commit message for these staged changes.
 
 %s
 
@@ -559,7 +538,7 @@ CODE STRUCTURE ANALYSIS:
 Past commit messages for limited context (do not rely heavily on these patterns):
 %s
 
-Based primarily on the ACTUAL CODE CHANGES shown above, suggest a concise, descriptive commit message that accurately describes what was modified in the code. Focus on specific function changes, parameters, logic modifications, or features added/removed:`,
+Based primarily on the ACTUAL CODE CHANGES shown above, suggest a BRIEF, CONCISE commit message that accurately describes the most important changes. Focus on being direct and to the point - every word must justify its inclusion:`,
 		diffContext,
 		formatCodeChanges(ctx.Diff),
 		formatSemanticChanges(extractCodeSemantics(ctx.Diff)),
@@ -631,6 +610,11 @@ func extractCommitMessage(response string) string {
 	if len(lines) > 0 {
 		firstLine := strings.TrimSpace(lines[0])
 
+		// Ensure first line is under 72 characters
+		if len(firstLine) > 72 {
+			firstLine = firstLine[:72]
+		}
+
 		// Check if first line matches conventional commit format
 		if strings.Contains(firstLine, ":") && len(firstLine) < 100 {
 			typePrefix := strings.Split(firstLine, ":")[0]
@@ -638,13 +622,22 @@ func extractCommitMessage(response string) string {
 			commitTypes := []string{"feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"}
 			for _, cType := range commitTypes {
 				if typePrefix == cType {
-					// If it's a multi-line commit message, return the full message
+					// If it's a multi-line commit message, return a condensed version
 					if len(lines) > 2 {
 						// Ensure we have a blank line after the first line
 						if strings.TrimSpace(lines[1]) == "" {
-							return response
+							// Only include essential follow-up lines (up to 5 max)
+							maxBodyLines := 5
+							if len(lines) > maxBodyLines+2 {
+								return firstLine + "\n\n" + strings.Join(lines[2:2+maxBodyLines], "\n")
+							}
+							return firstLine + "\n\n" + strings.Join(lines[2:], "\n")
 						} else {
-							// Insert blank line if missing
+							// Insert blank line if missing, and limit body lines
+							maxBodyLines := 5
+							if len(lines) > maxBodyLines+1 {
+								return firstLine + "\n\n" + strings.Join(lines[1:1+maxBodyLines], "\n")
+							}
 							return firstLine + "\n\n" + strings.Join(lines[1:], "\n")
 						}
 					}
@@ -658,13 +651,28 @@ func extractCommitMessage(response string) string {
 	// If first line doesn't match conventional format but we have multiple lines,
 	// it might still be a valid multi-line commit
 	if len(lines) > 2 && len(strings.TrimSpace(lines[0])) > 0 {
+		firstLine := strings.TrimSpace(lines[0])
+		
+		// Ensure first line is under 72 characters
+		if len(firstLine) > 72 {
+			firstLine = firstLine[:72]
+		}
+		
 		// Check if we have a blank second line
 		if strings.TrimSpace(lines[1]) == "" {
-			// Likely a valid multi-line commit message
-			return response
+			// Limit the body to a reasonable number of lines (5 max)
+			maxBodyLines := 5
+			if len(lines) > maxBodyLines+2 {
+				return firstLine + "\n\n" + strings.Join(lines[2:2+maxBodyLines], "\n")
+			}
+			return firstLine + "\n\n" + strings.Join(lines[2:], "\n")
 		} else if strings.TrimSpace(lines[1]) != "" && len(lines) > 2 {
-			// Add blank line separator if missing
-			return strings.TrimSpace(lines[0]) + "\n\n" + strings.Join(lines[1:], "\n")
+			// Add blank line separator if missing, and limit body lines
+			maxBodyLines := 5
+			if len(lines) > maxBodyLines+1 {
+				return firstLine + "\n\n" + strings.Join(lines[1:1+maxBodyLines], "\n")
+			}
+			return firstLine + "\n\n" + strings.Join(lines[1:], "\n")
 		}
 	}
 
@@ -672,6 +680,10 @@ func extractCommitMessage(response string) string {
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line != "" && len(line) < 100 && !strings.HasPrefix(line, "#") {
+			// Ensure line is under 72 characters
+			if len(line) > 72 {
+				return line[:72]
+			}
 			return line
 		}
 	}
@@ -1196,35 +1208,4 @@ func formatCodeStructure(structure map[string]interface{}) string {
 	}
 	
 	return result.String()
-}
-
-// enhancedDiffAnalysis performs comprehensive analysis of code changes
-// to provide a complete picture of what was modified in the codebase
-// This combines multiple analysis techniques for better commit message generation
-func enhancedDiffAnalysis(diff string) map[string]interface{} {
-	// Combine results from multiple analyzers
-	result := make(map[string]interface{})
-	
-	// Get semantic changes
-	semanticChanges := extractCodeSemantics(diff)
-	
-	// Get structural changes
-	structuralChanges := analyzeCodeStructure(diff)
-	
-	// Merge results
-	for k, v := range semanticChanges {
-		result[k] = v
-	}
-	
-	for k, v := range structuralChanges {
-		if _, exists := result[k]; !exists {
-			result[k] = v
-		}
-	}
-	
-	// Add additional metadata
-	result["analysis_type"] = "enhanced"
-	result["analysis_version"] = "1.0"
-	
-	return result
 }
