@@ -64,6 +64,19 @@ Get immediate feedback after each commit with the Moai:
 "You've typed 'final fix' 17 times today. I'm not judging. (I am.)"
 ```
 
+Options:
+- `--ai` - Use AI to generate feedback (default: use config setting)
+- `--diff` - Include the diff in AI context for better analysis
+- `--personality <n>` - Personality to use for feedback
+- `--history` - Include recent commit history for context
+- `--list-personalities` - List available personalities
+
+Example:
+```bash
+# Get AI-powered feedback with recent history context
+noidea moai --ai --history
+```
+
 ### Weekly Summaries
 
 Generate insightful summaries of your Git activity:
@@ -76,6 +89,14 @@ Options:
 - `--days <N>` - Analyze the last N days (default: 7)
 - `--personality <n>` - Use a specific personality for insights
 - `--export <format>` - Export to text, markdown, or HTML
+- `--stats-only` - Show only statistics without AI insights
+- `--ai` - Include AI insights (default: use config)
+
+Example:
+```bash
+# Generate a 30-day summary with AI insights and export as markdown
+noidea summary --days 30 --ai --export markdown
+```
 
 ### On-Demand Feedback
 
@@ -131,7 +152,11 @@ Options:
 
 Git Hook Integration:
 - Automatically suggests commit messages during the commit process
-- Easily enable with `scripts/install-hooks.sh`
+- Easily enable with the included script:
+  ```
+  ./scripts/install-hooks.sh
+  ```
+  This installs the `prepare-commit-msg` hook and sets up your Git config with interactive prompts
 
 Examples:
 
@@ -261,6 +286,9 @@ noidea config --init
 
 # Validate your configuration
 noidea config --validate
+
+# Specify a custom config path
+noidea config --path /custom/path/config.toml --show
 ```
 
 ### Configuration file
@@ -279,6 +307,8 @@ temperature = 0.7
 [moai]
 use_lint = false
 faces_mode = "random"
+personality = "snarky_reviewer"
+include_history = true
 ```
 
 ### Environment variables
@@ -294,6 +324,8 @@ export NOIDEA_TEMPERATURE=0.5
 # Moai settings
 export NOIDEA_FACES_MODE=random
 export NOIDEA_USE_LINT=false
+export NOIDEA_PERSONALITY=snarky_reviewer
+export NOIDEA_INCLUDE_HISTORY=true
 
 # Provider API keys
 export XAI_API_KEY=your_api_key_here
@@ -340,4 +372,3 @@ It will, however, make it more entertaining.
 ---
 
 Made with `noidea` and late-night energy.
-# Test change
