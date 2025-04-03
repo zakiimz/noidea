@@ -1,10 +1,14 @@
-# 🧠 noidea — The Git Extension You Never Knew You Needed
+# 🧠 noidea — Smart Git Assistant with AI Commit Suggestions & Fun Feedback
 
-> Commit with confidence. Or shame. Probably shame.
+> Intelligent commit suggestions with a side of sass. Be productive while being judged by a Moai.
 
-**noidea** is a lightweight, plug-and-play Git extension that adds ✨fun and occasionally useful ✨feedback into your normal Git workflow.
+**noidea** is a lightweight Git extension that enhances your workflow with AI-powered features:
 
-Every time you commit, a mysterious Moai appears to judge your code.
+✅ **Smart Commit Message Suggestions** - Get professional, conventional commit messages based on your staged changes  
+✅ **Git Commit Analysis** - Receive insights about your commit patterns and code quality  
+✅ **Fun Feedback** - Enjoy entertaining responses from a judgmental Moai after each commit  
+
+Every `git commit` becomes both more productive and more entertaining. Whether you need help crafting the perfect commit message or just want to be roasted for your 3 AM code, noidea has you covered.
 
 ---
 
@@ -18,6 +22,16 @@ After every `git commit`, you'll see something like:
 ```
 
 Whether your code is clean or cursed, the Moai sees all.
+
+And before committing, get AI-powered suggestions:
+
+```
+🧠 Analyzing staged changes and 10 recent commits
+Generating professional commit message suggestion...
+
+Suggested commit message:
+feat(user-auth): implement password reset functionality with email verification
+```
 
 ---
 
