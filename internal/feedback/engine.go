@@ -32,10 +32,10 @@ const (
 )
 
 // NewFeedbackEngine creates a new feedback engine based on the provided configuration
-func NewFeedbackEngine(provider string, model string, apiKey string) FeedbackEngine {
+func NewFeedbackEngine(provider string, model string, apiKey string, personalityName string, personalityFile string) FeedbackEngine {
 	// If we have a valid API key, use the unified engine
 	if apiKey != "" {
-		return NewUnifiedFeedbackEngine(provider, model, apiKey)
+		return NewUnifiedFeedbackEngine(provider, model, apiKey, personalityName, personalityFile)
 	}
 
 	// Fallback to local feedback engine if no API key is provided

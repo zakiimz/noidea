@@ -20,8 +20,10 @@ type LLMConfig struct {
 
 // MoaiConfig holds Moai-specific configuration
 type MoaiConfig struct {
-	UseLint    bool   `toml:"use_lint"`
-	FacesMode  string `toml:"faces_mode"`
+	UseLint      bool   `toml:"use_lint"`
+	FacesMode    string `toml:"faces_mode"`
+	Personality  string `toml:"personality"`
+	PersonalityFile string `toml:"personality_file"`
 }
 
 // Config holds the application configuration
@@ -41,8 +43,10 @@ func DefaultConfig() Config {
 			Temperature: 0.7,
 		},
 		Moai: MoaiConfig{
-			UseLint:    false,
-			FacesMode:  "random",
+			UseLint:      false,
+			FacesMode:    "random",
+			Personality:  "snarky_reviewer",
+			PersonalityFile: "",
 		},
 	}
 }
@@ -124,6 +128,14 @@ func LoadConfig() Config {
 
 	if useLint := os.Getenv("NOIDEA_USE_LINT"); useLint != "" {
 		config.Moai.UseLint = useLint == "true" || useLint == "1" || useLint == "yes"
+	}
+	
+	if personality := os.Getenv("NOIDEA_PERSONALITY"); personality != "" {
+		config.Moai.Personality = personality
+	}
+	
+	if personalityFile := os.Getenv("NOIDEA_PERSONALITY_FILE"); personalityFile != "" {
+		config.Moai.PersonalityFile = personalityFile
 	}
 
 	return config

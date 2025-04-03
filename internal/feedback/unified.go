@@ -3,15 +3,18 @@ package feedback
 import (
 	"context"
 	"fmt"
+	"os/exec"
+	"strings"
 
+	"github.com/AccursedGalaxy/noidea/internal/personality"
 	openai "github.com/sashabaranov/go-openai"
 )
 
 // ProviderConfig contains configuration for different LLM providers
 type ProviderConfig struct {
-	BaseURL    string
+	BaseURL      string
 	DefaultModel string
-	Name       string
+	Name         string
 }
 
 // Known providers
@@ -37,13 +40,15 @@ var (
 
 // UnifiedFeedbackEngine generates feedback using any OpenAI-compatible API
 type UnifiedFeedbackEngine struct {
-	client *openai.Client
-	model  string
-	provider ProviderConfig
+	client        *openai.Client
+	model         string
+	provider      ProviderConfig
+	personalityName string
+	personalityFile string
 }
 
 // NewUnifiedFeedbackEngine creates a new unified feedback engine
-func NewUnifiedFeedbackEngine(provider string, model string, apiKey string) *UnifiedFeedbackEngine {
+func NewUnifiedFeedbackEngine(provider string, model string, apiKey string, personalityName string, personalityFile string) *UnifiedFeedbackEngine {
 	var providerConfig ProviderConfig
 	
 	// Select provider configuration
@@ -72,28 +77,43 @@ func NewUnifiedFeedbackEngine(provider string, model string, apiKey string) *Uni
 	
 	client := openai.NewClientWithConfig(config)
 	return &UnifiedFeedbackEngine{
-		client:   client,
-		model:    model,
-		provider: providerConfig,
+		client:        client,
+		model:         model,
+		provider:      providerConfig,
+		personalityName: personalityName,
+		personalityFile: personalityFile,
 	}
 }
 
 // GenerateFeedback implements the FeedbackEngine interface
 func (e *UnifiedFeedbackEngine) GenerateFeedback(ctx CommitContext) (string, error) {
-	// Create the system prompt
-	systemPrompt := `You are a snarky but insightful Git expert named Moai. 
-Given a commit message and time of day, give a short and funny, but helpful comment.
-Your responses must be ONE sentence only and should be witty, memorable, and concise.
-Responses should be between 50-120 characters.`
+	// Load personality configuration
+	personalities, err := personality.LoadPersonalities(e.personalityFile)
+	if err != nil {
+		// Fall back to default personalities if there's an error
+		personalities = personality.DefaultPersonalities()
+	}
 
-	// Format the user prompt with commit information
-	timeOfDay := GetTimeOfDay(ctx.Timestamp)
-	userPrompt := fmt.Sprintf("Commit message: \"%s\"\nTime of day: %s", 
-		ctx.Message, timeOfDay)
-	
-	// Add diff information if available
-	if ctx.Diff != "" {
-		userPrompt += fmt.Sprintf("\n\nCommit changes:\n%s", ctx.Diff)
+	// Get the selected personality
+	personalityConfig, err := personalities.GetPersonality(e.personalityName)
+	if err != nil {
+		// Fall back to default personality
+		personalityConfig, _ = personalities.GetPersonality("")
+	}
+
+	// Create personality context for template rendering
+	personalityCtx := personality.Context{
+		Message:   ctx.Message,
+		TimeOfDay: GetTimeOfDay(ctx.Timestamp),
+		Diff:      ctx.Diff,
+		Username:  getUserName(),
+		RepoName:  getRepoName(),
+	}
+
+	// Generate the prompt using the personality template
+	userPrompt, err := personalityConfig.GeneratePrompt(personalityCtx)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate prompt: %w", err)
 	}
 
 	// Create the chat completion request
@@ -102,15 +122,15 @@ Responses should be between 50-120 characters.`
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleSystem,
-				Content: systemPrompt,
+				Content: personalityConfig.SystemPrompt,
 			},
 			{
 				Role:    openai.ChatMessageRoleUser,
 				Content: userPrompt,
 			},
 		},
-		Temperature: 0.7,
-		MaxTokens:   150,
+		Temperature: float32(personalityConfig.Temperature),
+		MaxTokens:   personalityConfig.MaxTokens,
 		N:           1,
 	}
 
@@ -126,4 +146,36 @@ Responses should be between 50-120 characters.`
 	}
 
 	return "", fmt.Errorf("no response from %s API", e.provider.Name)
+}
+
+// getUserName attempts to get the Git user name
+func getUserName() string {
+	cmd := exec.Command("git", "config", "user.name")
+	output, err := cmd.Output()
+	if err != nil {
+		return "User"
+	}
+	return strings.TrimSpace(string(output))
+}
+
+// getRepoName attempts to get the Git repository name
+func getRepoName() string {
+	// Try to get the remote origin URL
+	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
+	output, err := cmd.Output()
+	if err != nil {
+		return "repository"
+	}
+
+	// Extract repo name from URL
+	repoURL := strings.TrimSpace(string(output))
+	parts := strings.Split(repoURL, "/")
+	if len(parts) > 0 {
+		repoName := parts[len(parts)-1]
+		// Remove .git suffix if present
+		repoName = strings.TrimSuffix(repoName, ".git")
+		return repoName
+	}
+
+	return "repository"
 } 

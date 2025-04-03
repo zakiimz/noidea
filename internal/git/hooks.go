@@ -67,11 +67,20 @@ func InstallPostCommitHook(hooksDir string) error {
 		return err
 	}
 	
-	// Check if AI should be enabled by default
+	// Load configuration
 	cfg := config.LoadConfig()
-	aiFlag := ""
+	
+	// Build command flags
+	flags := ""
+	
+	// Add AI flag if enabled
 	if cfg.LLM.Enabled {
-		aiFlag = "--ai"
+		flags += "--ai "
+	}
+	
+	// Add personality flag if set
+	if cfg.Moai.Personality != "" {
+		flags += fmt.Sprintf("--personality=%s ", cfg.Moai.Personality)
 	}
 	
 	// Create the post-commit hook content
@@ -85,11 +94,11 @@ func InstallPostCommitHook(hooksDir string) error {
 COMMIT_MSG=$(git log -1 --pretty=%%B)
 
 # Call noidea with the commit message (using absolute path)
-%s moai %s "$COMMIT_MSG"
+%s moai %s"$COMMIT_MSG"
 
 # Always exit with success so git continues normally
 exit 0
-`, execPath, aiFlag)
+`, execPath, flags)
 	
 	// Write the hook file
 	if err := os.WriteFile(postCommitPath, []byte(hookContent), 0755); err != nil {

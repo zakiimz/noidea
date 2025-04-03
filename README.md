@@ -91,6 +91,56 @@ To enable AI integration:
    export NOIDEA_MODEL=grok-2-1212
    ```
 
+## 🤖 AI Personalities
+
+noidea supports multiple AI personalities to provide different types of feedback:
+
+- **Snarky Code Reviewer** - A sarcastic, witty code reviewer (default)
+- **Supportive Mentor** - Encouraging and positive feedback 
+- **Git Expert** - Technical feedback based on Git best practices
+- **Motivational Speaker** - Over-the-top enthusiasm for your commits!
+
+### Using personalities
+
+```bash
+# List available personalities
+noidea moai --list-personalities
+
+# Use a specific personality
+noidea moai --ai --personality=supportive_mentor
+
+# Set default personality in config
+export NOIDEA_PERSONALITY=git_expert
+```
+
+### Creating custom personalities
+
+Create a `personalities.toml` file in your project or in `~/.noidea/` directory:
+
+```toml
+# Default personality to use
+default = "my_custom_personality"
+
+[personalities.my_custom_personality]
+name = "My Custom Personality"
+description = "A custom personality that fits my workflow"
+system_prompt = """
+Instructions for the AI on how to respond.
+Keep it concise and clear.
+"""
+user_prompt_format = """
+Commit message: "{{.Message}}"
+Time of day: {{.TimeOfDay}}
+{{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+
+Provide feedback about this commit:
+"""
+max_tokens = 150
+temperature = 0.7
+```
+
+Reference the example file at `personalities.toml.example` for more details.
+
 ---
 
 ## 🔧 Configuration
