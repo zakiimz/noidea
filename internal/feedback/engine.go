@@ -6,9 +6,11 @@ import (
 
 // CommitContext contains information about a commit
 type CommitContext struct {
-	Message   string
-	Timestamp time.Time
-	Diff      string // Optional
+	Message      string
+	Timestamp    time.Time
+	Diff         string    // Optional
+	CommitHistory []string // Recent commit messages
+	CommitStats   map[string]interface{} // Stats about recent commits
 }
 
 // FeedbackEngine defines the interface for generating commit feedback

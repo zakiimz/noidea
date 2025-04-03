@@ -103,11 +103,13 @@ func (e *UnifiedFeedbackEngine) GenerateFeedback(ctx CommitContext) (string, err
 
 	// Create personality context for template rendering
 	personalityCtx := personality.Context{
-		Message:   ctx.Message,
-		TimeOfDay: GetTimeOfDay(ctx.Timestamp),
-		Diff:      ctx.Diff,
-		Username:  getUserName(),
-		RepoName:  getRepoName(),
+		Message:       ctx.Message,
+		TimeOfDay:     GetTimeOfDay(ctx.Timestamp),
+		Diff:          ctx.Diff,
+		Username:      getUserName(),
+		RepoName:      getRepoName(),
+		CommitHistory: ctx.CommitHistory,
+		CommitStats:   ctx.CommitStats,
 	}
 
 	// Generate the prompt using the personality template

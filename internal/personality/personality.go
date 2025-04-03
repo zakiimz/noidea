@@ -7,17 +7,20 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
 
 // Context represents the commit context for template rendering
 type Context struct {
-	Message   string
-	TimeOfDay string
-	Diff      string
-	Username  string
-	RepoName  string
+	Message       string
+	TimeOfDay     string
+	Diff          string
+	Username      string
+	RepoName      string
+	CommitHistory []string             // Recent commit messages
+	CommitStats   map[string]interface{} // Stats about recent commits
 }
 
 // Personality defines a configurable AI personality
@@ -51,6 +54,10 @@ Keep your responses between 50-120 characters and as a single sentence.`,
 				UserPromptFormat: `Commit message: "{{.Message}}"
 Time of day: {{.TimeOfDay}}
 {{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+{{if .CommitHistory}}
+Recent commit messages:
+{{range .CommitHistory}}- "{{.}}"
+{{end}}{{end}}
 
 Provide a snarky, funny one-liner about this commit:`,
 				MaxTokens:   150,
@@ -66,6 +73,10 @@ Keep your responses concise (one sentence) and encouraging.`,
 				UserPromptFormat: `Commit message: "{{.Message}}"
 Time of day: {{.TimeOfDay}}
 {{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+{{if .CommitHistory}}
+Recent commit messages:
+{{range .CommitHistory}}- "{{.}}"
+{{end}}{{end}}
 
 Provide a supportive, encouraging comment about this commit:`,
 				MaxTokens:   150,
@@ -81,6 +92,15 @@ Keep your responses concise (one sentence) and informative.`,
 				UserPromptFormat: `Commit message: "{{.Message}}"
 Time of day: {{.TimeOfDay}}
 {{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+{{if .CommitHistory}}
+Recent commit messages:
+{{range .CommitHistory}}- "{{.}}"
+{{end}}{{end}}
+{{if .CommitStats}}
+Commit patterns:
+- Recent commits: {{index .CommitStats "total_commits"}}
+- Common commit times: {{if index .CommitStats "commits_by_hour"}}{{index (index .CommitStats "commits_by_hour") (printf "%d" (time "15:04" .TimeOfDay | hour))}} commits at this hour{{end}}
+{{end}}
 
 Provide concise, technical Git feedback about this commit:`,
 				MaxTokens:   150,
@@ -165,8 +185,26 @@ func FindPersonalityFile() string {
 
 // GeneratePrompt generates a formatted prompt from a personality and context
 func (p Personality) GeneratePrompt(ctx Context) (string, error) {
+	// Define template functions
+	funcMap := template.FuncMap{
+		"hour": func(timeStr string) int {
+			t, err := time.Parse("15:04", timeStr)
+			if err != nil {
+				return 0
+			}
+			return t.Hour()
+		},
+		"time": func(format string, timeStr string) time.Time {
+			t, err := time.Parse(format, timeStr)
+			if err != nil {
+				return time.Time{}
+			}
+			return t
+		},
+	}
+
 	// Parse the template
-	tmpl, err := template.New("userPrompt").Parse(p.UserPromptFormat)
+	tmpl, err := template.New("userPrompt").Funcs(funcMap).Parse(p.UserPromptFormat)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse prompt template: %w", err)
 	}

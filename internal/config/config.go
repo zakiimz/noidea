@@ -20,10 +20,11 @@ type LLMConfig struct {
 
 // MoaiConfig holds Moai-specific configuration
 type MoaiConfig struct {
-	UseLint      bool   `toml:"use_lint"`
-	FacesMode    string `toml:"faces_mode"`
-	Personality  string `toml:"personality"`
+	UseLint         bool   `toml:"use_lint"`
+	FacesMode       string `toml:"faces_mode"`
+	Personality     string `toml:"personality"`
 	PersonalityFile string `toml:"personality_file"`
+	IncludeHistory  bool   `toml:"include_history"`
 }
 
 // Config holds the application configuration
@@ -43,10 +44,11 @@ func DefaultConfig() Config {
 			Temperature: 0.7,
 		},
 		Moai: MoaiConfig{
-			UseLint:      false,
-			FacesMode:    "random",
-			Personality:  "snarky_reviewer",
+			UseLint:         false,
+			FacesMode:       "random",
+			Personality:     "snarky_reviewer",
 			PersonalityFile: "",
+			IncludeHistory:  false,
 		},
 	}
 }
@@ -136,6 +138,10 @@ func LoadConfig() Config {
 	
 	if personalityFile := os.Getenv("NOIDEA_PERSONALITY_FILE"); personalityFile != "" {
 		config.Moai.PersonalityFile = personalityFile
+	}
+
+	if includeHistory := os.Getenv("NOIDEA_INCLUDE_HISTORY"); includeHistory != "" {
+		config.Moai.IncludeHistory = includeHistory == "true" || includeHistory == "1" || includeHistory == "yes"
 	}
 
 	return config

@@ -8,6 +8,7 @@ import (
 
 	"github.com/AccursedGalaxy/noidea/internal/config"
 	"github.com/AccursedGalaxy/noidea/internal/feedback"
+	"github.com/AccursedGalaxy/noidea/internal/history"
 	"github.com/AccursedGalaxy/noidea/internal/moai"
 	"github.com/AccursedGalaxy/noidea/internal/personality"
 	"github.com/fatih/color"
@@ -23,6 +24,8 @@ var (
 	personalityFlag string
 	// Flag to list available personalities
 	listPersonalities bool
+	// Flag to include commit history context
+	includeHistory bool
 )
 
 func init() {
@@ -33,6 +36,7 @@ func init() {
 	moaiCmd.Flags().BoolVarP(&includeDiff, "diff", "d", false, "Include the diff in AI context")
 	moaiCmd.Flags().StringVarP(&personalityFlag, "personality", "p", "", "Personality to use for feedback (default: from config)")
 	moaiCmd.Flags().BoolVarP(&listPersonalities, "list-personalities", "l", false, "List available personalities")
+	moaiCmd.Flags().BoolVarP(&includeHistory, "history", "H", false, "Include recent commit history context")
 }
 
 var moaiCmd = &cobra.Command{
@@ -101,6 +105,16 @@ var moaiCmd = &cobra.Command{
 				Diff:      commitDiff,
 			}
 
+			// Add commit history context if requested or enabled in config
+			if includeHistory || cfg.Moai.IncludeHistory {
+				// Get commit history
+				recentCommits, recentStats, err := getCommitHistoryContext()
+				if err == nil && len(recentCommits) > 0 {
+					commitContext.CommitHistory = recentCommits
+					commitContext.CommitStats = recentStats
+				}
+			}
+
 			// Create feedback engine based on configuration
 			engine := feedback.NewFeedbackEngine(
 				cfg.LLM.Provider, 
@@ -125,6 +139,34 @@ var moaiCmd = &cobra.Command{
 			fmt.Println(color.YellowString(moai.GetRandomFeedback(commitMsg)))
 		}
 	},
+}
+
+// getCommitHistoryContext retrieves recent commit history for context
+func getCommitHistoryContext() ([]string, map[string]interface{}, error) {
+	// Get last 5 commits (not including current one)
+	commits, err := history.GetLastNCommits(6, false)
+	if err != nil || len(commits) <= 1 {
+		return nil, nil, err
+	}
+	
+	// Skip the most recent commit (it's the one we're currently giving feedback for)
+	commits = commits[1:]
+	
+	// Extract messages
+	messages := make([]string, len(commits))
+	for i, commit := range commits {
+		messages[i] = commit.Message
+	}
+	
+	// Get stats
+	collector, err := history.NewHistoryCollector()
+	if err != nil {
+		return messages, nil, err
+	}
+	
+	stats := collector.CalculateStats(commits)
+	
+	return messages, stats, nil
 }
 
 // showPersonalities displays a list of available personalities

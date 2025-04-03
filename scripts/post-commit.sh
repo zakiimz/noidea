@@ -7,8 +7,8 @@
 # Get the last commit message
 COMMIT_MSG=$(git log -1 --pretty=%B)
 
-# Call noidea with the commit message
-noidea moai "$COMMIT_MSG"
+# Call noidea with the commit message and history context
+noidea moai --history "$COMMIT_MSG"
 
 # Always exit with success so git continues normally
 exit 0 
