@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/AccursedGalaxy/noidea/internal/personality"
@@ -303,26 +304,35 @@ func (e *UnifiedFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (str
 	systemPrompt := `You are a Git expert who writes clear, concise, and descriptive commit messages.
 Your task is to suggest a high-quality commit message based on the staged changes.
 Follow these guidelines:
-1. Use the conventional commits format (type: description) when appropriate
-2. Be specific about what changed and why, but remain concise
-3. Focus on the purpose and impact of the change, not just what files changed
-4. Keep the first line under 72 characters
-5. Use present tense (e.g., "add feature" not "added feature")
-6. Only include relevant details
-7. Always maintain a professional tone
+1. IMPORTANT: Focus primarily on the ACTUAL CHANGES in the diff, not on past commit patterns
+2. Analyze what files were changed and how they were modified
+3. Use the conventional commits format (type: description) when appropriate
+   - docs: for documentation changes
+   - feat: for new features
+   - fix: for bug fixes
+   - refactor: for code restructuring without behavior changes
+   - style: for formatting/style changes
+   - test: for adding or fixing tests
+   - chore: for routine maintenance tasks
+4. Be specific about what changed, making sure your message accurately reflects the actual modifications
+5. Keep the first line under 72 characters
+6. Use present tense (e.g., "add feature" not "added feature")
+7. When multiple files or components are changed, focus on the primary purpose of the changes
 8. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations, reasoning, or markdown formatting`
 
-	// Create a user prompt focused on commit message generation
-	userPrompt := fmt.Sprintf(`I'm about to commit these changes and need a good commit message.
+	// Prepare the diff context - enhanced with file analysis
+	diffInfo := analyzeDiff(ctx.Diff)
 
-Diff summary of staged changes:
+	// Create a user prompt focused on commit message generation with emphasis on changes
+	userPrompt := fmt.Sprintf(`I need a commit message for these staged changes.
+
 %s
 
-Recent commit messages for context:
+Past commit messages for limited context (do not rely heavily on these patterns):
 %s
 
-Please suggest a concise, descriptive commit message that follows conventional commits format when appropriate:`,
-		diffContext(ctx.Diff),
+Based primarily on the ACTUAL CHANGES shown above, suggest a concise, descriptive commit message that accurately describes what was modified:`,
+		diffInfo,
 		formatCommitList(ctx.CommitHistory))
 
 	// Create the chat completion request
@@ -361,6 +371,103 @@ Please suggest a concise, descriptive commit message that follows conventional c
 	}
 
 	return "", fmt.Errorf("no response from %s API", e.provider.Name)
+}
+
+// analyzeDiff enhances raw diff with structured file change information
+func analyzeDiff(diff string) string {
+	if diff == "" {
+		return "No changes detected in the diff."
+	}
+	
+	// Track files modified
+	var filesAdded []string
+	var filesModified []string
+	var filesDeleted []string
+	var fileExtensions = make(map[string]bool)
+	
+	// Track content changes
+	linesAdded := 0
+	linesRemoved := 0
+	
+	// Simple diff analysis
+	lines := strings.Split(diff, "\n")
+	currentFile := ""
+	
+	for _, line := range lines {
+		// Track files changed
+		if strings.HasPrefix(line, "diff --git") {
+			parts := strings.Split(line, " ")
+			if len(parts) >= 4 {
+				// Extract filename from "diff --git a/file.txt b/file.txt"
+				newFile := strings.TrimPrefix(parts[3], "b/")
+				currentFile = newFile
+				
+				// Track file extension
+				ext := filepath.Ext(newFile)
+				if ext != "" {
+					fileExtensions[ext] = true
+				}
+			}
+		} else if strings.HasPrefix(line, "new file mode") {
+			filesAdded = append(filesAdded, currentFile)
+		} else if strings.HasPrefix(line, "deleted file mode") {
+			filesDeleted = append(filesDeleted, currentFile)
+		} else if currentFile != "" && !contains(filesAdded, currentFile) && !contains(filesDeleted, currentFile) {
+			// If we know the file and it's not added or deleted, it's modified
+			if !contains(filesModified, currentFile) {
+				filesModified = append(filesModified, currentFile)
+			}
+		}
+		
+		// Count line changes
+		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+			linesAdded++
+		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+			linesRemoved++
+		}
+	}
+	
+	// Format the report
+	var result strings.Builder
+	result.WriteString("Diff Analysis:\n")
+	
+	// File changes
+	if len(filesAdded) > 0 {
+		result.WriteString("Files Added: " + strings.Join(filesAdded, ", ") + "\n")
+	}
+	if len(filesModified) > 0 {
+		result.WriteString("Files Modified: " + strings.Join(filesModified, ", ") + "\n")
+	}
+	if len(filesDeleted) > 0 {
+		result.WriteString("Files Deleted: " + strings.Join(filesDeleted, ", ") + "\n")
+	}
+	
+	// Line changes
+	result.WriteString(fmt.Sprintf("Lines Added: %d, Lines Removed: %d\n", linesAdded, linesRemoved))
+	
+	// File types
+	var extensions []string
+	for ext := range fileExtensions {
+		extensions = append(extensions, ext)
+	}
+	if len(extensions) > 0 {
+		result.WriteString("File Types: " + strings.Join(extensions, ", ") + "\n")
+	}
+	
+	// Add the full diff
+	result.WriteString("\nRaw Diff:\n" + diff)
+	
+	return result.String()
+}
+
+// contains checks if a string is in a slice
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
 
 // extractCommitMessage parses the LLM response to extract just the commit message
