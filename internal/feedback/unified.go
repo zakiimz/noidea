@@ -335,7 +335,14 @@ Follow these guidelines:
     - Mention specific functions, classes, or components that were modified
     - Include the purpose or impact of the change (e.g., "fix: correct error handling in config parsing function")
 13. Analyze the diff content to identify the actual changes made to the code/files, not just which files were changed
-14. If a file was updated, specify what functionality was added, removed, or modified within that file`
+14. If a file was updated, specify what functionality was added, removed, or modified within that file
+15. CRITICALLY IMPORTANT: Examine the CODE CHANGES DETAIL section closely. This contains the actual code changes with context.
+    - Look for specific function names that were modified
+    - Identify parameter changes, logic updates, or new functionality
+    - Note new imports or dependencies added
+    - Pay attention to variable names, error handling, and structural changes 
+16. Your commit message should be so specific that someone reading it can understand exactly what code changes were made
+    without looking at the diff`
 
 	// Prepare the diff context - enhanced with file analysis
 	diffContext := `
@@ -529,15 +536,19 @@ Analysis of changes:
 	}
 
 	// Create a user prompt focused on commit message generation with emphasis on changes
-	userPrompt := fmt.Sprintf(`I need a commit message for these staged changes.
+	userPrompt := fmt.Sprintf(`I need a specific and detailed commit message for these staged changes.
 
+%s
+
+CODE CHANGES DETAIL:
 %s
 
 Past commit messages for limited context (do not rely heavily on these patterns):
 %s
 
-Based primarily on the ACTUAL CHANGES shown above, suggest a concise, descriptive commit message that accurately describes what was modified:`,
+Based primarily on the ACTUAL CODE CHANGES shown above, suggest a concise, descriptive commit message that accurately describes what was modified in the code. Focus on specific function changes, parameters, logic modifications, or features added/removed:`,
 		diffContext,
+		formatCodeChanges(ctx.Diff),
 		formatCommitList(ctx.CommitHistory))
 
 	// Create the chat completion request
@@ -713,4 +724,103 @@ func diffContext(diff string) string {
 
 	return fmt.Sprintf(`Code changes (diff context):
 %s`, diff)
+}
+
+// formatCodeChanges formats code changes for the prompt
+func formatCodeChanges(diff string) string {
+	if diff == "" {
+		return ""
+	}
+
+	// Split the diff into lines
+	lines := strings.Split(diff, "\n")
+
+	// Initialize a result string
+	var result strings.Builder
+	
+	// Keep track of current file
+	currentFile := ""
+	
+	// Capture context lines (unchanged lines around changes)
+	const contextLines = 3
+	lineBuffer := make([]string, 0, contextLines*2+1)
+	inChangeBlock := false
+	
+	// Iterate over each line
+	for i, line := range lines {
+		// Check if this is a new file
+		if strings.HasPrefix(line, "diff --git") {
+			parts := strings.Fields(line)
+			if len(parts) >= 3 {
+				// Add a separator between files if we've already seen a file
+				if currentFile != "" {
+					result.WriteString("\n-----------------------------------\n\n")
+				}
+				
+				// Extract the file name
+				filePath := strings.TrimPrefix(parts[2], "a/")
+				currentFile = filePath
+				result.WriteString(fmt.Sprintf("==== CHANGES IN FILE: %s ====\n", filePath))
+			}
+			continue
+		}
+		
+		// Skip git metadata lines
+		if strings.HasPrefix(line, "index ") || 
+		   strings.HasPrefix(line, "+++") || 
+		   strings.HasPrefix(line, "---") ||
+		   strings.HasPrefix(line, "@@") {
+			continue
+		}
+		
+		// Handle code lines
+		if strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-") {
+			// If we're starting a new change block, add context before
+			if !inChangeBlock {
+				inChangeBlock = true
+				
+				// Add preceding context lines
+				for j := i - contextLines; j < i; j++ {
+					if j >= 0 && !strings.HasPrefix(lines[j], "diff --git") && 
+					   !strings.HasPrefix(lines[j], "index ") && 
+					   !strings.HasPrefix(lines[j], "+++") && 
+					   !strings.HasPrefix(lines[j], "---") &&
+					   !strings.HasPrefix(lines[j], "@@") {
+						result.WriteString(fmt.Sprintf("  %s\n", lines[j]))
+					}
+				}
+			}
+			
+			// Add the changed line
+			result.WriteString(fmt.Sprintf("%s\n", line))
+			
+			// Clear the line buffer
+			lineBuffer = lineBuffer[:0]
+		} else {
+			// Unchanged line
+			if inChangeBlock {
+				// Add the unchanged line
+				lineBuffer = append(lineBuffer, line)
+				
+				// Check if we have enough context lines or reached the end
+				if len(lineBuffer) >= contextLines || i == len(lines)-1 {
+					// Write the context lines
+					for _, bufLine := range lineBuffer {
+						result.WriteString(fmt.Sprintf("  %s\n", bufLine))
+					}
+					
+					// Reset the buffer and change block flag
+					lineBuffer = lineBuffer[:0]
+					inChangeBlock = false
+					
+					// Add a separator if not at the end
+					if i < len(lines)-1 {
+						result.WriteString("\n")
+					}
+				}
+			}
+		}
+	}
+
+	return result.String()
 }

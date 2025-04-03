@@ -107,6 +107,12 @@ This helps maintain a clear and informative commit history, regardless of the pe
 		fmt.Printf("%s\n",
 			color.CyanString("Generating professional commit message suggestion..."))
 
+		// If using full diff, indicate that we're doing detailed code analysis
+		if fullDiffFlag {
+			fmt.Printf("%s\n",
+				color.CyanString("Performing detailed code analysis to identify specific changes..."))
+		}
+
 		// Create feedback engine based on config
 		engineProvider := cfg.LLM.Provider
 		engineModel := cfg.LLM.Model
@@ -122,6 +128,12 @@ This helps maintain a clear and informative commit history, regardless of the pe
 			CommitHistory: commitMessages,
 			CommitStats:   stats,
 			Timestamp:     time.Now(),
+		}
+
+		// If fullDiffFlag is true, provide the entire diff, otherwise summarize
+		if !fullDiffFlag {
+			// Create a summarized version of the diff for conciseness
+			ctx.Diff = summarizeDiff(diff)
 		}
 
 		// Generate suggested commit message
@@ -210,6 +222,56 @@ func getStagedDiff() (string, error) {
 	}
 
 	return outputBuffer.String(), nil
+}
+
+// summarizeDiff creates a concise version of the diff
+// It keeps file headers and a limited number of changed lines per file
+func summarizeDiff(diff string) string {
+	const maxLinesPerFile = 50 // Maximum number of diff lines to show per file
+	
+	// If the diff is small enough, just return it
+	lines := strings.Split(diff, "\n")
+	if len(lines) <= maxLinesPerFile * 2 {
+		return diff
+	}
+	
+	var result strings.Builder
+	linesInCurrentFile := 0
+	inFile := false
+	
+	for _, line := range lines {
+		// Always include file headers and chunk headers
+		if strings.HasPrefix(line, "diff --git") {
+			// If we were in a file and truncated it, add an indicator
+			if inFile && linesInCurrentFile >= maxLinesPerFile {
+				result.WriteString("... (additional lines omitted for brevity) ...\n\n")
+			}
+			
+			// Reset for the next file
+			linesInCurrentFile = 0
+			inFile = true
+			
+			// Add the file header
+			result.WriteString(line + "\n")
+		} else if strings.HasPrefix(line, "index ") || 
+				  strings.HasPrefix(line, "---") || 
+				  strings.HasPrefix(line, "+++") || 
+				  strings.HasPrefix(line, "@@") {
+			// Always include these git metadata lines
+			result.WriteString(line + "\n")
+		} else if linesInCurrentFile < maxLinesPerFile {
+			// Include the line if we haven't hit the max for this file
+			result.WriteString(line + "\n")
+			linesInCurrentFile++
+		}
+	}
+	
+	// Add a final truncation notice if needed
+	if inFile && linesInCurrentFile >= maxLinesPerFile {
+		result.WriteString("... (additional lines omitted for brevity) ...\n")
+	}
+	
+	return result.String()
 }
 
 // handleInteractiveMode presents the suggestion to the user and allows interaction

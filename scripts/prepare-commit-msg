@@ -106,10 +106,11 @@ fi
 
 # Get full diff setting from config
 FULL_DIFF=$(git config --get noidea.suggest.full-diff)
-if [ "$FULL_DIFF" = "true" ]; then
-    DIFF_FLAG="--full-diff"
-else
+if [ "$FULL_DIFF" = "false" ]; then
     DIFF_FLAG=""
+else
+    # Default to using full diff for better commit messages
+    DIFF_FLAG="--full-diff"
 fi
 
 # Print a divider at the start
