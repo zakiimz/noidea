@@ -758,6 +758,9 @@ func formatCodeChanges(diff string) string {
 	lineBuffer := make([]string, 0, contextLines*2+1)
 	inChangeBlock := false
 	
+	// Track if we're in a meaningful code section or just metadata
+	inCodeSection := false
+	
 	// Iterate over each line
 	for i, line := range lines {
 		// Check if this is a new file
@@ -773,6 +776,7 @@ func formatCodeChanges(diff string) string {
 				filePath := strings.TrimPrefix(parts[2], "a/")
 				currentFile = filePath
 				result.WriteString(fmt.Sprintf("==== CHANGES IN FILE: %s ====\n", filePath))
+				inCodeSection = false
 			}
 			continue
 		}
@@ -780,8 +784,18 @@ func formatCodeChanges(diff string) string {
 		// Skip git metadata lines
 		if strings.HasPrefix(line, "index ") || 
 		   strings.HasPrefix(line, "+++") || 
-		   strings.HasPrefix(line, "---") ||
-		   strings.HasPrefix(line, "@@") {
+		   strings.HasPrefix(line, "---") {
+			continue
+		}
+		
+		// Check for chunk header
+		if strings.HasPrefix(line, "@@") {
+			inCodeSection = true
+			continue
+		}
+		
+		// Process only if we're in a code section
+		if !inCodeSection {
 			continue
 		}
 		
