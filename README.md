@@ -17,8 +17,10 @@ Every `git commit` becomes both more productive and more entertaining. Whether y
 After every `git commit`, you'll see something like:
 
 ```
+───────────────────────────────────────────────────
 🗿  (ಠ_ಠ) Your commit message was 'fix final final pls real'
 "You've entered the 2AM hotfix arc. A legendary time."
+───────────────────────────────────────────────────
 ```
 
 Whether your code is clean or cursed, the Moai sees all.
@@ -39,33 +41,86 @@ feat(user-auth): implement password reset functionality with email verification
 
 ## 🚀 Getting Started
 
-1. **Install the binary**
+### Installation Options
 
-(coming soon — cross-platform release)
+Choose one of these methods to install noidea:
 
-For now, build from source:
+#### 1. One-Line Installation (Recommended)
 
+```bash
+# Install to /usr/local/bin (may require sudo)
+curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | bash
+
+# Or with sudo for system-wide installation
+curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | sudo bash
 ```
+
+#### 2. Quick Installation Script
+
+```bash
+# Clone the repository
 git clone https://github.com/AccursedGalaxy/noidea.git
 cd noidea
+
+# Run the installer (might need sudo)
+./install.sh
+# Or specify a custom location
+./install.sh ~/bin
+```
+
+#### 3. Using Make
+
+```bash
+# Clone the repository
+git clone https://github.com/AccursedGalaxy/noidea.git
+cd noidea
+
+# Install to /usr/local/bin (default)
+sudo make install
+# Or specify a custom prefix
+make install PREFIX=~/.local
+```
+
+#### 4. Manual Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/AccursedGalaxy/noidea.git
+cd noidea
+
+# Build the binary
 go build -o noidea
+
+# Move it to a directory in your PATH
+sudo cp noidea /usr/local/bin/
 ```
 
-2. **Run `noidea init`**
+#### 5. Pre-built Binaries (Coming Soon)
 
+We'll soon provide pre-built binaries for various platforms on our releases page.
+
+### Setting Up In Your Repository
+
+Once noidea is installed, you can set it up in any Git repository:
+
+```bash
+# Navigate to your repository
+cd /path/to/your/repo
+
+# Initialize noidea (sets up Git hooks)
+noidea init
 ```
-./noidea init
+
+This adds a post-commit hook to show the Moai judgments after each commit.
+
+For commit message suggestions, enable them during initialization or run:
+
+```bash
+# Enable commit suggestions
+git config noidea.suggest true
 ```
 
-This installs a Git `post-commit` hook in your repo.
-
-3. **Commit your sins**
-
-```
-git commit -m "fix maybe this time"
-```
-
-And witness the Moai's judgment.
+Now, when you commit, noidea will suggest a message for you!
 
 ---
 

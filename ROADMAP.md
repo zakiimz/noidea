@@ -129,10 +129,10 @@
 ### 🧼 Phase 6: Polish & Ship 🚧
 
 #### Tasks:
-- [ ] Installation & Distribution:
-  - [ ] Add install instructions (`go install`, brew tap)
-  - [ ] Create cross-platform release binaries (macOS, Linux, Windows)
-  - [ ] Add one-line install script for quick setup
+- [x] Installation & Distribution:
+  - [x] Add install instructions (`go install`, brew tap)
+  - [x] Create cross-platform release binaries (macOS, Linux, Windows)
+  - [x] Add one-line install script for quick setup
 - [x] User Experience Improvements:
   - [x] Add `--verbose` and `--silent` flags for control over output
   - [x] Create interactive `noidea setup` wizard for first-time users
