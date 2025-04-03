@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/AccursedGalaxy/noidea/internal/config"
@@ -154,7 +155,7 @@ func createConfigInteractive(path string) {
 		response, _ = reader.ReadString('\n')
 		temp := strings.TrimSpace(response)
 		if temp != "" {
-			if t, err := config.ParseFloat(temp); err == nil {
+			if t, err := strconv.ParseFloat(temp, 64); err == nil {
 				cfg.LLM.Temperature = t
 			}
 		}
@@ -193,7 +194,7 @@ func createConfigInteractive(path string) {
 	}
 
 	// Save the config
-	err := config.SaveConfig(cfg, path)
+	err := config.SaveConfig(cfg)
 	if err != nil {
 		fmt.Println(color.RedString("Error saving configuration:"), err)
 		return

@@ -190,7 +190,7 @@ fi
 
 # Generate a suggested commit message
 echo "${CYAN}🧠 Generating commit message suggestion...${RESET}"
-%s suggest $INTERACTIVE_FLAG $HISTORY_FLAG $DIFF_FLAG --file "$COMMIT_MSG_FILE"
+%s suggest $INTERACTIVE_FLAG $HISTORY_FLAG $DIFF_FLAG --quiet --file "$COMMIT_MSG_FILE"
 
 exit 0
 `, execPath)

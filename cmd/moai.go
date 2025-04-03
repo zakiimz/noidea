@@ -105,8 +105,8 @@ var moaiCmd = &cobra.Command{
 				Diff:      commitDiff,
 			}
 
-			// Add commit history context if requested or enabled in config
-			if includeHistory || cfg.Moai.IncludeHistory {
+			// Add commit history context if requested
+			if includeHistory {
 				// Get commit history
 				recentCommits, recentStats, err := getCommitHistoryContext()
 				if err == nil && len(recentCommits) > 0 {

@@ -37,6 +37,7 @@ var (
 	fullDiffFlag      bool
 	interactiveFlag   bool
 	commitMsgFileFlag string
+	quietFlag         bool  // Flag for machine-readable output without UI elements
 )
 
 // Add divider constant at the top of the file, near other constants
@@ -50,6 +51,7 @@ func init() {
 	suggestCmd.Flags().BoolVarP(&fullDiffFlag, "full-diff", "f", false, "Include full diff instead of summary")
 	suggestCmd.Flags().BoolVarP(&interactiveFlag, "interactive", "i", false, "Interactive mode to approve/reject suggestions")
 	suggestCmd.Flags().StringVarP(&commitMsgFileFlag, "file", "F", "", "Path to commit message file (for prepare-commit-msg hook)")
+	suggestCmd.Flags().BoolVarP(&quietFlag, "quiet", "q", false, "Output only the message without UI elements (for scripts)")
 }
 
 var suggestCmd = &cobra.Command{
@@ -127,47 +129,62 @@ regardless of the personality settings used elsewhere in noidea.`,
 			return
 		}
 
-		// Print another divider
-		fmt.Println(color.HiBlackString(divider))
-
-		if interactiveFlag {
-			// Handle interactive mode
-			handleInteractiveMode(suggestion, commitMsgFileFlag)
-		} else {
-			// Just print the suggestion
-			fmt.Println(color.GreenString("✨ Suggested commit message:"))
-
-			// Handle multi-line commit messages with better formatting
-			lines := strings.Split(suggestion, "\n")
-			if len(lines) > 1 {
-				// Print the first line (subject) in white
-				fmt.Println(color.HiWhiteString(lines[0]))
-
-				// Print the rest with proper formatting
-				for i := 1; i < len(lines); i++ {
-					if lines[i] == "" {
-						// Print empty lines as is
-						fmt.Println()
-					} else {
-						// Print content lines in white but not highlighted
-						fmt.Println(color.WhiteString(lines[i]))
-					}
-				}
-			} else {
-				// Single line message
-				fmt.Println(color.HiWhiteString(suggestion))
-			}
-
-			fmt.Println(color.HiBlackString(divider))
-
-			// If we have a commit message file, write to it
+		// Handle output based on flags
+		if quietFlag {
+			// For quiet mode, just handle the commit message file without any UI
 			if commitMsgFileFlag != "" {
 				err := writeToCommitMsgFile(suggestion, commitMsgFileFlag)
 				if err != nil {
 					fmt.Println(color.RedString("❌ Error:"), "Failed to write commit message:", err)
 					return
 				}
-				fmt.Println(color.GreenString("✅ Commit message suggestion applied"))
+			} else {
+				// Just print the raw message for piping
+				fmt.Print(suggestion)
+			}
+		} else {
+			// Standard output with UI elements
+			fmt.Println(color.HiBlackString(divider))
+
+			if interactiveFlag {
+				// Handle interactive mode
+				handleInteractiveMode(suggestion, commitMsgFileFlag)
+			} else {
+				// Just print the suggestion
+				fmt.Println(color.GreenString("✨ Suggested commit message:"))
+				
+				// Handle multi-line commit messages with better formatting
+				lines := strings.Split(suggestion, "\n")
+				if len(lines) > 1 {
+					// Print the first line (subject) in white
+					fmt.Println(color.HiWhiteString(lines[0]))
+					
+					// Print the rest with proper formatting
+					for i := 1; i < len(lines); i++ {
+						if lines[i] == "" {
+							// Print empty lines as is
+							fmt.Println()
+						} else {
+							// Print content lines in white but not highlighted
+							fmt.Println(color.WhiteString(lines[i]))
+						}
+					}
+				} else {
+					// Single line message
+					fmt.Println(color.HiWhiteString(suggestion))
+				}
+				
+				fmt.Println(color.HiBlackString(divider))
+				
+				// If we have a commit message file, write to it
+				if commitMsgFileFlag != "" {
+					err := writeToCommitMsgFile(suggestion, commitMsgFileFlag)
+					if err != nil {
+						fmt.Println(color.RedString("❌ Error:"), "Failed to write commit message:", err)
+						return
+					}
+					fmt.Println(color.GreenString("✅ Commit message suggestion applied"))
+				}
 			}
 		}
 	},
