@@ -1,0 +1,90 @@
+{
+  "name": "Moai Command Tests",
+  "output_dir": "results/moai",
+  "test_cases": [
+    {
+      "name": "default_moai",
+      "command": "../noidea",
+      "args": [
+        "moai",
+        "Test commit message"
+      ],
+      "description": "Default moai command with static message",
+      "repetitions": 5
+    },
+    {
+      "name": "moai_with_ai",
+      "command": "../noidea",
+      "args": [
+        "moai",
+        "--ai",
+        "Feature implementation complete"
+      ],
+      "description": "Moai with AI feedback enabled",
+      "repetitions": 5
+    },
+    {
+      "name": "moai_with_diff",
+      "command": "../noidea",
+      "args": [
+        "moai",
+        "--ai",
+        "--diff",
+        "Bug fix for critical issue"
+      ],
+      "description": "Moai with diff context",
+      "repetitions": 3
+    },
+    {
+      "name": "moai_snarky_reviewer",
+      "command": "../noidea",
+      "args": [
+        "moai",
+        "--ai",
+        "--personality",
+        "snarky_reviewer",
+        "Code cleanup"
+      ],
+      "description": "Moai with snarky reviewer personality",
+      "repetitions": 5
+    },
+    {
+      "name": "moai_supportive_mentor",
+      "command": "../noidea",
+      "args": [
+        "moai",
+        "--ai",
+        "--personality",
+        "supportive_mentor",
+        "First attempt at new feature"
+      ],
+      "description": "Moai with supportive mentor personality",
+      "repetitions": 5
+    },
+    {
+      "name": "moai_git_expert",
+      "command": "../noidea",
+      "args": [
+        "moai",
+        "--ai",
+        "--personality",
+        "git_expert",
+        "Merge branch 'feature/x' into main"
+      ],
+      "description": "Moai with git expert personality",
+      "repetitions": 5
+    },
+    {
+      "name": "moai_with_history",
+      "command": "../noidea",
+      "args": [
+        "moai",
+        "--ai",
+        "--history",
+        "Follow-up fix"
+      ],
+      "description": "Moai with commit history context",
+      "repetitions": 3
+    }
+  ]
+}

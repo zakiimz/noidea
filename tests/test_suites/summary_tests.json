@@ -1,0 +1,91 @@
+{
+  "name": "Summary Command Tests",
+  "output_dir": "results/summary",
+  "test_cases": [
+    {
+      "name": "default_summary",
+      "command": "../noidea",
+      "args": [
+        "summary"
+      ],
+      "description": "Default summary command with default settings",
+      "repetitions": 3
+    },
+    {
+      "name": "summary_14_days",
+      "command": "../noidea",
+      "args": [
+        "summary",
+        "--days",
+        "14"
+      ],
+      "description": "Summary for the last 14 days",
+      "repetitions": 3
+    },
+    {
+      "name": "summary_snarky_reviewer",
+      "command": "../noidea",
+      "args": [
+        "summary",
+        "--personality",
+        "snarky_reviewer"
+      ],
+      "description": "Summary with snarky reviewer personality",
+      "repetitions": 3
+    },
+    {
+      "name": "summary_supportive_mentor",
+      "command": "../noidea",
+      "args": [
+        "summary",
+        "--personality",
+        "supportive_mentor"
+      ],
+      "description": "Summary with supportive mentor personality",
+      "repetitions": 3
+    },
+    {
+      "name": "summary_git_expert",
+      "command": "../noidea",
+      "args": [
+        "summary",
+        "--personality",
+        "git_expert"
+      ],
+      "description": "Summary with git expert personality",
+      "repetitions": 3
+    },
+    {
+      "name": "summary_markdown_export",
+      "command": "../noidea",
+      "args": [
+        "summary",
+        "--export",
+        "markdown"
+      ],
+      "description": "Summary with markdown export",
+      "repetitions": 2
+    },
+    {
+      "name": "summary_html_export",
+      "command": "../noidea",
+      "args": [
+        "summary",
+        "--export",
+        "html"
+      ],
+      "description": "Summary with HTML export",
+      "repetitions": 2
+    },
+    {
+      "name": "summary_stats_only",
+      "command": "../noidea",
+      "args": [
+        "summary",
+        "--stats-only"
+      ],
+      "description": "Summary with statistics only (no AI insights)",
+      "repetitions": 1
+    }
+  ]
+}

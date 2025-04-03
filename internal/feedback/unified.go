@@ -150,6 +150,102 @@ func (e *UnifiedFeedbackEngine) GenerateFeedback(ctx CommitContext) (string, err
 	return "", fmt.Errorf("no response from %s API", e.provider.Name)
 }
 
+// GenerateSummaryFeedback provides insights for a weekly summary
+func (e *UnifiedFeedbackEngine) GenerateSummaryFeedback(ctx CommitContext) (string, error) {
+	// Load personality configuration
+	personalities, err := personality.LoadPersonalities(e.personalityFile)
+	if err != nil {
+		// Fall back to default personalities if there's an error
+		personalities = personality.DefaultPersonalities()
+	}
+
+	// Get the selected personality
+	personalityConfig, err := personalities.GetPersonality(e.personalityName)
+	if err != nil {
+		// Fall back to default personality
+		personalityConfig, _ = personalities.GetPersonality("")
+	}
+
+	// Create a custom system prompt for summaries
+	systemPrompt := personalityConfig.SystemPrompt
+	if strings.Contains(systemPrompt, "one-liner") || strings.Contains(systemPrompt, "one sentence") {
+		// Replace one-liner instruction with more detailed analysis for summaries
+		systemPrompt = `You are an insightful Git expert who analyzes commit patterns.
+Provide a thoughtful, detailed analysis of the commit history.
+Focus on patterns, trends, and actionable insights.
+Your response should be 3-5 paragraphs with useful observations and suggestions.`
+	}
+
+	// Create user prompt with commit history
+	userPrompt := fmt.Sprintf(`I'd like you to analyze my Git commit history from the past week.
+
+Commit messages:
+%s
+
+Commit statistics:
+- Total commits: %v
+- Unique authors: %v
+- Files changed: %v
+- Lines added: %v
+- Lines deleted: %v
+
+Please provide insights about:
+1. Commit message patterns and quality
+2. Work focus areas (based on commit messages)
+3. Time distribution patterns
+4. Suggestions for improving workflow or commit habits
+
+Respond with thoughtful analysis and actionable suggestions:`,
+		formatCommitList(ctx.CommitHistory),
+		ctx.CommitStats["total_commits"],
+		ctx.CommitStats["unique_authors"],
+		ctx.CommitStats["total_files_changed"],
+		ctx.CommitStats["total_insertions"],
+		ctx.CommitStats["total_deletions"])
+
+	// Create the chat completion request
+	request := openai.ChatCompletionRequest{
+		Model: e.model,
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleSystem,
+				Content: systemPrompt,
+			},
+			{
+				Role:    openai.ChatMessageRoleUser,
+				Content: userPrompt,
+			},
+		},
+		Temperature: 0.7, // Slightly higher temperature for creative insights
+		MaxTokens:   800, // Longer response for summary
+		N:           1,
+	}
+
+	// Send the request to the API
+	response, err := e.client.CreateChatCompletion(context.Background(), request)
+	if err != nil {
+		return "", fmt.Errorf("%s API error: %w", e.provider.Name, err)
+	}
+
+	// Extract the response content
+	if len(response.Choices) > 0 {
+		return response.Choices[0].Message.Content, nil
+	}
+
+	return "", fmt.Errorf("no response from %s API", e.provider.Name)
+}
+
+// formatCommitList creates a formatted string of commit messages
+func formatCommitList(commits []string) string {
+	var result strings.Builder
+	
+	for i, commit := range commits {
+		result.WriteString(fmt.Sprintf("%d. %s\n", i+1, commit))
+	}
+	
+	return result.String()
+}
+
 // getUserName attempts to get the Git user name
 func getUserName() string {
 	cmd := exec.Command("git", "config", "user.name")

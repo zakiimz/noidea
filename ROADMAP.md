@@ -102,12 +102,12 @@
   - [x] Extract commit metadata (messages, authors, timestamps, files changed)
   - [x] Add diff summarization for contextual understanding
   - [x] Implement caching to reduce repeat Git operations
-- [ ] Weekly Summary Feature:
-  - [ ] Add `noidea summary` command with time range options
-  - [ ] Design comprehensive prompt for weekly work analysis
-  - [ ] Create statistical overview (commit frequency, time patterns, etc.)
-  - [ ] Generate human-readable summary with actionable insights
-  - [ ] Support markdown/HTML export for team sharing
+- [x] Weekly Summary Feature:
+  - [x] Add `noidea summary` command with time range options
+  - [x] Design comprehensive prompt for weekly work analysis
+  - [x] Create statistical overview (commit frequency, time patterns, etc.)
+  - [x] Generate human-readable summary with actionable insights
+  - [x] Support markdown/HTML export for team sharing
 - [ ] On-Demand Feedback:
   - [ ] Implement `noidea feedback [--count X]` command
   - [ ] Add filtering options (author, branch, files)

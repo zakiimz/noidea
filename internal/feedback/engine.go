@@ -17,6 +17,9 @@ type CommitContext struct {
 type FeedbackEngine interface {
 	// Generate feedback based on commit context
 	GenerateFeedback(context CommitContext) (string, error)
+	
+	// Generate insights for a weekly summary
+	GenerateSummaryFeedback(context CommitContext) (string, error)
 }
 
 // EngineName returns a string identifier for an engine type
