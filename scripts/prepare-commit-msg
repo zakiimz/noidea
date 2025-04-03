@@ -24,9 +24,50 @@ if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ] || [ -n "$C
     exit 0
 fi
 
-# Check if noidea is installed and available in PATH
-if ! command -v noidea >/dev/null 2>&1; then
-    echo "Warning: noidea command not found, but noidea.suggest is enabled"
+# Find the noidea binary in several possible locations
+# POSIX-compatible function definition
+find_noidea() {
+    # Check if it's in PATH
+    if command -v noidea >/dev/null 2>&1; then
+        echo "noidea"
+        return 0
+    fi
+
+    # Try to determine the git root
+    GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [ -n "$GIT_ROOT" ]; then
+        # Check if noidea is at the git root
+        if [ -x "$GIT_ROOT/noidea" ]; then
+            echo "$GIT_ROOT/noidea"
+            return 0
+        fi
+        
+        # Check in common binary locations - one by one for better POSIX compatibility
+        if [ -x "$GIT_ROOT/bin/noidea" ]; then
+            echo "$GIT_ROOT/bin/noidea"
+            return 0
+        fi
+        
+        if [ -x "$GIT_ROOT/build/noidea" ]; then
+            echo "$GIT_ROOT/build/noidea"
+            return 0
+        fi
+        
+        if [ -x "$GIT_ROOT/dist/noidea" ]; then
+            echo "$GIT_ROOT/dist/noidea"
+            return 0
+        fi
+    fi
+    
+    # Not found
+    return 1
+}
+
+# Find the noidea binary
+NOIDEA_BIN=$(find_noidea)
+if [ -z "$NOIDEA_BIN" ]; then
+    echo "Warning: noidea binary not found, but noidea.suggest is enabled"
+    echo "Please ensure noidea is in your PATH or at the repository root"
     exit 0
 fi
 
@@ -39,13 +80,9 @@ if [ -s "$COMMIT_MSG_FILE" ]; then
     fi
 fi
 
-# Get interactive setting from config
-INTERACTIVE=$(git config --get noidea.suggest.interactive)
-if [ "$INTERACTIVE" = "true" ]; then
-    INTERACTIVE_FLAG="--interactive"
-else
-    INTERACTIVE_FLAG=""
-fi
+# Always use non-interactive mode for hooks to prevent stdin issues
+# The user can still edit the message in their editor after suggestion
+INTERACTIVE_FLAG=""
 
 # Check if there's enough history for context
 COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
@@ -65,7 +102,7 @@ fi
 
 # Generate a suggested commit message
 echo "🧠 Generating commit message suggestion..."
-noidea suggest $INTERACTIVE_FLAG $HISTORY_FLAG $DIFF_FLAG --file "$COMMIT_MSG_FILE"
+"$NOIDEA_BIN" suggest $INTERACTIVE_FLAG $HISTORY_FLAG $DIFF_FLAG --file "$COMMIT_MSG_FILE"
 
 # Exit status depends on whether we successfully wrote to the file
 if [ -s "$COMMIT_MSG_FILE" ]; then

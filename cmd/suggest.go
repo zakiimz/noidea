@@ -144,6 +144,13 @@ func handleInteractiveMode(suggestion string) string {
 	fmt.Println(color.GreenString("\nSuggested commit message:"))
 	fmt.Println(suggestion)
 	
+	// Check if we're in a terminal/interactive environment
+	isTTY := isRunningInTerminal()
+	if !isTTY {
+		fmt.Println(color.YellowString("Not running in an interactive terminal. Accepting suggestion automatically."))
+		return suggestion
+	}
+	
 	for {
 		fmt.Println()
 		fmt.Print(color.CyanString("Accept (a), Regenerate (r), Edit (e), or Cancel (c)? "))
@@ -180,6 +187,18 @@ func handleInteractiveMode(suggestion string) string {
 			fmt.Println(color.RedString("Invalid choice. Please try again."))
 		}
 	}
+}
+
+// isRunningInTerminal checks if the program is running in an interactive terminal
+func isRunningInTerminal() bool {
+	// Check if stdin is a terminal
+	fileInfo, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	
+	// Check terminal mode bits
+	return (fileInfo.Mode() & os.ModeCharDevice) != 0
 }
 
 // writeToCommitMsgFile writes the message to the Git commit message file
