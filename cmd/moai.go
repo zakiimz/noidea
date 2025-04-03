@@ -55,7 +55,7 @@ var moaiCmd = &cobra.Command{
 
 		var commitMsg string
 		var commitDiff string
-		
+
 		// If commit message was provided as args, use it
 		if len(args) > 0 {
 			commitMsg = strings.Join(args, " ")
@@ -117,8 +117,8 @@ var moaiCmd = &cobra.Command{
 
 			// Create feedback engine based on configuration
 			engine := feedback.NewFeedbackEngine(
-				cfg.LLM.Provider, 
-				cfg.LLM.Model, 
+				cfg.LLM.Provider,
+				cfg.LLM.Model,
 				cfg.LLM.APIKey,
 				personalityName,
 				cfg.Moai.PersonalityFile,
@@ -148,24 +148,24 @@ func getCommitHistoryContext() ([]string, map[string]interface{}, error) {
 	if err != nil || len(commits) <= 1 {
 		return nil, nil, err
 	}
-	
+
 	// Skip the most recent commit (it's the one we're currently giving feedback for)
 	commits = commits[1:]
-	
+
 	// Extract messages
 	messages := make([]string, len(commits))
 	for i, commit := range commits {
 		messages[i] = commit.Message
 	}
-	
+
 	// Get stats
 	collector, err := history.NewHistoryCollector()
 	if err != nil {
 		return messages, nil, err
 	}
-	
+
 	stats := collector.CalculateStats(commits)
-	
+
 	return messages, stats, nil
 }
 
@@ -202,4 +202,4 @@ func showPersonalities(personalityFile string) {
 	fmt.Println("To set a default personality:")
 	fmt.Println("  export NOIDEA_PERSONALITY=<name>")
 	fmt.Println("  or add to your .noidea.toml configuration file")
-} 
+}

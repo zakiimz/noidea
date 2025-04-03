@@ -19,23 +19,23 @@ type Context struct {
 	Diff          string
 	Username      string
 	RepoName      string
-	CommitHistory []string             // Recent commit messages
+	CommitHistory []string               // Recent commit messages
 	CommitStats   map[string]interface{} // Stats about recent commits
 }
 
 // Personality defines a configurable AI personality
 type Personality struct {
-	Name             string `toml:"name"`
-	Description      string `toml:"description"`
-	SystemPrompt     string `toml:"system_prompt"`
-	UserPromptFormat string `toml:"user_prompt_format"`
-	MaxTokens        int    `toml:"max_tokens"`
+	Name             string  `toml:"name"`
+	Description      string  `toml:"description"`
+	SystemPrompt     string  `toml:"system_prompt"`
+	UserPromptFormat string  `toml:"user_prompt_format"`
+	MaxTokens        int     `toml:"max_tokens"`
 	Temperature      float64 `toml:"temperature"`
 }
 
 // PersonalityConfig holds multiple personality configurations
 type PersonalityConfig struct {
-	Default     string                 `toml:"default"`
+	Default       string                 `toml:"default"`
 	Personalities map[string]Personality `toml:"personalities"`
 }
 
@@ -243,4 +243,4 @@ func ValidatePersonality(p Personality) error {
 	}
 
 	return nil
-} 
+}

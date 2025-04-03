@@ -33,7 +33,7 @@ func (e *LocalFeedbackEngine) GenerateSummaryFeedback(ctx CommitContext) (string
 		"Your commits show attention to detail. Remember to take breaks too!",
 		"I notice your commit messages are concise. For complex changes, a bit more detail might help future you.",
 	}
-	
+
 	return summaries[rand.Intn(len(summaries))], nil
 }
 
@@ -43,12 +43,12 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 	lines := strings.Split(ctx.Diff, "\n")
 	var filesChanged []string
 	var fileExtensions = make(map[string]int)
-	
+
 	for _, line := range lines {
 		if strings.HasPrefix(line, "+++ b/") {
 			file := strings.TrimPrefix(line, "+++ b/")
 			filesChanged = append(filesChanged, file)
-			
+
 			// Count file extensions
 			ext := filepath.Ext(file)
 			if ext != "" {
@@ -56,7 +56,7 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 			}
 		}
 	}
-	
+
 	// Determine the type prefix based on file types
 	typePrefix := "feat"
 	if len(fileExtensions) > 0 {
@@ -69,7 +69,7 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 				mostCommonExt = ext
 			}
 		}
-		
+
 		// Suggest type based on extension
 		switch mostCommonExt {
 		case ".md":
@@ -80,7 +80,7 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 			typePrefix = "style"
 		}
 	}
-	
+
 	// Count number of modified lines (approximation)
 	addedLines := 0
 	removedLines := 0
@@ -91,7 +91,7 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 			removedLines++
 		}
 	}
-	
+
 	// Generate basic message based on files and line stats
 	if len(filesChanged) == 0 {
 		return typePrefix + ": update code", nil
@@ -105,4 +105,4 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 	} else {
 		return typePrefix + ": update multiple files", nil
 	}
-} 
+}

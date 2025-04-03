@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/AccursedGalaxy/noidea/internal/personality"
@@ -24,13 +25,13 @@ var (
 		DefaultModel: "grok-2-1212",
 		Name:         "xAI",
 	}
-	
+
 	ProviderOpenAI = ProviderConfig{
 		BaseURL:      "", // Default OpenAI URL
 		DefaultModel: "gpt-3.5-turbo",
 		Name:         "OpenAI",
 	}
-	
+
 	ProviderDeepSeek = ProviderConfig{
 		BaseURL:      "https://api.deepseek.com/v1", // This is a placeholder, replace with actual URL
 		DefaultModel: "deepseek-chat",
@@ -40,9 +41,9 @@ var (
 
 // UnifiedFeedbackEngine generates feedback using any OpenAI-compatible API
 type UnifiedFeedbackEngine struct {
-	client        *openai.Client
-	model         string
-	provider      ProviderConfig
+	client          *openai.Client
+	model           string
+	provider        ProviderConfig
 	personalityName string
 	personalityFile string
 }
@@ -50,7 +51,7 @@ type UnifiedFeedbackEngine struct {
 // NewUnifiedFeedbackEngine creates a new unified feedback engine
 func NewUnifiedFeedbackEngine(provider string, model string, apiKey string, personalityName string, personalityFile string) *UnifiedFeedbackEngine {
 	var providerConfig ProviderConfig
-	
+
 	// Select provider configuration
 	switch provider {
 	case "xai":
@@ -63,23 +64,23 @@ func NewUnifiedFeedbackEngine(provider string, model string, apiKey string, pers
 		// Default to OpenAI if unknown provider
 		providerConfig = ProviderOpenAI
 	}
-	
+
 	// Use provider's default model if none specified
 	if model == "" {
 		model = providerConfig.DefaultModel
 	}
-	
+
 	// Configure the client
 	config := openai.DefaultConfig(apiKey)
 	if providerConfig.BaseURL != "" {
 		config.BaseURL = providerConfig.BaseURL
 	}
-	
+
 	client := openai.NewClientWithConfig(config)
 	return &UnifiedFeedbackEngine{
-		client:        client,
-		model:         model,
-		provider:      providerConfig,
+		client:          client,
+		model:           model,
+		provider:        providerConfig,
 		personalityName: personalityName,
 		personalityFile: personalityFile,
 	}
@@ -171,7 +172,7 @@ func (e *UnifiedFeedbackEngine) GenerateSummaryFeedback(ctx CommitContext) (stri
 	if strings.Contains(systemPrompt, "one-liner") || strings.Contains(systemPrompt, "one sentence") {
 		// Determine if this is a weekly summary or on-demand feedback
 		isOnDemand := strings.Contains(ctx.Message, "On-Demand")
-		
+
 		if isOnDemand {
 			// Specialized prompt for targeted code analysis
 			systemPrompt = `You are an insightful Git expert who analyzes code practices and commit patterns.
@@ -192,7 +193,7 @@ Your response should be 3-5 paragraphs with useful observations and suggestions.
 	// Determine the appropriate user prompt based on context
 	var userPrompt string
 	isOnDemand := strings.Contains(ctx.Message, "On-Demand")
-	
+
 	if isOnDemand {
 		// Specialized prompt for on-demand feedback
 		userPrompt = fmt.Sprintf(`I'd like you to analyze this specific set of Git commits.
@@ -338,7 +339,7 @@ Here's the current diff of staged changes:
 
 Analysis of changes:
 `
-	
+
 	// Add simple analysis of the types of files changed and how many lines were modified
 	var totalAdditions, totalDeletions int
 	changedFiles := make(map[string]bool)
@@ -356,6 +357,39 @@ Analysis of changes:
 	modifiedFiles := make(map[string]bool)
 	deletedFiles := make(map[string]bool)
 	
+	// File extension categorization maps for better maintainability
+	extensionCategories := map[string]map[string]bool{
+		"doc": docFiles,
+		"code": codeFiles,
+		"config": configFiles,
+		"build": buildFiles,
+		"script": scriptFiles,
+	}
+	
+	// Map extensions to categories
+	extensionMap := map[string]string{
+		// Documentation files
+		".md": "doc", ".txt": "doc", ".rst": "doc", ".adoc": "doc", 
+		".markdown": "doc", ".wiki": "doc", ".org": "doc", 
+		
+		// Source code files
+		".go": "code", ".js": "code", ".ts": "code", ".py": "code", 
+		".java": "code", ".c": "code", ".cpp": "code", ".cc": "code", 
+		".h": "code", ".hpp": "code", ".cs": "code", ".rb": "code", 
+		".php": "code", ".swift": "code", ".kt": "code", ".rs": "code",
+		
+		// Configuration files
+		".json": "config", ".yaml": "config", ".yml": "config", ".toml": "config", 
+		".ini": "config", ".xml": "config", ".properties": "config", ".conf": "config",
+		
+		// Build files
+		".bazel": "build", ".bzl": "build", ".mk": "build",
+		
+		// Script files
+		".sh": "script", ".bash": "script", ".zsh": "script", 
+		".bat": "script", ".cmd": "script", ".ps1": "script",
+	}
+	
 	// Simple diff parser to count lines and identify files
 	lines := strings.Split(ctx.Diff, "\n")
 	currentFile := ""
@@ -369,26 +403,19 @@ Analysis of changes:
 				changedFiles[filePath] = true
 				
 				// Categorize by file type
-				switch {
-				case strings.HasSuffix(filePath, ".md"), strings.HasSuffix(filePath, ".txt"), strings.HasSuffix(filePath, ".rst"):
-					docFiles[filePath] = true
-				case strings.HasSuffix(filePath, ".go"), strings.HasSuffix(filePath, ".js"), strings.HasSuffix(filePath, ".ts"), 
-				     strings.HasSuffix(filePath, ".py"), strings.HasSuffix(filePath, ".java"), strings.HasSuffix(filePath, ".c"), 
-				     strings.HasSuffix(filePath, ".cpp"), strings.HasSuffix(filePath, ".h"):
-					if strings.Contains(filePath, "_test.") {
-						testFiles[filePath] = true
-					} else {
-						codeFiles[filePath] = true
-					}
-				case strings.HasSuffix(filePath, ".json"), strings.HasSuffix(filePath, ".yaml"), strings.HasSuffix(filePath, ".yml"),
-				     strings.HasSuffix(filePath, ".toml"), strings.HasSuffix(filePath, ".ini"), strings.HasSuffix(filePath, ".config"):
-					configFiles[filePath] = true
-				case strings.HasSuffix(filePath, "Makefile"), strings.HasSuffix(filePath, ".mk"), 
-				     strings.Contains(filePath, "CMakeLists.txt"), strings.HasSuffix(filePath, ".bazel"):
+				ext := filepath.Ext(filePath)
+				baseName := filepath.Base(filePath)
+				
+				// Special file handling for common non-extension files
+				if baseName == "Makefile" || baseName == "Dockerfile" || 
+				   baseName == "CMakeLists.txt" || strings.HasPrefix(baseName, "Jenkinsfile") {
 					buildFiles[filePath] = true
-				case strings.HasSuffix(filePath, ".sh"), strings.HasSuffix(filePath, ".bash"), 
-				     strings.HasSuffix(filePath, ".bat"), strings.HasSuffix(filePath, ".ps1"):
-					scriptFiles[filePath] = true
+				} else if strings.Contains(filePath, "_test.") {
+					// Test files get special handling
+					testFiles[filePath] = true
+				} else if category, found := extensionMap[ext]; found {
+					// Use the extension map for categorization
+					extensionCategories[category][filePath] = true
 				}
 			}
 		} else if strings.HasPrefix(line, "new file mode") {
@@ -405,7 +432,7 @@ Analysis of changes:
 			totalDeletions++
 		}
 	}
-	
+
 	// Remove files from modified if they're added or deleted
 	for file := range addedFiles {
 		delete(modifiedFiles, file)
@@ -413,12 +440,12 @@ Analysis of changes:
 	for file := range deletedFiles {
 		delete(modifiedFiles, file)
 	}
-	
+
 	// Format the analysis
-	diffContext += fmt.Sprintf("- Total files changed: %d (%d added, %d modified, %d deleted)\n", 
+	diffContext += fmt.Sprintf("- Total files changed: %d (%d added, %d modified, %d deleted)\n",
 		len(changedFiles), len(addedFiles), len(modifiedFiles), len(deletedFiles))
 	diffContext += fmt.Sprintf("- Lines: +%d, -%d\n\n", totalAdditions, totalDeletions)
-	
+
 	// Add file categories analysis
 	if len(docFiles) > 0 {
 		fileList := make([]string, 0, len(docFiles))
@@ -427,7 +454,7 @@ Analysis of changes:
 		}
 		diffContext += fmt.Sprintf("Documentation files: %s\n", strings.Join(fileList, ", "))
 	}
-	
+
 	if len(codeFiles) > 0 {
 		fileList := make([]string, 0, len(codeFiles))
 		for file := range codeFiles {
@@ -435,7 +462,7 @@ Analysis of changes:
 		}
 		diffContext += fmt.Sprintf("Code files: %s\n", strings.Join(fileList, ", "))
 	}
-	
+
 	if len(buildFiles) > 0 {
 		fileList := make([]string, 0, len(buildFiles))
 		for file := range buildFiles {
@@ -443,7 +470,7 @@ Analysis of changes:
 		}
 		diffContext += fmt.Sprintf("Build files: %s\n", strings.Join(fileList, ", "))
 	}
-	
+
 	if len(scriptFiles) > 0 {
 		fileList := make([]string, 0, len(scriptFiles))
 		for file := range scriptFiles {
@@ -451,7 +478,7 @@ Analysis of changes:
 		}
 		diffContext += fmt.Sprintf("Script files: %s\n", strings.Join(fileList, ", "))
 	}
-	
+
 	if len(configFiles) > 0 {
 		fileList := make([]string, 0, len(configFiles))
 		for file := range configFiles {
@@ -459,7 +486,7 @@ Analysis of changes:
 		}
 		diffContext += fmt.Sprintf("Config files: %s\n", strings.Join(fileList, ", "))
 	}
-	
+
 	if len(testFiles) > 0 {
 		fileList := make([]string, 0, len(testFiles))
 		for file := range testFiles {
@@ -467,10 +494,10 @@ Analysis of changes:
 		}
 		diffContext += fmt.Sprintf("Test files: %s\n", strings.Join(fileList, ", "))
 	}
-	
+
 	// Add operations analysis
 	diffContext += "\nFile operations:\n"
-	
+
 	if len(addedFiles) > 0 {
 		fileList := make([]string, 0, len(addedFiles))
 		for file := range addedFiles {
@@ -478,7 +505,7 @@ Analysis of changes:
 		}
 		diffContext += fmt.Sprintf("Added: %s\n", strings.Join(fileList, ", "))
 	}
-	
+
 	if len(modifiedFiles) > 0 {
 		fileList := make([]string, 0, len(modifiedFiles))
 		for file := range modifiedFiles {
@@ -486,7 +513,7 @@ Analysis of changes:
 		}
 		diffContext += fmt.Sprintf("Modified: %s\n", strings.Join(fileList, ", "))
 	}
-	
+
 	if len(deletedFiles) > 0 {
 		fileList := make([]string, 0, len(deletedFiles))
 		for file := range deletedFiles {
@@ -535,10 +562,10 @@ Based primarily on the ACTUAL CHANGES shown above, suggest a concise, descriptiv
 	if len(response.Choices) > 0 {
 		// Get the raw response
 		rawSuggestion := response.Choices[0].Message.Content
-		
+
 		// Clean up the response and extract only the actual commit message
 		suggestion := extractCommitMessage(rawSuggestion)
-		
+
 		return suggestion, nil
 	}
 
@@ -549,12 +576,12 @@ Based primarily on the ACTUAL CHANGES shown above, suggest a concise, descriptiv
 func extractCommitMessage(response string) string {
 	// Trim whitespace
 	response = strings.TrimSpace(response)
-	
+
 	// If wrapped in quotes, remove them
 	if strings.HasPrefix(response, "\"") && strings.HasSuffix(response, "\"") {
 		response = response[1 : len(response)-1]
 	}
-	
+
 	// Check if the response contains a code block with ```
 	if strings.Contains(response, "```") {
 		// Extract content between code blocks
@@ -564,14 +591,14 @@ func extractCommitMessage(response string) string {
 			response = strings.TrimSpace(parts[1])
 		}
 	}
-	
+
 	// Split into lines to process
 	lines := strings.Split(response, "\n")
-	
+
 	// Always look for conventional commit format in the first line
 	if len(lines) > 0 {
 		firstLine := strings.TrimSpace(lines[0])
-		
+
 		// Check if first line matches conventional commit format
 		if strings.Contains(firstLine, ":") && len(firstLine) < 100 {
 			typePrefix := strings.Split(firstLine, ":")[0]
@@ -595,8 +622,8 @@ func extractCommitMessage(response string) string {
 			}
 		}
 	}
-	
-	// If first line doesn't match conventional format but we have multiple lines, 
+
+	// If first line doesn't match conventional format but we have multiple lines,
 	// it might still be a valid multi-line commit
 	if len(lines) > 2 && len(strings.TrimSpace(lines[0])) > 0 {
 		// Check if we have a blank second line
@@ -608,7 +635,7 @@ func extractCommitMessage(response string) string {
 			return strings.TrimSpace(lines[0]) + "\n\n" + strings.Join(lines[1:], "\n")
 		}
 	}
-	
+
 	// If no valid format found, use the first non-empty line as subject
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -616,7 +643,7 @@ func extractCommitMessage(response string) string {
 			return line
 		}
 	}
-	
+
 	// If all else fails, return the first 72 chars of first line
 	if len(lines) > 0 {
 		firstLine := strings.TrimSpace(lines[0])
@@ -625,18 +652,18 @@ func extractCommitMessage(response string) string {
 		}
 		return firstLine
 	}
-	
+
 	return response
 }
 
 // formatCommitList creates a formatted string of commit messages
 func formatCommitList(commits []string) string {
 	var result strings.Builder
-	
+
 	for i, commit := range commits {
 		result.WriteString(fmt.Sprintf("%d. %s\n", i+1, commit))
 	}
-	
+
 	return result.String()
 }
 
@@ -677,7 +704,7 @@ func diffContext(diff string) string {
 	if diff == "" {
 		return ""
 	}
-	
+
 	return fmt.Sprintf(`Code changes (diff context):
 %s`, diff)
 }

@@ -1,3 +1,10 @@
+// main.go - Entry point for the noidea application
+//
+// noidea is a Git companion that provides commit message suggestions,
+// feedback on your commit history, and other helpful development tools.
+//
+// This main package initializes the application and invokes the root command.
+
 package main
 
 import (
@@ -5,5 +12,6 @@ import (
 )
 
 func main() {
+	// Execute the root command which handles errors internally
 	cmd.Execute()
-} 
+}

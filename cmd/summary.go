@@ -16,10 +16,10 @@ import (
 
 var (
 	// Summary command flags
-	daysFlag      int
-	exportFlag    string
-	statsOnlyFlag bool
-	aiInsightFlag bool
+	daysFlag              int
+	exportFlag            string
+	statsOnlyFlag         bool
+	aiInsightFlag         bool
 	personalityForSummary string
 )
 
@@ -74,7 +74,7 @@ var summaryCmd = &cobra.Command{
 
 		// Format statistics and get basic summary
 		statsSummary := history.FormatStatsForDisplay(stats)
-		
+
 		// Get list of commits
 		commitList := history.FormatCommitList(commits)
 
@@ -110,15 +110,15 @@ func generateAIInsights(commits []history.CommitInfo, stats map[string]interface
 	for _, commit := range commits {
 		commitMessages = append(commitMessages, commit.Message)
 	}
-	
+
 	// Create summary context
 	summaryContext := feedback.CommitContext{
-		Message:      "Weekly Summary Analysis",
-		Timestamp:    time.Now(),
+		Message:       "Weekly Summary Analysis",
+		Timestamp:     time.Now(),
 		CommitHistory: commitMessages,
-		CommitStats:  stats,
+		CommitStats:   stats,
 	}
-	
+
 	// Create feedback engine based on configuration
 	engine := feedback.NewFeedbackEngine(
 		cfg.LLM.Provider,
@@ -127,7 +127,7 @@ func generateAIInsights(commits []history.CommitInfo, stats map[string]interface
 		personalityName,
 		cfg.Moai.PersonalityFile,
 	)
-	
+
 	// Generate AI insights
 	return engine.GenerateSummaryFeedback(summaryContext)
 }
@@ -135,30 +135,30 @@ func generateAIInsights(commits []history.CommitInfo, stats map[string]interface
 // formatSummary combines all parts into a complete summary
 func formatSummary(stats, commits, aiInsights string, days int) string {
 	var result strings.Builder
-	
+
 	// Header
 	result.WriteString(color.CyanString("📊 Git Activity Summary") + "\n")
-	result.WriteString(color.CyanString(fmt.Sprintf("Last %d days - %s to %s\n\n", 
-		days, 
+	result.WriteString(color.CyanString(fmt.Sprintf("Last %d days - %s to %s\n\n",
+		days,
 		time.Now().AddDate(0, 0, -days).Format("2006-01-02"),
 		time.Now().Format("2006-01-02"))))
-	
+
 	// Statistics
 	result.WriteString(color.CyanString("## Statistics\n\n"))
 	result.WriteString(stats)
 	result.WriteString("\n")
-	
+
 	// AI Insights (if available)
 	if aiInsights != "" {
 		result.WriteString(color.CyanString("## AI Insights\n\n"))
 		result.WriteString(aiInsights)
 		result.WriteString("\n\n")
 	}
-	
+
 	// Commit List
 	result.WriteString(color.CyanString("## Commit History\n\n"))
 	result.WriteString(commits)
-	
+
 	return result.String()
 }
 
@@ -167,23 +167,23 @@ func exportSummary(summary, format string) error {
 	// Determine output filename
 	timestamp := time.Now().Format("2006-01-02")
 	var filename string
-	
+
 	// Convert ANSI color codes to appropriate format
 	plainSummary := stripANSIColors(summary)
-	
+
 	switch strings.ToLower(format) {
 	case "text", "txt":
 		filename = fmt.Sprintf("git-summary-%s.txt", timestamp)
 		return ioutil.WriteFile(filename, []byte(plainSummary), 0644)
-		
+
 	case "markdown", "md":
 		filename = fmt.Sprintf("git-summary-%s.md", timestamp)
 		return ioutil.WriteFile(filename, []byte(convertToMarkdown(plainSummary)), 0644)
-		
+
 	case "html":
 		filename = fmt.Sprintf("git-summary-%s.html", timestamp)
 		return ioutil.WriteFile(filename, []byte(convertToHTML(plainSummary)), 0644)
-		
+
 	default:
 		return fmt.Errorf("unsupported export format: %s", format)
 	}
@@ -199,7 +199,7 @@ func stripANSIColors(s string) string {
 func convertToMarkdown(summary string) string {
 	lines := strings.Split(summary, "\n")
 	var result strings.Builder
-	
+
 	for _, line := range lines {
 		if strings.HasPrefix(line, "##") {
 			// Convert "## Title" to "## Title"
@@ -212,14 +212,14 @@ func convertToMarkdown(summary string) string {
 			result.WriteString(line + "\n")
 		}
 	}
-	
+
 	return result.String()
 }
 
 // convertToHTML converts the summary to HTML format
 func convertToHTML(summary string) string {
 	markdown := convertToMarkdown(summary)
-	
+
 	// Simple HTML wrapper
 	html := `<!DOCTYPE html>
 <html>
@@ -274,13 +274,13 @@ func convertToHTML(summary string) string {
 </body>
 </html>
 `
-	
+
 	// Replace Markdown with HTML tags
 	htmlContent := strings.ReplaceAll(markdown, "# ", "<h1>")
 	htmlContent = strings.ReplaceAll(htmlContent, "\n## ", "</h1>\n<h2>")
 	htmlContent = strings.ReplaceAll(htmlContent, "\n", "<br>")
 	htmlContent = strings.ReplaceAll(htmlContent, "</h1>", "</h1>")
 	htmlContent = strings.ReplaceAll(htmlContent, "</h2>", "</h2>")
-	
+
 	return fmt.Sprintf(html, htmlContent)
-} 
+}

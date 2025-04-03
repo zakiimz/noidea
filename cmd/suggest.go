@@ -33,9 +33,9 @@ import (
 
 var (
 	// Suggest command flags
-	historyCountFlag int
-	fullDiffFlag     bool
-	interactiveFlag  bool
+	historyCountFlag  int
+	fullDiffFlag      bool
+	interactiveFlag   bool
 	commitMsgFileFlag string
 )
 
@@ -55,7 +55,7 @@ func init() {
 var suggestCmd = &cobra.Command{
 	Use:   "suggest",
 	Short: "Suggest a commit message based on staged changes",
-	Long:  `Analyze staged changes and commit history to suggest a descriptive commit message.
+	Long: `Analyze staged changes and commit history to suggest a descriptive commit message.
 	
 Commit message suggestions always follow professional conventional commit format,
 regardless of the personality settings used elsewhere in noidea.`,
@@ -94,12 +94,12 @@ regardless of the personality settings used elsewhere in noidea.`,
 
 		// Print a divider
 		fmt.Println(color.HiBlackString(divider))
-		
+
 		// Print analysis info
-		fmt.Printf("%s %s\n", 
+		fmt.Printf("%s %s\n",
 			color.CyanString("🧠 Analyzing staged changes and"),
 			color.CyanString(fmt.Sprintf("%d recent commits", len(commitMessages))))
-		
+
 		fmt.Printf("%s\n",
 			color.CyanString("Generating professional commit message suggestion..."))
 
@@ -109,9 +109,9 @@ regardless of the personality settings used elsewhere in noidea.`,
 		apiKey := cfg.LLM.APIKey
 		personality := cfg.Moai.Personality
 		personalityFile := cfg.Moai.PersonalityFile
-		
+
 		engine := feedback.NewFeedbackEngine(engineProvider, engineModel, apiKey, personality, personalityFile)
-		
+
 		// Create commit context for the suggestion
 		ctx := feedback.CommitContext{
 			Diff:          diff,
@@ -119,7 +119,7 @@ regardless of the personality settings used elsewhere in noidea.`,
 			CommitStats:   stats,
 			Timestamp:     time.Now(),
 		}
-		
+
 		// Generate suggested commit message
 		suggestion, err := engine.GenerateCommitSuggestion(ctx)
 		if err != nil {
@@ -136,13 +136,13 @@ regardless of the personality settings used elsewhere in noidea.`,
 		} else {
 			// Just print the suggestion
 			fmt.Println(color.GreenString("✨ Suggested commit message:"))
-			
+
 			// Handle multi-line commit messages with better formatting
 			lines := strings.Split(suggestion, "\n")
 			if len(lines) > 1 {
 				// Print the first line (subject) in white
 				fmt.Println(color.HiWhiteString(lines[0]))
-				
+
 				// Print the rest with proper formatting
 				for i := 1; i < len(lines); i++ {
 					if lines[i] == "" {
@@ -157,9 +157,9 @@ regardless of the personality settings used elsewhere in noidea.`,
 				// Single line message
 				fmt.Println(color.HiWhiteString(suggestion))
 			}
-			
+
 			fmt.Println(color.HiBlackString(divider))
-			
+
 			// If we have a commit message file, write to it
 			if commitMsgFileFlag != "" {
 				err := writeToCommitMsgFile(suggestion, commitMsgFileFlag)
@@ -177,32 +177,32 @@ regardless of the personality settings used elsewhere in noidea.`,
 func getStagedDiff() (string, error) {
 	// Use a more efficient approach with custom buffer sizing
 	cmd := exec.Command("git", "diff", "--staged")
-	
+
 	// Create a buffer with reasonable initial size to reduce allocations
 	var outputBuffer strings.Builder
 	outputBuffer.Grow(8192) // Pre-allocate 8KB which is sufficient for most diffs
-	
+
 	// Setup command to write directly to our buffer
 	cmd.Stdout = &outputBuffer
-	
+
 	// Run the command
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to get staged diff: %w", err)
 	}
-	
+
 	return outputBuffer.String(), nil
 }
 
 // handleInteractiveMode presents the suggestion to the user and allows interaction
 func handleInteractiveMode(suggestion string, commitMsgFileFlag string) {
 	fmt.Println(color.GreenString("✨ Suggested commit message:"))
-	
+
 	// Handle multi-line commit messages with better formatting
 	lines := strings.Split(suggestion, "\n")
 	if len(lines) > 1 {
 		// Print the first line (subject) in white
 		fmt.Println(color.HiWhiteString(lines[0]))
-		
+
 		// Print the rest with proper formatting
 		for i := 1; i < len(lines); i++ {
 			if lines[i] == "" {
@@ -217,9 +217,9 @@ func handleInteractiveMode(suggestion string, commitMsgFileFlag string) {
 		// Single line message
 		fmt.Println(color.HiWhiteString(suggestion))
 	}
-	
+
 	fmt.Println(color.HiBlackString(divider))
-	
+
 	// Ask if the user wants to use this suggestion
 	fmt.Print(color.YellowString("Accept this suggestion? (Y/n/e): "))
 	reader := bufio.NewReader(os.Stdin)
@@ -269,7 +269,7 @@ func editSuggestion(suggestion string) string {
 	fmt.Println(color.CyanString("✏️ Current suggestion:"))
 	fmt.Println(suggestion)
 	fmt.Println(color.CyanString("Enter your edited message (type 'done' on a new line when finished):"))
-	
+
 	var lines []string
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -279,6 +279,6 @@ func editSuggestion(suggestion string) string {
 		}
 		lines = append(lines, line)
 	}
-	
+
 	return strings.Join(lines, "\n")
-} 
+}

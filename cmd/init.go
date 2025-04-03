@@ -12,16 +12,16 @@ import (
 )
 
 var (
-	enableSuggestions  bool
-	enableInteractive  bool
-	enableFullDiff     bool
+	enableSuggestions bool
+	enableInteractive bool
+	enableFullDiff    bool
 )
 
 func init() {
 	initCmd.Flags().BoolVarP(&enableSuggestions, "suggest", "s", true, "Enable commit message suggestions")
 	initCmd.Flags().BoolVarP(&enableInteractive, "interactive", "i", false, "Enable interactive mode for direct command usage")
 	initCmd.Flags().BoolVarP(&enableFullDiff, "full-diff", "f", false, "Include full diffs in commit message analysis")
-	
+
 	rootCmd.AddCommand(initCmd)
 }
 
@@ -43,7 +43,7 @@ var initCmd = &cobra.Command{
 			fmt.Println(color.RedString("Error:"), "Failed to create hooks directory:", err)
 			os.Exit(1)
 		}
-		
+
 		// Install the post-commit hook for Moai feedback
 		err = git.InstallPostCommitHook(hooksDir)
 		if err != nil {
@@ -51,7 +51,7 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		fmt.Println(color.GreenString("✓"), "Installed post-commit hook for Moai feedback")
-		
+
 		// Install the prepare-commit-msg hook for commit suggestions
 		err = git.InstallPrepareCommitMsgHook(hooksDir)
 		if err != nil {
@@ -59,7 +59,7 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		fmt.Println(color.GreenString("✓"), "Installed prepare-commit-msg hook for commit suggestions")
-		
+
 		// Configure git settings based on flags
 		gitConfigRunner := func(key, value string) {
 			cmd := exec.Command("git", "config", key, value)
@@ -67,7 +67,7 @@ var initCmd = &cobra.Command{
 				fmt.Println(color.YellowString("Warning:"), "Failed to set git config", key, ":", err)
 			}
 		}
-		
+
 		// Set suggestion configuration
 		gitConfigRunner("noidea.suggest", fmt.Sprintf("%t", enableSuggestions))
 		status := "enabled"
@@ -75,7 +75,7 @@ var initCmd = &cobra.Command{
 			status = "disabled"
 		}
 		fmt.Println(color.GreenString("✓"), "Commit message suggestions", status)
-		
+
 		// Only configure these if suggestions are enabled
 		if enableSuggestions {
 			gitConfigRunner("noidea.suggest.interactive", fmt.Sprintf("%t", enableInteractive))
@@ -84,16 +84,16 @@ var initCmd = &cobra.Command{
 				fmt.Println(color.BlueString("Note:"), "Interactive mode only applies when running 'noidea suggest' directly.")
 				fmt.Println("      Git hooks always use non-interactive mode to avoid input issues.")
 			}
-			
+
 			gitConfigRunner("noidea.suggest.full-diff", fmt.Sprintf("%t", enableFullDiff))
 			if enableFullDiff {
 				fmt.Println(color.GreenString("✓"), "Full diff analysis enabled")
 			}
 		}
-		
+
 		// Check if noidea is properly available
 		execPath, _ := os.Executable()
 		fmt.Println(color.GreenString("Success!"), "noidea hooks installed - executable at:", execPath)
 		fmt.Println(color.BlueString("Note:"), "To change settings, run 'git config noidea.suggest [true|false]'")
 	},
-} 
+}

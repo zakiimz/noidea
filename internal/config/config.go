@@ -1,213 +1,225 @@
+// Package config provides configuration management for the noidea tool.
+// It handles loading, saving, and validating user configuration settings.
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/BurntSushi/toml"
-	"github.com/joho/godotenv"
 )
 
-// LLMConfig holds LLM-specific configuration
-type LLMConfig struct {
-	Enabled     bool    `toml:"enabled"`
-	Provider    string  `toml:"provider"`
-	APIKey      string  `toml:"api_key"`
-	Model       string  `toml:"model"`
-	Temperature float64 `toml:"temperature"`
-}
-
-// MoaiConfig holds Moai-specific configuration
-type MoaiConfig struct {
-	UseLint         bool   `toml:"use_lint"`
-	FacesMode       string `toml:"faces_mode"`
-	Personality     string `toml:"personality"`
-	PersonalityFile string `toml:"personality_file"`
-	IncludeHistory  bool   `toml:"include_history"`
-}
-
-// Config holds the application configuration
+// Config represents the application configuration
 type Config struct {
-	LLM  LLMConfig  `toml:"llm"`
-	Moai MoaiConfig `toml:"moai"`
+	// LLM contains settings for the AI language model integration
+	LLM struct {
+		Enabled     bool    `json:"enabled"`
+		Provider    string  `json:"provider"`    // "xai", "openai", "deepseek"
+		APIKey      string  `json:"api_key"`     // API key for the language model provider
+		Model       string  `json:"model"`       // Model name to use
+		Temperature float64 `json:"temperature"` // Temperature for AI responses (0.0-1.0)
+	} `json:"llm"`
+
+	// Moai contains settings for the Moai feedback system
+	Moai struct {
+		UseLint         bool   `json:"use_lint"`          // Include linting feedback
+		FacesMode       string `json:"faces_mode"`        // "random", "sequential", "mood"
+		Personality     string `json:"personality"`       // Selected personality
+		PersonalityFile string `json:"personality_file"`  // Custom personality definitions
+	} `json:"moai"`
 }
 
-// DefaultConfig returns a default configuration
+// DefaultConfig returns a configuration with default values
 func DefaultConfig() Config {
-	return Config{
-		LLM: LLMConfig{
-			Enabled:     false,
-			Provider:    "xai",
-			APIKey:      "",
-			Model:       "grok-2-1212",
-			Temperature: 0.7,
-		},
-		Moai: MoaiConfig{
-			UseLint:         false,
-			FacesMode:       "random",
-			Personality:     "snarky_reviewer",
-			PersonalityFile: "",
-			IncludeHistory:  false,
-		},
-	}
-}
-
-// ConfigPaths returns the possible configuration file paths
-func ConfigPaths() []string {
-	// Check for configuration in current directory
-	paths := []string{".noidea.toml"}
-
-	// Check in home directory
-	home, err := os.UserHomeDir()
+	cfg := Config{}
+	
+	// Set default LLM configuration
+	cfg.LLM.Enabled = false
+	cfg.LLM.Provider = "xai"
+	cfg.LLM.APIKey = ""
+	cfg.LLM.Model = "xai-chat"
+	cfg.LLM.Temperature = 0.7
+	
+	// Set default Moai configuration
+	cfg.Moai.UseLint = false
+	cfg.Moai.FacesMode = "random"
+	cfg.Moai.Personality = "default"
+	
+	// Get home directory for default personality file path
+	homeDir, err := os.UserHomeDir()
 	if err == nil {
-		paths = append(paths, filepath.Join(home, ".noidea", "config.toml"))
-		paths = append(paths, filepath.Join(home, ".config", "noidea", "config.toml"))
+		cfg.Moai.PersonalityFile = filepath.Join(homeDir, ".noidea", "personalities.json")
+	} else {
+		// Fallback to current directory if we can't get home dir
+		cfg.Moai.PersonalityFile = "personalities.json"
 	}
-
-	return paths
+	
+	return cfg
 }
 
-// LoadConfig loads configuration from files and environment variables
+// LoadConfig loads the configuration from the default location
+// If the config file doesn't exist, it returns the default config
 func LoadConfig() Config {
-	// Start with default config
-	config := DefaultConfig()
-
-	// Load from config files
-	for _, path := range ConfigPaths() {
-		if _, err := os.Stat(path); err == nil {
-			_, err := toml.DecodeFile(path, &config)
-			if err == nil {
-				// Successfully loaded a config file, break
-				break
-			}
-		}
-	}
-
-	// Load from .env files
-	_ = godotenv.Load()
-
-	// Try to load from home directory .env file
-	home, err := os.UserHomeDir()
-	if err == nil {
-		_ = godotenv.Load(filepath.Join(home, ".noidea", ".env"))
-	}
-
-	// Override with environment variables (higher priority)
-	if apiKey := os.Getenv("XAI_API_KEY"); apiKey != "" {
-		config.LLM.APIKey = apiKey
-		config.LLM.Provider = "xai"
-		config.LLM.Enabled = true
-	} else if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
-		config.LLM.APIKey = apiKey
-		config.LLM.Provider = "openai"
-		config.LLM.Enabled = true
-	} else if apiKey := os.Getenv("DEEPSEEK_API_KEY"); apiKey != "" {
-		config.LLM.APIKey = apiKey
-		config.LLM.Provider = "deepseek"
-		config.LLM.Enabled = true
-	}
-
-	// Other environment variable overrides
-	if model := os.Getenv("NOIDEA_MODEL"); model != "" {
-		config.LLM.Model = model
-	}
-
-	if temp := os.Getenv("NOIDEA_TEMPERATURE"); temp != "" {
-		// Ignore errors - if we can't parse, we keep the default
-		if t, err := ParseFloat(temp); err == nil {
-			config.LLM.Temperature = t
-		}
-	}
-
-	if enabled := os.Getenv("NOIDEA_LLM_ENABLED"); enabled != "" {
-		config.LLM.Enabled = enabled == "true" || enabled == "1" || enabled == "yes"
-	}
-
-	if facesMode := os.Getenv("NOIDEA_FACES_MODE"); facesMode != "" {
-		config.Moai.FacesMode = facesMode
-	}
-
-	if useLint := os.Getenv("NOIDEA_USE_LINT"); useLint != "" {
-		config.Moai.UseLint = useLint == "true" || useLint == "1" || useLint == "yes"
+	// Try to get user home directory
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return DefaultConfig()
 	}
 	
-	if personality := os.Getenv("NOIDEA_PERSONALITY"); personality != "" {
-		config.Moai.Personality = personality
+	// Config directory path
+	configDir := filepath.Join(homeDir, ".noidea")
+	
+	// Config file path
+	configFile := filepath.Join(configDir, "config.json")
+	
+	// Check if config file exists
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		return DefaultConfig()
 	}
 	
-	if personalityFile := os.Getenv("NOIDEA_PERSONALITY_FILE"); personalityFile != "" {
-		config.Moai.PersonalityFile = personalityFile
+	// Read config file
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		return DefaultConfig()
 	}
-
-	if includeHistory := os.Getenv("NOIDEA_INCLUDE_HISTORY"); includeHistory != "" {
-		config.Moai.IncludeHistory = includeHistory == "true" || includeHistory == "1" || includeHistory == "yes"
+	
+	// Parse config
+	var cfg Config
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return DefaultConfig()
 	}
-
-	return config
+	
+	// Ensure all fields are set properly
+	ensureDefaults(&cfg)
+	
+	return cfg
 }
 
-// SaveConfig saves the configuration to a file
-func SaveConfig(config Config, path string) error {
-	// Ensure the directory exists
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+// ensureDefaults ensures that all config fields have valid values
+// by applying defaults to any missing or invalid values
+func ensureDefaults(cfg *Config) {
+	defaultCfg := DefaultConfig()
+	
+	// Ensure LLM defaults
+	if cfg.LLM.Provider == "" {
+		cfg.LLM.Provider = defaultCfg.LLM.Provider
+	}
+	
+	if cfg.LLM.Model == "" {
+		cfg.LLM.Model = defaultCfg.LLM.Model
+	}
+	
+	if cfg.LLM.Temperature <= 0 || cfg.LLM.Temperature > 1.0 {
+		cfg.LLM.Temperature = defaultCfg.LLM.Temperature
+	}
+	
+	// Ensure Moai defaults
+	if cfg.Moai.FacesMode == "" {
+		cfg.Moai.FacesMode = defaultCfg.Moai.FacesMode
+	}
+	
+	if cfg.Moai.Personality == "" {
+		cfg.Moai.Personality = defaultCfg.Moai.Personality
+	}
+	
+	if cfg.Moai.PersonalityFile == "" {
+		cfg.Moai.PersonalityFile = defaultCfg.Moai.PersonalityFile
+	}
+}
+
+// SaveConfig saves the configuration to the default location
+func SaveConfig(cfg Config) error {
+	// Get home directory
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to get user home directory: %w", err)
+	}
+	
+	// Create config directory if it doesn't exist
+	configDir := filepath.Join(homeDir, ".noidea")
+	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
-
-	// Create or truncate the file
-	file, err := os.Create(path)
+	
+	// Config file path
+	configFile := filepath.Join(configDir, "config.json")
+	
+	// Marshal config to JSON
+	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to create config file: %w", err)
-	}
-	defer file.Close()
-
-	// Encode the config to TOML
-	if err := toml.NewEncoder(file).Encode(config); err != nil {
 		return fmt.Errorf("failed to encode config: %w", err)
 	}
-
+	
+	// Write config file
+	if err := os.WriteFile(configFile, data, 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+	
 	return nil
 }
 
-// ValidateConfig checks if the configuration is valid
+// ValidateConfig checks the configuration for errors or inconsistencies
+// Returns a list of issues or an empty slice if the config is valid
 func ValidateConfig(config Config) []string {
 	var issues []string
-
-	// Check LLM configuration
+	
+	// Validate LLM settings
 	if config.LLM.Enabled {
-		if config.LLM.APIKey == "" {
-			issues = append(issues, "LLM is enabled but no API key is provided")
+		// Check that provider is valid
+		validProviders := map[string]bool{
+			"xai":      true,
+			"openai":   true,
+			"deepseek": true,
 		}
-
-		if config.LLM.Model == "" {
-			issues = append(issues, "LLM is enabled but no model is specified")
-		}
-
-		if config.LLM.Temperature < 0 || config.LLM.Temperature > 1 {
-			issues = append(issues, "Temperature must be between 0 and 1")
-		}
-
-		// Check provider
-		switch config.LLM.Provider {
-		case "xai", "openai", "deepseek":
-			// Valid providers
-		default:
+		
+		if !validProviders[config.LLM.Provider] {
 			issues = append(issues, fmt.Sprintf("Unknown provider: %s", config.LLM.Provider))
 		}
+		
+		// Check that API key is set
+		if config.LLM.APIKey == "" {
+			issues = append(issues, "API key is required when LLM is enabled")
+		}
+		
+		// Check temperature range
+		if config.LLM.Temperature < 0 || config.LLM.Temperature > 1.0 {
+			issues = append(issues, fmt.Sprintf("Temperature value must be between 0.0 and 1.0 (got %.1f)", 
+				config.LLM.Temperature))
+		}
 	}
-
-	// Check Moai configuration
-	if config.Moai.FacesMode != "random" && config.Moai.FacesMode != "sequential" && config.Moai.FacesMode != "mood" {
+	
+	// Validate Moai settings
+	validFacesModes := map[string]bool{
+		"random":     true,
+		"sequential": true,
+		"mood":       true,
+	}
+	
+	if !validFacesModes[config.Moai.FacesMode] {
 		issues = append(issues, fmt.Sprintf("Unknown faces mode: %s", config.Moai.FacesMode))
 	}
-
+	
+	// Check that personality file exists if a custom personality is set
+	if config.Moai.Personality != "default" && 
+	   config.Moai.Personality != "friendly" && 
+	   config.Moai.Personality != "professional" && 
+	   config.Moai.Personality != "sarcastic" {
+		
+		// Check if the file exists
+		if _, err := os.Stat(config.Moai.PersonalityFile); os.IsNotExist(err) {
+			issues = append(issues, "Custom personality file not found: " + config.Moai.PersonalityFile)
+		}
+	}
+	
 	return issues
 }
 
-// Helper function to parse float
-func ParseFloat(s string) (float64, error) {
+// ParseFloat parses a string to a float64 with a default value if parsing fails
+func ParseFloat(s string, defaultVal float64) float64 {
 	var f float64
 	_, err := fmt.Sscanf(s, "%f", &f)
-	return f, err
-} 
+	if err != nil {
+		return defaultVal
+	}
+	return f
+}

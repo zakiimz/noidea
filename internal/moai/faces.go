@@ -1,3 +1,5 @@
+// Package moai provides functions for generating Moai feedback
+// with different personalities and moods.
 package moai
 
 import (
@@ -9,18 +11,24 @@ import (
 )
 
 var (
-	// Random number generator
+	// Random number generator with time-based seed
 	rng = rand.New(rand.NewSource(time.Now().UnixNano()))
-	
+
+	// moaiFaces is a collection of Moai ASCII faces with different expressions
 	moaiFaces = []string{
-		"🗿  (ಠ_ಠ)",
-		"🗿  (¬_¬)",
-		"🗿  (⊙_⊙)",
-		"🗿  (¯\\_(:/)_/¯)",
-		"🗿  (╯°□°）╯",
-		"🗿  (◉_◉)",
-		"🗿  (⊙﹏⊙)",
-		"🗿  (⚆_⚆)",
+		"🗿  (ಠ_ಠ)",       // Disapproving
+		"🗿  (¬_¬)",       // Suspicious
+		"🗿  (⊙_⊙)",       // Surprised
+		"🗿  (¯\\_(:/)_/¯)", // Confused shrug
+		"🗿  (╯°□°）╯",    // Angry table flip
+		"🗿  (◉_◉)",       // Surprised or shocked
+		"🗿  (⊙﹏⊙)",      // Worried
+		"🗿  (⚆_⚆)",       // Staring
+		"🗿  ( ͡° ͜ʖ ͡°)",   // Smug 
+		"🗿  (ᵔᴥᵔ)",      // Happy
+		"🗿  (•‿•)",       // Pleased
+		"🗿  (≧◡≦)",       // Very happy
+		"🗿  (─‿‿─)",     // Satisfied
 	}
 
 	// Feedback templates based on commit message patterns
@@ -85,14 +93,14 @@ func GetRandomFace() string {
 // GetRandomFeedback generates feedback based on the commit message
 func GetRandomFeedback(commitMsg string) string {
 	commitMsg = strings.ToLower(commitMsg)
-	
+
 	// Check for specific patterns in the commit message
 	for pattern, templates := range feedbackTemplates {
 		if strings.Contains(commitMsg, pattern) {
 			return color.YellowString(templates[rng.Intn(len(templates))])
 		}
 	}
-	
+
 	// If no specific pattern matched, return general feedback
 	return color.YellowString(generalFeedback[rng.Intn(len(generalFeedback))])
-} 
+}

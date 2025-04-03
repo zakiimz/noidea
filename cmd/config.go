@@ -14,8 +14,8 @@ import (
 
 var (
 	// Config operation flags
-	showConfig  bool
-	initConfig  bool
+	showConfig   bool
+	initConfig   bool
 	validateFlag bool
 
 	// Config file path
@@ -84,11 +84,11 @@ var configCmd = &cobra.Command{
 // printConfig displays the current configuration
 func printConfig(cfg config.Config) {
 	fmt.Println(color.CyanString("🧠 noidea configuration:"))
-	
+
 	fmt.Println(color.CyanString("\n[LLM]"))
 	fmt.Printf("Enabled: %v\n", cfg.LLM.Enabled)
 	fmt.Printf("Provider: %s\n", cfg.LLM.Provider)
-	
+
 	// Don't show the full API key for security
 	apiKey := cfg.LLM.APIKey
 	if apiKey != "" {
@@ -98,11 +98,11 @@ func printConfig(cfg config.Config) {
 			apiKey = "***"
 		}
 	}
-	
+
 	fmt.Printf("API Key: %s\n", apiKey)
 	fmt.Printf("Model: %s\n", cfg.LLM.Model)
 	fmt.Printf("Temperature: %.1f\n", cfg.LLM.Temperature)
-	
+
 	fmt.Println(color.CyanString("\n[Moai]"))
 	fmt.Printf("Use Lint: %v\n", cfg.Moai.UseLint)
 	fmt.Printf("Faces Mode: %s\n", cfg.Moai.FacesMode)
@@ -113,17 +113,17 @@ func createConfigInteractive(path string) {
 	// Start with default config
 	cfg := config.DefaultConfig()
 	reader := bufio.NewReader(os.Stdin)
-	
+
 	fmt.Println(color.CyanString("Creating a new configuration file at:"), path)
-	
+
 	// LLM Settings
 	fmt.Println(color.CyanString("\nLLM Settings:"))
-	
+
 	// Enable LLM
 	fmt.Print("Enable LLM? (y/n): ")
 	response, _ := reader.ReadString('\n')
 	cfg.LLM.Enabled = strings.TrimSpace(response) == "y"
-	
+
 	if cfg.LLM.Enabled {
 		// Provider
 		fmt.Print("Provider (xai, openai, deepseek): ")
@@ -132,7 +132,7 @@ func createConfigInteractive(path string) {
 		if provider != "" {
 			cfg.LLM.Provider = provider
 		}
-		
+
 		// API Key
 		fmt.Print("API Key: ")
 		response, _ = reader.ReadString('\n')
@@ -140,7 +140,7 @@ func createConfigInteractive(path string) {
 		if apiKey != "" {
 			cfg.LLM.APIKey = apiKey
 		}
-		
+
 		// Model
 		fmt.Print("Model: ")
 		response, _ = reader.ReadString('\n')
@@ -148,7 +148,7 @@ func createConfigInteractive(path string) {
 		if model != "" {
 			cfg.LLM.Model = model
 		}
-		
+
 		// Temperature
 		fmt.Print("Temperature (0.0-1.0): ")
 		response, _ = reader.ReadString('\n')
@@ -159,15 +159,15 @@ func createConfigInteractive(path string) {
 			}
 		}
 	}
-	
+
 	// Moai Settings
 	fmt.Println(color.CyanString("\nMoai Settings:"))
-	
+
 	// Use Lint
 	fmt.Print("Enable linting feedback? (y/n): ")
 	response, _ = reader.ReadString('\n')
 	cfg.Moai.UseLint = strings.TrimSpace(response) == "y"
-	
+
 	// Faces Mode
 	fmt.Print("Faces mode (random, sequential, mood): ")
 	response, _ = reader.ReadString('\n')
@@ -175,7 +175,7 @@ func createConfigInteractive(path string) {
 	if facesMode != "" {
 		cfg.Moai.FacesMode = facesMode
 	}
-	
+
 	// Validate the config
 	issues := config.ValidateConfig(cfg)
 	if len(issues) > 0 {
@@ -183,7 +183,7 @@ func createConfigInteractive(path string) {
 		for _, issue := range issues {
 			fmt.Println(color.YellowString("  - " + issue))
 		}
-		
+
 		fmt.Print("Save anyway? (y/n): ")
 		response, _ = reader.ReadString('\n')
 		if strings.TrimSpace(response) != "y" {
@@ -191,13 +191,13 @@ func createConfigInteractive(path string) {
 			return
 		}
 	}
-	
+
 	// Save the config
 	err := config.SaveConfig(cfg, path)
 	if err != nil {
 		fmt.Println(color.RedString("Error saving configuration:"), err)
 		return
 	}
-	
+
 	fmt.Println(color.GreenString("Configuration saved to:"), path)
-} 
+}

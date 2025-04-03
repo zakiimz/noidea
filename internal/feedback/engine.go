@@ -6,10 +6,10 @@ import (
 
 // CommitContext contains information about a commit
 type CommitContext struct {
-	Message      string
-	Timestamp    time.Time
-	Diff         string    // Optional
-	CommitHistory []string // Recent commit messages
+	Message       string
+	Timestamp     time.Time
+	Diff          string                 // Optional
+	CommitHistory []string               // Recent commit messages
 	CommitStats   map[string]interface{} // Stats about recent commits
 }
 
@@ -17,10 +17,10 @@ type CommitContext struct {
 type FeedbackEngine interface {
 	// Generate feedback based on commit context
 	GenerateFeedback(context CommitContext) (string, error)
-	
+
 	// Generate insights for a weekly summary
 	GenerateSummaryFeedback(context CommitContext) (string, error)
-	
+
 	// Generate commit message suggestions based on staged changes and history
 	GenerateCommitSuggestion(context CommitContext) (string, error)
 }
@@ -48,4 +48,4 @@ func NewFeedbackEngine(provider string, model string, apiKey string, personality
 
 	// Fallback to local feedback engine if no API key is provided
 	return NewLocalFeedbackEngine()
-} 
+}

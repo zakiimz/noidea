@@ -7,7 +7,7 @@ import (
 // GetTimeOfDay returns a string representation of the time of day
 func GetTimeOfDay(t time.Time) string {
 	hour := t.Hour()
-	
+
 	switch {
 	case hour >= 5 && hour < 12:
 		return "morning"
@@ -18,4 +18,4 @@ func GetTimeOfDay(t time.Time) string {
 	default:
 		return "night"
 	}
-} 
+}

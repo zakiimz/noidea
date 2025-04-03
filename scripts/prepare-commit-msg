@@ -2,6 +2,9 @@
 #
 # prepare-commit-msg hook for noidea's commit message suggestion feature
 # 
+# This script runs when Git is about to create a commit. It generates a helpful
+# commit message suggestion based on the staged changes using the noidea tool.
+#
 # To install this hook:
 # 1. Make it executable (chmod +x prepare-commit-msg)
 # 2. Copy it to .git/hooks/ in your repository
@@ -18,6 +21,7 @@ if [ -t 1 ]; then
     RED="\033[0;31m"
     RESET="\033[0m"
 else
+    # No colors in non-terminal environments
     GREEN=""
     YELLOW=""
     CYAN=""
@@ -25,21 +29,23 @@ else
     RESET=""
 fi
 
-# Get commit message file
+# Get commit message file and source from Git
 COMMIT_MSG_FILE=$1
 COMMIT_SOURCE=$2
 
 # Check if noidea's suggestion feature is enabled
 if [ "$(git config --get noidea.suggest)" != "true" ]; then
+    # Feature disabled, exit silently
     exit 0
 fi
 
-# Skip if it's a merge, rebase, or cherry-pick
+# Skip suggestion for special commit types
 if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ] || [ -n "$COMMIT_SOURCE" ]; then
+    # Skip for merges, squashes, and other special commits
     exit 0
 fi
 
-# Print a divider
+# Print a divider for visual separation
 print_divider() {
     echo "${CYAN}───────────────────────────────────────────────────${RESET}"
 }
@@ -56,27 +62,13 @@ find_noidea() {
     # Try to determine the git root
     GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
     if [ -n "$GIT_ROOT" ]; then
-        # Check if noidea is at the git root
-        if [ -x "$GIT_ROOT/noidea" ]; then
-            echo "$GIT_ROOT/noidea"
-            return 0
-        fi
-        
-        # Check in common binary locations - one by one for better POSIX compatibility
-        if [ -x "$GIT_ROOT/bin/noidea" ]; then
-            echo "$GIT_ROOT/bin/noidea"
-            return 0
-        fi
-        
-        if [ -x "$GIT_ROOT/build/noidea" ]; then
-            echo "$GIT_ROOT/build/noidea"
-            return 0
-        fi
-        
-        if [ -x "$GIT_ROOT/dist/noidea" ]; then
-            echo "$GIT_ROOT/dist/noidea"
-            return 0
-        fi
+        # Check common binary locations - one by one for better POSIX compatibility
+        for location in "$GIT_ROOT/noidea" "$GIT_ROOT/bin/noidea" "$GIT_ROOT/build/noidea" "$GIT_ROOT/dist/noidea"; do
+            if [ -x "$location" ]; then
+                echo "$location"
+                return 0
+            fi
+        done
     fi
     
     # Not found

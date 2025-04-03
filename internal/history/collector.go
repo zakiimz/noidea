@@ -13,14 +13,14 @@ import (
 
 // CommitInfo represents metadata about a single git commit
 type CommitInfo struct {
-	Hash      string    `json:"hash"`
-	Author    string    `json:"author"`
-	Email     string    `json:"email"`
-	Timestamp time.Time `json:"timestamp"`
-	Message   string    `json:"message"`
-	Files     []string  `json:"files"`
-	Stats     CommitStats `json:"stats"`
-	DiffSummary string   `json:"diff_summary,omitempty"`
+	Hash        string      `json:"hash"`
+	Author      string      `json:"author"`
+	Email       string      `json:"email"`
+	Timestamp   time.Time   `json:"timestamp"`
+	Message     string      `json:"message"`
+	Files       []string    `json:"files"`
+	Stats       CommitStats `json:"stats"`
+	DiffSummary string      `json:"diff_summary,omitempty"`
 }
 
 // CommitStats holds statistics about files changed in a commit
@@ -54,23 +54,23 @@ func NewHistoryCollector() (*HistoryCollector, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user home directory: %w", err)
 	}
-	
+
 	cacheDir := filepath.Join(home, ".noidea", "cache")
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
 	}
-	
+
 	cacheFile := filepath.Join(cacheDir, "history_cache.json")
-	
+
 	collector := &HistoryCollector{
 		cacheDir:  cacheDir,
 		cacheFile: cacheFile,
 		cached:    make(map[string]CommitInfo),
 	}
-	
+
 	// Load cache if exists
 	collector.loadCache()
-	
+
 	return collector, nil
 }
 
@@ -81,7 +81,7 @@ func (h *HistoryCollector) loadCache() {
 		// Cache doesn't exist yet, that's fine
 		return
 	}
-	
+
 	if err := json.Unmarshal(data, &h.cached); err != nil {
 		// If cache is corrupted, start fresh
 		h.cached = make(map[string]CommitInfo)
@@ -94,17 +94,17 @@ func (h *HistoryCollector) saveCache() error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal cache: %w", err)
 	}
-	
+
 	return os.WriteFile(h.cacheFile, data, 0644)
 }
 
 // GetCommitHistory retrieves commit history based on the provided filter
 func (h *HistoryCollector) GetCommitHistory(filter HistoryFilter) ([]CommitInfo, error) {
 	var args []string
-	
+
 	// Base command to get commit hashes
 	args = append(args, "log", "--format=%H")
-	
+
 	// Apply filters
 	if filter.Since != 0 {
 		// Time-based filtering
@@ -117,37 +117,37 @@ func (h *HistoryCollector) GetCommitHistory(filter HistoryFilter) ([]CommitInfo,
 		// Default to last 10 commits if no filter specified
 		args = append(args, "-n10")
 	}
-	
+
 	// Author filter
 	if filter.Author != "" {
 		args = append(args, fmt.Sprintf("--author=%s", filter.Author))
 	}
-	
+
 	// Branch filter
 	if filter.Branch != "" {
 		args = append(args, filter.Branch)
 	}
-	
+
 	// Execute git command
 	cmd := exec.Command("git", args...)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get commit hashes: %w", err)
 	}
-	
+
 	// Parse commit hashes
 	hashes := strings.Split(strings.TrimSpace(string(output)), "\n")
 	if len(hashes) == 0 || (len(hashes) == 1 && hashes[0] == "") {
 		return nil, nil // No commits found
 	}
-	
+
 	// Collect commit info for each hash
 	commits := make([]CommitInfo, 0, len(hashes))
 	for _, hash := range hashes {
 		if hash == "" {
 			continue
 		}
-		
+
 		// Check cache first
 		if commit, found := h.cached[hash]; found {
 			// If we need diff but it's not in cache, we'll fetch it
@@ -158,26 +158,26 @@ func (h *HistoryCollector) GetCommitHistory(filter HistoryFilter) ([]CommitInfo,
 					h.cached[hash] = commit // Update cache
 				}
 			}
-			
+
 			commits = append(commits, commit)
 			continue
 		}
-		
+
 		// Fetch commit info for uncached commits
 		commit, err := h.getCommitInfo(hash, filter.IncludeDiff)
 		if err != nil {
 			// Skip commits that can't be retrieved
 			continue
 		}
-		
+
 		// Add to cache
 		h.cached[hash] = commit
 		commits = append(commits, commit)
 	}
-	
+
 	// Save updated cache
 	h.saveCache()
-	
+
 	return commits, nil
 }
 
@@ -185,29 +185,29 @@ func (h *HistoryCollector) GetCommitHistory(filter HistoryFilter) ([]CommitInfo,
 func (h *HistoryCollector) getCommitInfo(hash string, includeDiff bool) (CommitInfo, error) {
 	var commit CommitInfo
 	commit.Hash = hash
-	
+
 	// Get commit metadata
 	cmd := exec.Command("git", "show", "--format=%an%n%ae%n%at%n%B", "--name-only", hash)
 	output, err := cmd.Output()
 	if err != nil {
 		return commit, fmt.Errorf("failed to get commit metadata: %w", err)
 	}
-	
+
 	lines := strings.Split(string(output), "\n")
 	if len(lines) < 4 {
 		return commit, fmt.Errorf("invalid commit data format")
 	}
-	
+
 	commit.Author = lines[0]
 	commit.Email = lines[1]
-	
+
 	// Parse timestamp
 	timestamp, err := strconv.ParseInt(lines[2], 10, 64)
 	if err != nil {
 		return commit, fmt.Errorf("failed to parse timestamp: %w", err)
 	}
 	commit.Timestamp = time.Unix(timestamp, 0)
-	
+
 	// Parse message (might span multiple lines)
 	var messageBuilder strings.Builder
 	lineIndex := 3
@@ -221,21 +221,21 @@ func (h *HistoryCollector) getCommitInfo(hash string, includeDiff bool) (CommitI
 		messageBuilder.WriteString(lines[lineIndex])
 	}
 	commit.Message = messageBuilder.String()
-	
+
 	// Skip any blank lines
 	for ; lineIndex < len(lines) && lines[lineIndex] == ""; lineIndex++ {
 	}
-	
+
 	// Collect changed files
 	for ; lineIndex < len(lines); lineIndex++ {
 		if lines[lineIndex] != "" {
 			commit.Files = append(commit.Files, lines[lineIndex])
 		}
 	}
-	
+
 	// Get commit stats
 	commit.Stats = h.getCommitStats(hash)
-	
+
 	// Get diff summary if requested
 	if includeDiff {
 		diffSummary, err := h.getDiffSummary(hash)
@@ -243,21 +243,21 @@ func (h *HistoryCollector) getCommitInfo(hash string, includeDiff bool) (CommitI
 			commit.DiffSummary = diffSummary
 		}
 	}
-	
+
 	return commit, nil
 }
 
 // getCommitStats retrieves stats about files changed in the commit
 func (h *HistoryCollector) getCommitStats(hash string) CommitStats {
 	var stats CommitStats
-	
+
 	// Run git show with stat option
 	cmd := exec.Command("git", "show", "--stat", hash)
 	output, err := cmd.Output()
 	if err != nil {
 		return stats
 	}
-	
+
 	// Extract stats from the last line which looks like:
 	// " 3 files changed, 24 insertions(+), 4 deletions(-)"
 	lines := strings.Split(string(output), "\n")
@@ -282,7 +282,7 @@ func (h *HistoryCollector) getCommitStats(hash string) CommitStats {
 			break
 		}
 	}
-	
+
 	return stats
 }
 
@@ -294,18 +294,18 @@ func (h *HistoryCollector) getDiffSummary(hash string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get diff: %w", err)
 	}
-	
+
 	// For LLM consumption, we want to keep the diff relatively concise
 	// This is a simple approach - for a more sophisticated summary,
 	// you might want to process the diff to extract only key changes
 	diffText := string(output)
-	
+
 	// Truncate very large diffs to avoid token explosion when sent to LLMs
 	const maxDiffLength = 5000
 	if len(diffText) > maxDiffLength {
 		return diffText[:maxDiffLength] + "... [diff truncated]", nil
 	}
-	
+
 	return diffText, nil
 }
 
@@ -317,62 +317,62 @@ func (h *HistoryCollector) GetCommitRange(startTime, endTime time.Time) ([]Commi
 		fmt.Sprintf("--since=%s", startTime.Format(time.RFC3339)),
 		fmt.Sprintf("--until=%s", endTime.Format(time.RFC3339)),
 	}
-	
+
 	cmd := exec.Command("git", args...)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get commit range: %w", err)
 	}
-	
+
 	hashes := strings.Split(strings.TrimSpace(string(output)), "\n")
 	if len(hashes) == 0 || (len(hashes) == 1 && hashes[0] == "") {
 		return nil, nil // No commits in range
 	}
-	
+
 	commits := make([]CommitInfo, 0, len(hashes))
 	for _, hash := range hashes {
 		if hash == "" {
 			continue
 		}
-		
+
 		// Check cache first
 		if commit, found := h.cached[hash]; found {
 			commits = append(commits, commit)
 			continue
 		}
-		
+
 		// Fetch commit info
 		commit, err := h.getCommitInfo(hash, false)
 		if err != nil {
 			continue
 		}
-		
+
 		// Add to cache
 		h.cached[hash] = commit
 		commits = append(commits, commit)
 	}
-	
+
 	h.saveCache()
-	
+
 	return commits, nil
 }
 
 // CalculateStats generates aggregated statistics for a set of commits
 func (h *HistoryCollector) CalculateStats(commits []CommitInfo) map[string]interface{} {
 	stats := make(map[string]interface{})
-	
+
 	if len(commits) == 0 {
 		return stats
 	}
-	
+
 	// Basic counts
 	stats["total_commits"] = len(commits)
-	
+
 	// Time range
 	earliest := commits[len(commits)-1].Timestamp
 	latest := commits[0].Timestamp
 	stats["time_span_hours"] = latest.Sub(earliest).Hours()
-	
+
 	// Author stats
 	authors := make(map[string]int)
 	for _, c := range commits {
@@ -380,7 +380,7 @@ func (h *HistoryCollector) CalculateStats(commits []CommitInfo) map[string]inter
 	}
 	stats["unique_authors"] = len(authors)
 	stats["author_distribution"] = authors
-	
+
 	// File stats
 	totalFiles := 0
 	totalInsertions := 0
@@ -393,7 +393,7 @@ func (h *HistoryCollector) CalculateStats(commits []CommitInfo) map[string]inter
 	stats["total_files_changed"] = totalFiles
 	stats["total_insertions"] = totalInsertions
 	stats["total_deletions"] = totalDeletions
-	
+
 	// Commits by day of week
 	dayOfWeek := make(map[string]int)
 	for _, c := range commits {
@@ -401,7 +401,7 @@ func (h *HistoryCollector) CalculateStats(commits []CommitInfo) map[string]inter
 		dayOfWeek[day]++
 	}
 	stats["commits_by_day"] = dayOfWeek
-	
+
 	// Commits by hour
 	hourOfDay := make(map[int]int)
 	for _, c := range commits {
@@ -409,7 +409,7 @@ func (h *HistoryCollector) CalculateStats(commits []CommitInfo) map[string]inter
 		hourOfDay[hour]++
 	}
 	stats["commits_by_hour"] = hourOfDay
-	
+
 	return stats
 }
 
@@ -420,4 +420,4 @@ func (h *HistoryCollector) ClearCache() error {
 		return os.Remove(h.cacheFile)
 	}
 	return nil
-} 
+}
