@@ -169,12 +169,22 @@ regardless of the personality settings used elsewhere in noidea.`,
 
 // getStagedDiff gets the diff of staged changes
 func getStagedDiff() (string, error) {
+	// Use a more efficient approach with custom buffer sizing
 	cmd := exec.Command("git", "diff", "--staged")
-	output, err := cmd.Output()
-	if err != nil {
+	
+	// Create a buffer with reasonable initial size to reduce allocations
+	var outputBuffer strings.Builder
+	outputBuffer.Grow(8192) // Pre-allocate 8KB which is sufficient for most diffs
+	
+	// Setup command to write directly to our buffer
+	cmd.Stdout = &outputBuffer
+	
+	// Run the command
+	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to get staged diff: %w", err)
 	}
-	return string(output), nil
+	
+	return outputBuffer.String(), nil
 }
 
 // handleInteractiveMode presents the suggestion to the user and allows interaction
