@@ -130,7 +130,10 @@ echo "${CYAN}🧠 Generating commit message suggestion...${RESET}"
 # Check if we successfully wrote to the file and if it contains a valid message
 ORIGINAL_SIZE=$(wc -c < "$COMMIT_MSG_FILE")
 if [ -s "$COMMIT_MSG_FILE" ] && [ "$ORIGINAL_SIZE" -gt 5 ]; then
-    # Read the first few lines of the commit message for display
+    # Get the number of lines in commit message
+    LINE_COUNT=$(grep -c "" "$COMMIT_MSG_FILE" || echo "0")
+    
+    # Read the first line of the commit message for display
     PREVIEW=$(head -n 1 "$COMMIT_MSG_FILE")
     PREVIEW_LEN=$(echo "$PREVIEW" | wc -c)
     
@@ -142,6 +145,12 @@ if [ -s "$COMMIT_MSG_FILE" ] && [ "$ORIGINAL_SIZE" -gt 5 ]; then
     print_divider
     echo "${GREEN}✅ Commit message suggestion applied:${RESET}"
     echo "${PREVIEW}"
+    
+    # Indicate if there's more content in the message
+    if [ "$LINE_COUNT" -gt 1 ]; then
+        echo "${CYAN}(+ additional details in commit message)${RESET}"
+    fi
+    
     print_divider
     exit 0
 else

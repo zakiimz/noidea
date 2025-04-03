@@ -319,7 +319,16 @@ Follow these guidelines:
 6. Be specific about what changed, making sure your message accurately reflects the actual modifications
 7. Keep the first line under 72 characters
 8. Use present tense (e.g., "add feature" not "added feature")
-9. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations, reasoning, or markdown formatting`
+9. ALWAYS generate a MULTI-LINE commit message for significant changes or modifications affecting multiple files:
+   - First line: Short, descriptive summary following conventional format (type: description)
+   - Second line: BLANK line (must be empty)
+   - Following lines: Detailed explanation of the changes with specifics about:
+     * What files or components were modified
+     * Why the changes were made
+     * Any important technical details
+     * Group related changes into paragraphs with empty lines between them
+10. For simple changes affecting a single file or making minor modifications, a single line message is sufficient
+11. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations, reasoning, or markdown formatting`
 
 	// Prepare the diff context - enhanced with file analysis
 	diffContext := `
@@ -512,7 +521,7 @@ Based primarily on the ACTUAL CHANGES shown above, suggest a concise, descriptiv
 			},
 		},
 		Temperature: 0.3, // Fixed lower temperature for more precise, professional responses
-		MaxTokens:   150, // Commit messages are short
+		MaxTokens:   300, // Increased token limit for multi-line commit messages
 		N:           1,
 	}
 
@@ -556,25 +565,51 @@ func extractCommitMessage(response string) string {
 		}
 	}
 	
-	// Check if there are multiple lines with a conventional commit format on one line
+	// Split into lines to process
 	lines := strings.Split(response, "\n")
-	for _, line := range lines {
-		// Look for lines that match conventional commit format (type: message)
-		line = strings.TrimSpace(line)
-		if strings.Contains(line, ":") && len(line) < 100 {
-			typePrefix := strings.Split(line, ":")[0]
+	
+	// Always look for conventional commit format in the first line
+	if len(lines) > 0 {
+		firstLine := strings.TrimSpace(lines[0])
+		
+		// Check if first line matches conventional commit format
+		if strings.Contains(firstLine, ":") && len(firstLine) < 100 {
+			typePrefix := strings.Split(firstLine, ":")[0]
 			// Common commit types
 			commitTypes := []string{"feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"}
 			for _, cType := range commitTypes {
 				if typePrefix == cType {
-					return line
+					// If it's a multi-line commit message, return the full message
+					if len(lines) > 2 {
+						// Ensure we have a blank line after the first line
+						if strings.TrimSpace(lines[1]) == "" {
+							return response
+						} else {
+							// Insert blank line if missing
+							return firstLine + "\n\n" + strings.Join(lines[1:], "\n")
+						}
+					}
+					// Single line commit message
+					return firstLine
 				}
 			}
 		}
 	}
 	
-	// If we couldn't extract a specific format, return the first non-empty line
-	// that is reasonable length for a commit message
+	// If first line doesn't match conventional format but we have multiple lines, 
+	// it might still be a valid multi-line commit
+	if len(lines) > 2 && len(strings.TrimSpace(lines[0])) > 0 {
+		// Check if we have a blank second line
+		if strings.TrimSpace(lines[1]) == "" {
+			// Likely a valid multi-line commit message
+			return response
+		} else if strings.TrimSpace(lines[1]) != "" && len(lines) > 2 {
+			// Add blank line separator if missing
+			return strings.TrimSpace(lines[0]) + "\n\n" + strings.Join(lines[1:], "\n")
+		}
+	}
+	
+	// If no valid format found, use the first non-empty line as subject
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line != "" && len(line) < 100 && !strings.HasPrefix(line, "#") {

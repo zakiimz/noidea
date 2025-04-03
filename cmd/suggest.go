@@ -19,7 +19,6 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -39,6 +38,9 @@ var (
 	interactiveFlag  bool
 	commitMsgFileFlag string
 )
+
+// Add divider constant at the top of the file, near other constants
+const divider = "------------------------------------------------------"
 
 func init() {
 	rootCmd.AddCommand(suggestCmd)
@@ -91,7 +93,6 @@ regardless of the personality settings used elsewhere in noidea.`,
 		stats := collector.CalculateStats(commits)
 
 		// Print a divider
-		divider := "───────────────────────────────────────────────────"
 		fmt.Println(color.HiBlackString(divider))
 		
 		// Print analysis info
@@ -131,27 +132,32 @@ regardless of the personality settings used elsewhere in noidea.`,
 
 		if interactiveFlag {
 			// Handle interactive mode
-			finalMessage := handleInteractiveMode(suggestion)
-			
-			// If we have a commit message file, write to it
-			if commitMsgFileFlag != "" {
-				err := writeToCommitMsgFile(finalMessage, commitMsgFileFlag)
-				if err != nil {
-					fmt.Println(color.RedString("❌ Error:"), "Failed to write commit message:", err)
-					return
-				}
-				fmt.Println(color.GreenString("✅ Commit message suggestion applied"))
-			} else {
-				// Print another divider
-				fmt.Println(color.HiBlackString(divider))
-				fmt.Println(color.GreenString("✅ Final commit message:"))
-				fmt.Println(color.HiWhiteString(finalMessage))
-				fmt.Println(color.HiBlackString(divider))
-			}
+			handleInteractiveMode(suggestion, commitMsgFileFlag)
 		} else {
 			// Just print the suggestion
 			fmt.Println(color.GreenString("✨ Suggested commit message:"))
-			fmt.Println(color.HiWhiteString(suggestion))
+			
+			// Handle multi-line commit messages with better formatting
+			lines := strings.Split(suggestion, "\n")
+			if len(lines) > 1 {
+				// Print the first line (subject) in white
+				fmt.Println(color.HiWhiteString(lines[0]))
+				
+				// Print the rest with proper formatting
+				for i := 1; i < len(lines); i++ {
+					if lines[i] == "" {
+						// Print empty lines as is
+						fmt.Println()
+					} else {
+						// Print content lines in white but not highlighted
+						fmt.Println(color.WhiteString(lines[i]))
+					}
+				}
+			} else {
+				// Single line message
+				fmt.Println(color.HiWhiteString(suggestion))
+			}
+			
 			fmt.Println(color.HiBlackString(divider))
 			
 			// If we have a commit message file, write to it
@@ -188,68 +194,91 @@ func getStagedDiff() (string, error) {
 }
 
 // handleInteractiveMode presents the suggestion to the user and allows interaction
-func handleInteractiveMode(suggestion string) string {
+func handleInteractiveMode(suggestion string, commitMsgFileFlag string) {
 	fmt.Println(color.GreenString("✨ Suggested commit message:"))
-	fmt.Println(color.HiWhiteString(suggestion))
 	
-	// Check if we're in a terminal/interactive environment
-	isTTY := isRunningInTerminal()
-	if !isTTY {
-		fmt.Println(color.YellowString("⚠️ Not running in an interactive terminal. Accepting suggestion automatically."))
-		return suggestion
-	}
-	
-	for {
-		fmt.Println()
-		fmt.Print(color.CyanString("Accept (a), Regenerate (r), Edit (e), or Cancel (c)? "))
+	// Handle multi-line commit messages with better formatting
+	lines := strings.Split(suggestion, "\n")
+	if len(lines) > 1 {
+		// Print the first line (subject) in white
+		fmt.Println(color.HiWhiteString(lines[0]))
 		
-		var choice string
-		fmt.Scanln(&choice)
-		
-		switch strings.ToLower(choice) {
-		case "a", "accept", "y", "yes":
-			return suggestion
-		case "r", "regenerate":
-			fmt.Println(color.YellowString("🔄 Regenerating suggestion..."))
-			// In a real implementation, we would regenerate here
-			// For now, we'll just return the original
-			return suggestion
-		case "e", "edit":
-			fmt.Println(color.CyanString("✏️ Enter your edited message (type 'done' on a new line when finished):"))
-			
-			var lines []string
-			scanner := bufio.NewScanner(os.Stdin)
-			for scanner.Scan() {
-				line := scanner.Text()
-				if line == "done" {
-					break
-				}
-				lines = append(lines, line)
+		// Print the rest with proper formatting
+		for i := 1; i < len(lines); i++ {
+			if lines[i] == "" {
+				// Print empty lines as is
+				fmt.Println()
+			} else {
+				// Print content lines in white but not highlighted
+				fmt.Println(color.WhiteString(lines[i]))
 			}
-			
-			return strings.Join(lines, "\n")
-		case "c", "cancel":
-			fmt.Println(color.YellowString("❌ Cancelled. Using default commit message."))
-			return ""
-		default:
-			fmt.Println(color.RedString("❓ Invalid choice. Please try again."))
 		}
-	}
-}
-
-// isRunningInTerminal checks if the program is running in an interactive terminal
-func isRunningInTerminal() bool {
-	// Check if stdin is a terminal
-	fileInfo, err := os.Stdin.Stat()
-	if err != nil {
-		return false
+	} else {
+		// Single line message
+		fmt.Println(color.HiWhiteString(suggestion))
 	}
 	
-	// Check terminal mode bits
-	return (fileInfo.Mode() & os.ModeCharDevice) != 0
+	fmt.Println(color.HiBlackString(divider))
+	
+	// Ask if the user wants to use this suggestion
+	fmt.Print(color.YellowString("Accept this suggestion? (Y/n/e): "))
+	reader := bufio.NewReader(os.Stdin)
+	response, _ := reader.ReadString('\n')
+	response = strings.ToLower(strings.TrimSpace(response))
+
+	// Default to yes if empty
+	if response == "" || response == "y" || response == "yes" {
+		if commitMsgFileFlag != "" {
+			err := writeToCommitMsgFile(suggestion, commitMsgFileFlag)
+			if err != nil {
+				fmt.Println(color.RedString("❌ Error:"), "Failed to write commit message:", err)
+				return
+			}
+			fmt.Println(color.GreenString("✅ Commit message accepted and applied"))
+		} else {
+			fmt.Println(color.GreenString("✅ Commit message accepted"))
+			// Print to stdout for piping
+			fmt.Println(suggestion)
+		}
+	} else if response == "e" || response == "edit" {
+		editedMsg := editSuggestion(suggestion)
+		if commitMsgFileFlag != "" {
+			err := writeToCommitMsgFile(editedMsg, commitMsgFileFlag)
+			if err != nil {
+				fmt.Println(color.RedString("❌ Error:"), "Failed to write commit message:", err)
+				return
+			}
+			fmt.Println(color.GreenString("✅ Edited commit message applied"))
+		} else {
+			fmt.Println(color.GreenString("✅ Commit message edited"))
+			// Print to stdout for piping
+			fmt.Println(editedMsg)
+		}
+	} else {
+		fmt.Println(color.YellowString("Suggestion declined"))
+	}
 }
 
 // writeToCommitMsgFile writes the message to the Git commit message file
 func writeToCommitMsgFile(message string, filePath string) error {
-	return ioutil.WriteFile(filePath, []byte(message), 0644)
+	return os.WriteFile(filePath, []byte(message), 0644)
+}
+
+// editSuggestion allows the user to edit the suggested commit message
+func editSuggestion(suggestion string) string {
+	fmt.Println(color.CyanString("✏️ Current suggestion:"))
+	fmt.Println(suggestion)
+	fmt.Println(color.CyanString("Enter your edited message (type 'done' on a new line when finished):"))
+	
+	var lines []string
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "done" {
+			break
+		}
+		lines = append(lines, line)
+	}
+	
+	return strings.Join(lines, "\n")
 } 
