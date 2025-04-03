@@ -150,7 +150,7 @@ func (e *UnifiedFeedbackEngine) GenerateFeedback(ctx CommitContext) (string, err
 	return "", fmt.Errorf("no response from %s API", e.provider.Name)
 }
 
-// GenerateSummaryFeedback provides insights for a weekly summary
+// GenerateSummaryFeedback provides insights for a weekly summary or on-demand analysis
 func (e *UnifiedFeedbackEngine) GenerateSummaryFeedback(ctx CommitContext) (string, error) {
 	// Load personality configuration
 	personalities, err := personality.LoadPersonalities(e.personalityFile)
@@ -166,18 +166,64 @@ func (e *UnifiedFeedbackEngine) GenerateSummaryFeedback(ctx CommitContext) (stri
 		personalityConfig, _ = personalities.GetPersonality("")
 	}
 
-	// Create a custom system prompt for summaries
+	// Create a custom system prompt for summaries or on-demand feedback
 	systemPrompt := personalityConfig.SystemPrompt
 	if strings.Contains(systemPrompt, "one-liner") || strings.Contains(systemPrompt, "one sentence") {
-		// Replace one-liner instruction with more detailed analysis for summaries
-		systemPrompt = `You are an insightful Git expert who analyzes commit patterns.
+		// Determine if this is a weekly summary or on-demand feedback
+		isOnDemand := strings.Contains(ctx.Message, "On-Demand")
+		
+		if isOnDemand {
+			// Specialized prompt for targeted code analysis
+			systemPrompt = `You are an insightful Git expert who analyzes code practices and commit patterns.
+Your task is to provide targeted, actionable feedback on the specific set of commits being reviewed.
+Focus on identifying patterns, potential issues, and specific suggestions for improvement.
+Consider best practices related to commit message quality, code organization, and development workflow.
+Your response should be 2-4 paragraphs with useful observations and actionable recommendations.
+If diffs are provided, focus your analysis on the actual code changes too.`
+		} else {
+			// Original weekly summary prompt
+			systemPrompt = `You are an insightful Git expert who analyzes commit patterns.
 Provide a thoughtful, detailed analysis of the commit history.
 Focus on patterns, trends, and actionable insights.
 Your response should be 3-5 paragraphs with useful observations and suggestions.`
+		}
 	}
 
-	// Create user prompt with commit history
-	userPrompt := fmt.Sprintf(`I'd like you to analyze my Git commit history from the past week.
+	// Determine the appropriate user prompt based on context
+	var userPrompt string
+	isOnDemand := strings.Contains(ctx.Message, "On-Demand")
+	
+	if isOnDemand {
+		// Specialized prompt for on-demand feedback
+		userPrompt = fmt.Sprintf(`I'd like you to analyze this specific set of Git commits.
+
+Commit messages:
+%s
+
+Commit statistics:
+- Total commits: %v
+- Files changed: %v
+- Lines added: %v
+- Lines deleted: %v
+
+%s
+
+Please provide targeted feedback about:
+1. Code quality patterns visible in these commits
+2. Commit message quality and clarity
+3. Specific suggestions for improvement
+4. Best practices that could be applied
+
+Focus on giving actionable, specific feedback for these particular commits:`,
+			formatCommitList(ctx.CommitHistory),
+			ctx.CommitStats["total_commits"],
+			ctx.CommitStats["total_files_changed"],
+			ctx.CommitStats["total_insertions"],
+			ctx.CommitStats["total_deletions"],
+			diffContext(ctx.Diff))
+	} else {
+		// Original weekly summary prompt
+		userPrompt = fmt.Sprintf(`I'd like you to analyze my Git commit history from the past week.
 
 Commit messages:
 %s
@@ -196,12 +242,13 @@ Please provide insights about:
 4. Suggestions for improving workflow or commit habits
 
 Respond with thoughtful analysis and actionable suggestions:`,
-		formatCommitList(ctx.CommitHistory),
-		ctx.CommitStats["total_commits"],
-		ctx.CommitStats["unique_authors"],
-		ctx.CommitStats["total_files_changed"],
-		ctx.CommitStats["total_insertions"],
-		ctx.CommitStats["total_deletions"])
+			formatCommitList(ctx.CommitHistory),
+			ctx.CommitStats["total_commits"],
+			ctx.CommitStats["unique_authors"],
+			ctx.CommitStats["total_files_changed"],
+			ctx.CommitStats["total_insertions"],
+			ctx.CommitStats["total_deletions"])
+	}
 
 	// Create the chat completion request
 	request := openai.ChatCompletionRequest{
@@ -216,8 +263,8 @@ Respond with thoughtful analysis and actionable suggestions:`,
 				Content: userPrompt,
 			},
 		},
-		Temperature: 0.7, // Slightly higher temperature for creative insights
-		MaxTokens:   800, // Longer response for summary
+		Temperature: float32(personalityConfig.Temperature),
+		MaxTokens:   800, // Increase token limit for more detailed analysis
 		N:           1,
 	}
 
@@ -276,4 +323,14 @@ func getRepoName() string {
 	}
 
 	return "repository"
+}
+
+// diffContext formats diff context for the prompt
+func diffContext(diff string) string {
+	if diff == "" {
+		return ""
+	}
+	
+	return fmt.Sprintf(`Code changes (diff context):
+%s`, diff)
 } 

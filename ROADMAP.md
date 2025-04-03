@@ -102,32 +102,19 @@
   - [x] Extract commit metadata (messages, authors, timestamps, files changed)
   - [x] Add diff summarization for contextual understanding
   - [x] Implement caching to reduce repeat Git operations
+
 - [x] Weekly Summary Feature:
-  - [x] Add `noidea summary` command with time range options
+  - [x] Add `noidea summary` command
   - [x] Design comprehensive prompt for weekly work analysis
-  - [x] Create statistical overview (commit frequency, time patterns, etc.)
-  - [x] Generate human-readable summary with actionable insights
-  - [x] Support markdown/HTML export for team sharing
-- [ ] On-Demand Feedback:
-  - [ ] Implement `noidea feedback [--count X]` command
-  - [ ] Add filtering options (author, branch, files)
-  - [ ] Create specialized prompts based on filter context
-  - [ ] Generate targeted code quality and practice insights
-- [ ] Configuration Extensions:
-  - [ ] Add summary settings to config file structure:
-    ```toml
-    [summary]
-    default_timespan = "7d"  # 7d, 14d, 30d
-    include_stats = true
-    export_format = "text"   # text, markdown, html
-    ```
-  - [ ] Support custom prompt templates for summaries
-  - [ ] Add personality-specific summary templates
-- [ ] Reporting & Visualization:
-  - [ ] Design simple ASCII/Unicode charts for terminal
-  - [ ] Add commit heatmap visualization
-  - [ ] Implement pattern detection algorithms
-  - [ ] Support configurable highlighting of notable trends
+  - [x] Create statistical overview (commits/day, files touched, etc.)
+  - [x] Generate human-readable summary with AI-powered insights
+  - [x] Support markdown/HTML export
+
+- [x] On-Demand Feedback:
+  - [x] Implement `noidea feedback [--count X]` command
+  - [x] Add filtering options (author, branch, files)
+  - [x] Create specialized prompts based on filter context
+  - [x] Generate targeted code quality and practice insights
 
 ---
 

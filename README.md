@@ -53,6 +53,68 @@ And witness the Moai's judgment.
 
 ---
 
+## 📋 Features
+
+### Post-Commit Feedback
+
+Get immediate feedback after each commit with the Moai:
+
+```
+🗿  (ಠ_ಠ)  This is definitely the final fix
+"You've typed 'final fix' 17 times today. I'm not judging. (I am.)"
+```
+
+### Weekly Summaries
+
+Generate insightful summaries of your Git activity:
+
+```
+noidea summary
+```
+
+Options:
+- `--days <N>` - Analyze the last N days (default: 7)
+- `--personality <name>` - Use a specific personality for insights
+- `--export <format>` - Export to text, markdown, or HTML
+
+### On-Demand Feedback
+
+Get targeted analysis of specific commits with powerful filtering:
+
+```
+noidea feedback
+```
+
+Options:
+- `--count <N>` - Analyze last N commits (default: 5)
+- `--author <name>` - Filter by commit author
+- `--branch <name>` - Filter by specific branch
+- `--files <list>` - Filter by files touched (comma-separated)
+- `--diff` - Include diff context for deeper analysis
+- `--personality <name>` - Use a specific personality
+- `--export <format>` - Export to text, markdown, or HTML
+
+Examples:
+
+```bash
+# Basic feedback on last 3 commits
+noidea feedback --count 3
+
+# Analyze commits affecting specific files
+noidea feedback --files "src/main.go,pkg/utils"
+
+# Analyze commits from a specific author
+noidea feedback --author "Your Name"
+
+# Use a supportive personality with diff context
+noidea feedback --personality supportive_mentor --diff
+
+# Export your feedback to share with the team
+noidea feedback --export markdown
+```
+
+---
+
 ## 🧠 AI Integration
 
 noidea supports AI-powered feedback using LLM providers that offer OpenAI-compatible APIs:
@@ -202,15 +264,17 @@ export DEEPSEEK_API_KEY=your_api_key_here
 
 ---
 
-## 💡 Upcoming Features
+## 💡 Feature Status
 
 | Feature                   | Status          |
 |---------------------------|-----------------|
-| Moai face after commit    | ✅ Done          |
-| AI-based commit feedback  | ✅ Done          |
-| Config file support       | ✅ Done          |
-| Lint feedback             | 🛠️ In progress   |
-| Commit streak insights    | 🔜 Coming Soon   |
+| Moai face after commit    | ✅ Done         |
+| AI-based commit feedback  | ✅ Done         |
+| Config file support       | ✅ Done         |
+| Weekly summaries          | ✅ Done         |
+| On-demand commit analysis | ✅ Done         |
+| Lint feedback             | 🛠️ In progress  |
+| Commit streak insights    | 🔜 Coming Soon  |
 
 ---
 
