@@ -48,5 +48,20 @@ echo "Running installer..."
 ./install.sh
 
 echo -e "${GREEN}✅ noidea has been successfully installed!${NC}"
-echo -e "${BLUE}You can now delete the temporary files with:${NC}"
-echo "rm -rf $TEMP_DIR" 
+
+# Detect if we're in a Git repository
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo -e "${YELLOW}Detected that you're inside a Git repository.${NC}"
+    echo -e "To initialize noidea in this repository, run:"
+    echo -e "${GREEN}noidea init${NC}"
+    echo ""
+    echo -e "Would you like to run 'noidea init' now? (y/n)"
+    read -r response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        noidea init
+    fi
+else
+    echo -e "${BLUE}To use noidea in a Git repository:${NC}"
+    echo "  1. cd /path/to/your/repo"
+    echo "  2. noidea init                 # Set up Git hooks"
+fi 

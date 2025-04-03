@@ -6,6 +6,7 @@
 # 1. Builds the noidea binary
 # 2. Installs it to /usr/local/bin (or custom location)
 # 3. Creates the ~/.noidea directory for configuration
+# 4. Installs the necessary Git hooks and scripts
 #
 
 set -e
@@ -26,6 +27,9 @@ INSTALL_DIR="/usr/local/bin"
 if [ -n "$1" ]; then
     INSTALL_DIR="$1"
 fi
+
+# Current script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo -e "${BLUE}🧠 noidea installer${NC}"
 echo "============================="
@@ -104,6 +108,21 @@ if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
     chown -R "$SUDO_USER" "$CONFIG_DIR"
 fi
 
+# Create scripts directory in the config directory
+SCRIPTS_INSTALL_DIR="$CONFIG_DIR/scripts"
+mkdir -p "$SCRIPTS_INSTALL_DIR"
+
+# Copy scripts to the config directory
+echo "Installing scripts to $SCRIPTS_INSTALL_DIR"
+cp -r "$SCRIPT_DIR/scripts/"* "$SCRIPTS_INSTALL_DIR/" 2>/dev/null || true
+# Ensure scripts are executable
+chmod +x "$SCRIPTS_INSTALL_DIR/"*.sh "$SCRIPTS_INSTALL_DIR/prepare-commit-msg" 2>/dev/null || true
+
+# If running as root, ensure the scripts are owned by the real user
+if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+    chown -R "$SUDO_USER" "$SCRIPTS_INSTALL_DIR"
+fi
+
 # Build the binary
 echo "Building noidea..."
 "$GO_CMD" build -o noidea
@@ -112,6 +131,22 @@ echo "Building noidea..."
 echo "Installing noidea to $INSTALL_DIR"
 cp noidea "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/noidea"
+
+# Run the hook installation script if we're in a Git repository
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Detected Git repository, installing hooks..."
+    
+    # If we're running as root/sudo, run the script as the real user
+    if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+        sudo -u "$SUDO_USER" "$SCRIPTS_INSTALL_DIR/install-hooks.sh"
+    else
+        "$SCRIPTS_INSTALL_DIR/install-hooks.sh"
+    fi
+else
+    echo -e "${YELLOW}Not inside a Git repository, skipping hook installation${NC}"
+    echo "You can install hooks later by running:"
+    echo "  cd /path/to/your/repo && $INSTALL_DIR/noidea init"
+fi
 
 # Output success message
 echo -e "${GREEN}✅ noidea has been successfully installed!${NC}"

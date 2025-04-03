@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/AccursedGalaxy/noidea/internal/personality"
@@ -305,7 +304,7 @@ func (e *UnifiedFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (str
 Your task is to suggest a high-quality commit message based on the staged changes.
 Follow these guidelines:
 1. IMPORTANT: Focus primarily on the ACTUAL CHANGES in the diff, not on past commit patterns
-2. Analyze what files were changed and how they were modified
+2. When changes span MULTIPLE CATEGORIES (docs, code, build files, etc.), make sure to reflect ALL major aspects
 3. Use the conventional commits format (type: description) when appropriate
    - docs: for documentation changes
    - feat: for new features
@@ -314,14 +313,178 @@ Follow these guidelines:
    - style: for formatting/style changes
    - test: for adding or fixing tests
    - chore: for routine maintenance tasks
-4. Be specific about what changed, making sure your message accurately reflects the actual modifications
-5. Keep the first line under 72 characters
-6. Use present tense (e.g., "add feature" not "added feature")
-7. When multiple files or components are changed, focus on the primary purpose of the changes
-8. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations, reasoning, or markdown formatting`
+   - build: for changes to build system or dependencies
+4. For mixed changes, choose the most significant type or use a broader scope like "feat" or "chore"
+5. When changes involve multiple components use a scope that encompasses all of them (e.g., "build+docs")
+6. Be specific about what changed, making sure your message accurately reflects the actual modifications
+7. Keep the first line under 72 characters
+8. Use present tense (e.g., "add feature" not "added feature")
+9. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations, reasoning, or markdown formatting`
 
 	// Prepare the diff context - enhanced with file analysis
-	diffInfo := analyzeDiff(ctx.Diff)
+	diffContext := `
+Here's the current diff of staged changes:
+
+` + ctx.Diff + `
+
+Analysis of changes:
+`
+	
+	// Add simple analysis of the types of files changed and how many lines were modified
+	var totalAdditions, totalDeletions int
+	changedFiles := make(map[string]bool)
+	
+	// Track different types of files
+	docFiles := make(map[string]bool)     // Documentation files (.md, .txt, etc)
+	codeFiles := make(map[string]bool)    // Source code files (.go, .js, etc)
+	configFiles := make(map[string]bool)  // Configuration files (.json, .yaml, etc)
+	buildFiles := make(map[string]bool)   // Build files (Makefile, CMakeLists.txt, etc)
+	testFiles := make(map[string]bool)    // Test files (*_test.go, etc)
+	scriptFiles := make(map[string]bool)  // Scripts (.sh, .bat, etc)
+	
+	// Track file operations
+	addedFiles := make(map[string]bool)
+	modifiedFiles := make(map[string]bool)
+	deletedFiles := make(map[string]bool)
+	
+	// Simple diff parser to count lines and identify files
+	lines := strings.Split(ctx.Diff, "\n")
+	currentFile := ""
+	
+	for _, line := range lines {
+		if strings.HasPrefix(line, "diff --git") {
+			parts := strings.Fields(line)
+			if len(parts) >= 3 {
+				filePath := strings.TrimPrefix(parts[2], "a/")
+				currentFile = filePath
+				changedFiles[filePath] = true
+				
+				// Categorize by file type
+				switch {
+				case strings.HasSuffix(filePath, ".md"), strings.HasSuffix(filePath, ".txt"), strings.HasSuffix(filePath, ".rst"):
+					docFiles[filePath] = true
+				case strings.HasSuffix(filePath, ".go"), strings.HasSuffix(filePath, ".js"), strings.HasSuffix(filePath, ".ts"), 
+				     strings.HasSuffix(filePath, ".py"), strings.HasSuffix(filePath, ".java"), strings.HasSuffix(filePath, ".c"), 
+				     strings.HasSuffix(filePath, ".cpp"), strings.HasSuffix(filePath, ".h"):
+					if strings.Contains(filePath, "_test.") {
+						testFiles[filePath] = true
+					} else {
+						codeFiles[filePath] = true
+					}
+				case strings.HasSuffix(filePath, ".json"), strings.HasSuffix(filePath, ".yaml"), strings.HasSuffix(filePath, ".yml"),
+				     strings.HasSuffix(filePath, ".toml"), strings.HasSuffix(filePath, ".ini"), strings.HasSuffix(filePath, ".config"):
+					configFiles[filePath] = true
+				case strings.HasSuffix(filePath, "Makefile"), strings.HasSuffix(filePath, ".mk"), 
+				     strings.Contains(filePath, "CMakeLists.txt"), strings.HasSuffix(filePath, ".bazel"):
+					buildFiles[filePath] = true
+				case strings.HasSuffix(filePath, ".sh"), strings.HasSuffix(filePath, ".bash"), 
+				     strings.HasSuffix(filePath, ".bat"), strings.HasSuffix(filePath, ".ps1"):
+					scriptFiles[filePath] = true
+				}
+			}
+		} else if strings.HasPrefix(line, "new file mode") {
+			addedFiles[currentFile] = true
+		} else if strings.HasPrefix(line, "deleted file mode") {
+			deletedFiles[currentFile] = true
+		} else if !deletedFiles[currentFile] && !addedFiles[currentFile] {
+			modifiedFiles[currentFile] = true
+		}
+		
+		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+			totalAdditions++
+		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+			totalDeletions++
+		}
+	}
+	
+	// Remove files from modified if they're added or deleted
+	for file := range addedFiles {
+		delete(modifiedFiles, file)
+	}
+	for file := range deletedFiles {
+		delete(modifiedFiles, file)
+	}
+	
+	// Format the analysis
+	diffContext += fmt.Sprintf("- Total files changed: %d (%d added, %d modified, %d deleted)\n", 
+		len(changedFiles), len(addedFiles), len(modifiedFiles), len(deletedFiles))
+	diffContext += fmt.Sprintf("- Lines: +%d, -%d\n\n", totalAdditions, totalDeletions)
+	
+	// Add file categories analysis
+	if len(docFiles) > 0 {
+		fileList := make([]string, 0, len(docFiles))
+		for file := range docFiles {
+			fileList = append(fileList, file)
+		}
+		diffContext += fmt.Sprintf("Documentation files: %s\n", strings.Join(fileList, ", "))
+	}
+	
+	if len(codeFiles) > 0 {
+		fileList := make([]string, 0, len(codeFiles))
+		for file := range codeFiles {
+			fileList = append(fileList, file)
+		}
+		diffContext += fmt.Sprintf("Code files: %s\n", strings.Join(fileList, ", "))
+	}
+	
+	if len(buildFiles) > 0 {
+		fileList := make([]string, 0, len(buildFiles))
+		for file := range buildFiles {
+			fileList = append(fileList, file)
+		}
+		diffContext += fmt.Sprintf("Build files: %s\n", strings.Join(fileList, ", "))
+	}
+	
+	if len(scriptFiles) > 0 {
+		fileList := make([]string, 0, len(scriptFiles))
+		for file := range scriptFiles {
+			fileList = append(fileList, file)
+		}
+		diffContext += fmt.Sprintf("Script files: %s\n", strings.Join(fileList, ", "))
+	}
+	
+	if len(configFiles) > 0 {
+		fileList := make([]string, 0, len(configFiles))
+		for file := range configFiles {
+			fileList = append(fileList, file)
+		}
+		diffContext += fmt.Sprintf("Config files: %s\n", strings.Join(fileList, ", "))
+	}
+	
+	if len(testFiles) > 0 {
+		fileList := make([]string, 0, len(testFiles))
+		for file := range testFiles {
+			fileList = append(fileList, file)
+		}
+		diffContext += fmt.Sprintf("Test files: %s\n", strings.Join(fileList, ", "))
+	}
+	
+	// Add operations analysis
+	diffContext += "\nFile operations:\n"
+	
+	if len(addedFiles) > 0 {
+		fileList := make([]string, 0, len(addedFiles))
+		for file := range addedFiles {
+			fileList = append(fileList, file)
+		}
+		diffContext += fmt.Sprintf("Added: %s\n", strings.Join(fileList, ", "))
+	}
+	
+	if len(modifiedFiles) > 0 {
+		fileList := make([]string, 0, len(modifiedFiles))
+		for file := range modifiedFiles {
+			fileList = append(fileList, file)
+		}
+		diffContext += fmt.Sprintf("Modified: %s\n", strings.Join(fileList, ", "))
+	}
+	
+	if len(deletedFiles) > 0 {
+		fileList := make([]string, 0, len(deletedFiles))
+		for file := range deletedFiles {
+			fileList = append(fileList, file)
+		}
+		diffContext += fmt.Sprintf("Deleted: %s\n", strings.Join(fileList, ", "))
+	}
 
 	// Create a user prompt focused on commit message generation with emphasis on changes
 	userPrompt := fmt.Sprintf(`I need a commit message for these staged changes.
@@ -332,7 +495,7 @@ Past commit messages for limited context (do not rely heavily on these patterns)
 %s
 
 Based primarily on the ACTUAL CHANGES shown above, suggest a concise, descriptive commit message that accurately describes what was modified:`,
-		diffInfo,
+		diffContext,
 		formatCommitList(ctx.CommitHistory))
 
 	// Create the chat completion request
@@ -371,103 +534,6 @@ Based primarily on the ACTUAL CHANGES shown above, suggest a concise, descriptiv
 	}
 
 	return "", fmt.Errorf("no response from %s API", e.provider.Name)
-}
-
-// analyzeDiff enhances raw diff with structured file change information
-func analyzeDiff(diff string) string {
-	if diff == "" {
-		return "No changes detected in the diff."
-	}
-	
-	// Track files modified
-	var filesAdded []string
-	var filesModified []string
-	var filesDeleted []string
-	var fileExtensions = make(map[string]bool)
-	
-	// Track content changes
-	linesAdded := 0
-	linesRemoved := 0
-	
-	// Simple diff analysis
-	lines := strings.Split(diff, "\n")
-	currentFile := ""
-	
-	for _, line := range lines {
-		// Track files changed
-		if strings.HasPrefix(line, "diff --git") {
-			parts := strings.Split(line, " ")
-			if len(parts) >= 4 {
-				// Extract filename from "diff --git a/file.txt b/file.txt"
-				newFile := strings.TrimPrefix(parts[3], "b/")
-				currentFile = newFile
-				
-				// Track file extension
-				ext := filepath.Ext(newFile)
-				if ext != "" {
-					fileExtensions[ext] = true
-				}
-			}
-		} else if strings.HasPrefix(line, "new file mode") {
-			filesAdded = append(filesAdded, currentFile)
-		} else if strings.HasPrefix(line, "deleted file mode") {
-			filesDeleted = append(filesDeleted, currentFile)
-		} else if currentFile != "" && !contains(filesAdded, currentFile) && !contains(filesDeleted, currentFile) {
-			// If we know the file and it's not added or deleted, it's modified
-			if !contains(filesModified, currentFile) {
-				filesModified = append(filesModified, currentFile)
-			}
-		}
-		
-		// Count line changes
-		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
-			linesAdded++
-		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
-			linesRemoved++
-		}
-	}
-	
-	// Format the report
-	var result strings.Builder
-	result.WriteString("Diff Analysis:\n")
-	
-	// File changes
-	if len(filesAdded) > 0 {
-		result.WriteString("Files Added: " + strings.Join(filesAdded, ", ") + "\n")
-	}
-	if len(filesModified) > 0 {
-		result.WriteString("Files Modified: " + strings.Join(filesModified, ", ") + "\n")
-	}
-	if len(filesDeleted) > 0 {
-		result.WriteString("Files Deleted: " + strings.Join(filesDeleted, ", ") + "\n")
-	}
-	
-	// Line changes
-	result.WriteString(fmt.Sprintf("Lines Added: %d, Lines Removed: %d\n", linesAdded, linesRemoved))
-	
-	// File types
-	var extensions []string
-	for ext := range fileExtensions {
-		extensions = append(extensions, ext)
-	}
-	if len(extensions) > 0 {
-		result.WriteString("File Types: " + strings.Join(extensions, ", ") + "\n")
-	}
-	
-	// Add the full diff
-	result.WriteString("\nRaw Diff:\n" + diff)
-	
-	return result.String()
-}
-
-// contains checks if a string is in a slice
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
 }
 
 // extractCommitMessage parses the LLM response to extract just the commit message
@@ -579,4 +645,4 @@ func diffContext(diff string) string {
 	
 	return fmt.Sprintf(`Code changes (diff context):
 %s`, diff)
-} 
+}

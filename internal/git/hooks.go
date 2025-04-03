@@ -107,4 +107,93 @@ exit 0
 	
 	fmt.Println("Installed post-commit hook at:", postCommitPath)
 	return nil
+}
+
+// InstallPrepareCommitMsgHook installs the prepare-commit-msg hook for commit message suggestions
+func InstallPrepareCommitMsgHook(hooksDir string) error {
+	hookPath := filepath.Join(hooksDir, "prepare-commit-msg")
+	
+	// Create hooks directory if it doesn't exist
+	if err := os.MkdirAll(hooksDir, 0755); err != nil {
+		return err
+	}
+	
+	// Get the absolute path to the noidea executable
+	execPath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	
+	// Create the hook content
+	hookContent := fmt.Sprintf(`#!/bin/sh
+#
+# noidea - prepare-commit-msg hook
+# This hook calls 'noidea suggest' to generate commit message suggestions
+# To disable, run: git config noidea.suggest false
+
+# Define some terminal colors if supported
+if [ -t 1 ]; then
+    GREEN="\033[0;32m"
+    YELLOW="\033[1;33m"
+    CYAN="\033[0;36m"
+    RED="\033[0;31m"
+    RESET="\033[0m"
+else
+    GREEN=""
+    YELLOW=""
+    CYAN=""
+    RED=""
+    RESET=""
+fi
+
+# Get commit message file
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Check if noidea's suggestion feature is enabled
+if [ "$(git config --get noidea.suggest)" != "true" ]; then
+    exit 0
+fi
+
+# Skip if it's a merge, rebase, or cherry-pick
+if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ] || [ -n "$COMMIT_SOURCE" ]; then
+    exit 0
+fi
+
+# Check if the commit message already has content
+if [ -s "$COMMIT_MSG_FILE" ]; then
+    # Has content already - user may have specified a message with -m
+    # Skip if the file already has content beyond comments
+    if grep -v "^#" "$COMMIT_MSG_FILE" | grep -q "[^[:space:]]"; then
+        exit 0
+    fi
+fi
+
+# Always use non-interactive mode for hooks to prevent stdin issues
+INTERACTIVE_FLAG=""
+
+# Get history setting from config
+HISTORY_FLAG="--history 10"
+
+# Get full diff setting from config
+FULL_DIFF=$(git config --get noidea.suggest.full-diff)
+if [ "$FULL_DIFF" = "true" ]; then
+    DIFF_FLAG="--full-diff"
+else
+    DIFF_FLAG=""
+fi
+
+# Generate a suggested commit message
+echo "${CYAN}🧠 Generating commit message suggestion...${RESET}"
+%s suggest $INTERACTIVE_FLAG $HISTORY_FLAG $DIFF_FLAG --file "$COMMIT_MSG_FILE"
+
+exit 0
+`, execPath)
+	
+	// Write the hook file
+	if err := os.WriteFile(hookPath, []byte(hookContent), 0755); err != nil {
+		return err
+	}
+	
+	return nil
 } 
