@@ -69,17 +69,15 @@
 
 ### 📊 Phase 4: Commit Pattern Analyzer (Offline Logic)
 
-**🔹 Goal:** Provide deeper insights based on Git behavior without needing AI.
+**🔹 Goal:** Provide highly customizable AI personality setups and configuration.
 
 #### ✅ Tasks:
-- [ ] Track:
-  - Time of day
-  - Frequency of commits
-  - Message patterns (e.g., "fix", "final", "pls work")
-- [ ] Generate local-only messages based on trends:
-  - "You haven't committed in 3 days"
-  - "5 commits with the same message detected"
-- [ ] Cache commit data in local SQLite or JSON
+- [ ] Improve the LLM prompt greatly in accordance to the following steps
+- [ ] Personality Configuration:
+  - [ ] Create highly flexible configuration seutp for the LLM setup
+  - [ ] Users should be able to create custom Prompts and Peronsalities for their noidea prompt
+- [ ] Offer 3 Default Personality Setups for users to choose
+
 
 ---
 
@@ -94,31 +92,3 @@
 - [ ] Add usage GIF in `README`
 
 ---
-
-### 🛠️ Current Project Structure
-
-```
-noidea/
-├── cmd/
-│   ├── root.go            # Root command
-│   ├── init.go            # Init command to install Git hook
-│   ├── config.go          # Config command for configuration management
-│   └── moai.go            # Moai command for feedback generation
-├── internal/
-│   ├── config/
-│   │   └── config.go      # Configuration loading and management
-│   ├── feedback/
-│   │   ├── engine.go      # FeedbackEngine interface
-│   │   ├── unified.go     # Unified LLM engine for all providers
-│   │   ├── local.go       # Local feedback engine (no API)
-│   │   └── utils.go       # Shared utility functions
-│   ├── git/
-│   │   └── hooks.go       # Git hook installation logic
-│   └── moai/
-│       └── faces.go       # Moai faces and random feedback
-├── scripts/
-│   └── post-commit.sh     # Template Git hook
-├── go.mod
-├── main.go
-└── README.md
-```
