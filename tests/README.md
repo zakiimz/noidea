@@ -45,6 +45,12 @@ To run the full test suite:
 ### Feature Tests
 
 - **Commit Message Suggestion**: Tests for commit message generation
+  - Single-line suggestions for simple changes
+  - Multi-line commit messages with body for complex changes
+  - Different command flags (history context, full diff, etc.)
+  - Interactive mode and file output options
+  - Conventional commit format verification
+  - Breaking change detection
 - **Moai Feedback**: Verify that post-commit feedback works correctly
 - **Configuration**: Test configuration loading and saving
 - **Summary Reports**: Test the generation of summary reports

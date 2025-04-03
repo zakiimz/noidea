@@ -5,7 +5,6 @@ go 1.22.1
 require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/fatih/color v1.18.0
-	github.com/joho/godotenv v1.5.1
 	github.com/sashabaranov/go-openai v1.38.1
 	github.com/spf13/cobra v1.9.1
 )

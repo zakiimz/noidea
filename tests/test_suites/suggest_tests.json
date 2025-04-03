@@ -1,0 +1,106 @@
+{
+  "name": "Commit Suggestion Tests",
+  "output_dir": "results/suggest",
+  "test_cases": [
+    {
+      "name": "default_suggest",
+      "command": "../../noidea",
+      "args": [
+        "suggest"
+      ],
+      "description": "Default suggestion command with current staged changes",
+      "repetitions": 5
+    },
+    {
+      "name": "suggest_with_history",
+      "command": "../../noidea",
+      "args": [
+        "suggest",
+        "--history",
+        "20"
+      ],
+      "description": "Suggestion with extended commit history context (20 commits)",
+      "repetitions": 3
+    },
+    {
+      "name": "suggest_with_full_diff",
+      "command": "../../noidea",
+      "args": [
+        "suggest",
+        "--full-diff"
+      ],
+      "description": "Suggestion with full diff context for better analysis",
+      "repetitions": 3
+    },
+    {
+      "name": "suggest_for_simple_change",
+      "command": "../../noidea",
+      "args": [
+        "suggest",
+        "--quiet"
+      ],
+      "description": "Simple change scenario - should generate single-line commit message",
+      "repetitions": 5
+    },
+    {
+      "name": "suggest_for_complex_change",
+      "command": "../../noidea",
+      "args": [
+        "suggest",
+        "--full-diff"
+      ],
+      "description": "Complex change scenario - should generate multi-line commit message with body",
+      "repetitions": 5
+    },
+    {
+      "name": "suggest_interactive_mode",
+      "command": "../../noidea",
+      "args": [
+        "suggest",
+        "--interactive"
+      ],
+      "description": "Test interactive suggestion mode (will require mock input handling)",
+      "repetitions": 3
+    },
+    {
+      "name": "suggest_with_file_output",
+      "command": "../../noidea",
+      "args": [
+        "suggest",
+        "--file",
+        "test_commit_msg.txt"
+      ],
+      "description": "Suggestion with output to a commit message file",
+      "repetitions": 3
+    },
+    {
+      "name": "suggest_no_staged_changes",
+      "command": "../../noidea",
+      "args": [
+        "suggest"
+      ],
+      "description": "Behavior when no changes are staged",
+      "repetitions": 3
+    },
+    {
+      "name": "suggest_with_type_prefix",
+      "command": "../../noidea",
+      "args": [
+        "suggest",
+        "--quiet"
+      ],
+      "description": "Check conventional commit format with type prefix (feat, fix, etc.)",
+      "repetitions": 5
+    },
+    {
+      "name": "suggest_with_breaking_change",
+      "command": "../../noidea",
+      "args": [
+        "suggest",
+        "--full-diff"
+      ],
+      "description": "Suggestion for changes that include breaking changes",
+      "repetitions": 3
+    }
+  ]
+}
