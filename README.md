@@ -30,7 +30,7 @@ Whether your code is clean or cursed, the Moai sees all.
 For now, build from source:
 
 ```
-git clone https://github.com/yourname/noidea.git
+git clone https://github.com/AccursedGalaxy/noidea.git
 cd noidea
 go build -o noidea
 ```
@@ -208,19 +208,9 @@ export DEEPSEEK_API_KEY=your_api_key_here
 |---------------------------|-----------------|
 | Moai face after commit    | ✅ Done          |
 | AI-based commit feedback  | ✅ Done          |
+| Config file support       | ✅ Done          |
 | Lint feedback             | 🛠️ In progress   |
 | Commit streak insights    | 🔜 Coming Soon   |
-| Config file support       | 🔜 Coming Soon   |
-
----
-
-## 🔧 Configuration (coming soon)
-
-You'll be able to configure:
-- Whether linting is checked
-- Types of Moai reactions
-- AI mode on/off
-- Local vs. cloud model
 
 ---
 
