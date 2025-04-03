@@ -1,11 +1,15 @@
-.PHONY: build install uninstall clean
+.PHONY: build install uninstall clean lint test release
 
 # Binary name
 BINARY=noidea
-# Version from git tag or default to 'dev'
+
+# Version information
 VERSION=$(shell git describe --tags 2>/dev/null || echo "dev")
+COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 # Build with version info
-LDFLAGS=-ldflags "-X main.Version=$(VERSION)"
+LDFLAGS=-ldflags "-X github.com/AccursedGalaxy/noidea/cmd.Version=$(VERSION) -X github.com/AccursedGalaxy/noidea/cmd.BuildDate=$(BUILD_DATE) -X github.com/AccursedGalaxy/noidea/cmd.Commit=$(COMMIT)"
 
 # Installation paths
 PREFIX?=/usr/local
@@ -27,7 +31,7 @@ GO?=$(shell command -v go 2>/dev/null || \
 
 # Default: build the binary
 build:
-	@echo "Building $(BINARY) version $(VERSION)..."
+	@echo "Building $(BINARY) version $(VERSION) (commit: $(COMMIT))..."
 	@if ! $(GO) version >/dev/null 2>&1; then \
 		echo "Error: Go not found. Please install Go or specify GO=/path/to/go"; \
 		exit 1; \
@@ -66,11 +70,25 @@ release:
 		echo "  - $(platform)"; \
 		export GOOS=$$(echo $(platform) | cut -d/ -f1); \
 		export GOARCH=$$(echo $(platform) | cut -d/ -f2); \
-		export OUTPUT=dist/$(BINARY)_$${GOOS}_$${GOARCH}; \
+		export OUTPUT=dist/$(BINARY)_$(VERSION)_$${GOOS}_$${GOARCH}; \
 		if [ "$${GOOS}" = "windows" ]; then export OUTPUT=$${OUTPUT}.exe; fi; \
 		$(GO) build $(LDFLAGS) -o $${OUTPUT}; \
 	)
 	@echo "✅ Release builds complete. See dist/ directory."
+	@echo "Creating checksums file..."
+	@cd dist && sha256sum * > checksums-$(VERSION).txt
+	@echo "✅ Checksums file created."
+
+# Run go vet and golint
+lint:
+	@echo "Running linters..."
+	$(GO) vet ./...
+	@if command -v golint >/dev/null 2>&1; then \
+		golint -set_exit_status ./...; \
+	else \
+		echo "Warning: golint not installed. Skipping."; \
+	fi
+	@echo "✅ Lint complete."
 
 # Install dependencies for development
 deps:
@@ -78,7 +96,9 @@ deps:
 
 # Run tests
 test:
+	@echo "Running tests..."
 	$(GO) test -v ./...
+	@echo "✅ Tests complete."
 
 # Uninstall the binary
 uninstall:
@@ -102,9 +122,10 @@ help:
 	@echo "  make install    - Install noidea to $(BINDIR)"
 	@echo "  make uninstall  - Remove noidea from $(BINDIR)"
 	@echo "  make release    - Build binaries for all platforms"
+	@echo "  make lint       - Run linters"
+	@echo "  make test       - Run tests"
 	@echo "  make clean      - Remove built binaries"
 	@echo "  make deps       - Install dependencies"
-	@echo "  make test       - Run tests"
 	@echo ""
 	@echo "Options:"
 	@echo "  PREFIX=<path>   - Set installation prefix (default: /usr/local)"

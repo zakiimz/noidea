@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 // Config represents the application configuration
@@ -57,13 +58,18 @@ func DefaultConfig() Config {
 	return cfg
 }
 
-// LoadConfig loads the configuration from the default location
+// LoadConfig loads the configuration from the default location or environment variables
 // If the config file doesn't exist, it returns the default config
 func LoadConfig() Config {
+	// Start with default config
+	cfg := DefaultConfig()
+	
 	// Try to get user home directory
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return DefaultConfig()
+		fmt.Fprintf(os.Stderr, "Warning: Could not determine user home directory: %v\n", err)
+		// Continue with defaults
+		return applyEnvironmentOverrides(cfg)
 	}
 	
 	// Config directory path
@@ -74,23 +80,101 @@ func LoadConfig() Config {
 	
 	// Check if config file exists
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
-		return DefaultConfig()
+		fmt.Fprintf(os.Stderr, "Info: No config file found at %s, using defaults\n", configFile)
+		// Check also for .toml format for backward compatibility
+		tomlConfigFile := filepath.Join(configDir, "config.toml")
+		if _, err := os.Stat(tomlConfigFile); os.IsNotExist(err) {
+			return applyEnvironmentOverrides(cfg)
+		}
+		configFile = tomlConfigFile
 	}
 	
 	// Read config file
 	data, err := os.ReadFile(configFile)
 	if err != nil {
-		return DefaultConfig()
+		fmt.Fprintf(os.Stderr, "Warning: Could not read config file %s: %v\n", configFile, err)
+		return applyEnvironmentOverrides(cfg)
 	}
 	
-	// Parse config
-	var cfg Config
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return DefaultConfig()
+	// Parse config based on file extension
+	if filepath.Ext(configFile) == ".toml" {
+		// Handle TOML format if needed
+		fmt.Fprintf(os.Stderr, "Warning: TOML format not fully supported yet\n")
+		// TODO: Implement TOML parsing
+	} else {
+		// Parse JSON
+		if err := json.Unmarshal(data, &cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Could not parse config file %s: %v\n", configFile, err)
+			// Continue with defaults
+			return applyEnvironmentOverrides(DefaultConfig())
+		}
 	}
 	
 	// Ensure all fields are set properly
 	ensureDefaults(&cfg)
+	
+	// Apply environment variable overrides
+	return applyEnvironmentOverrides(cfg)
+}
+
+// applyEnvironmentOverrides applies environment variable settings to override config file values
+func applyEnvironmentOverrides(cfg Config) Config {
+	// LLM settings
+	if val := os.Getenv("NOIDEA_LLM_ENABLED"); val != "" {
+		cfg.LLM.Enabled = val == "true" || val == "1" || val == "yes"
+	}
+	
+	if val := os.Getenv("NOIDEA_LLM_PROVIDER"); val != "" {
+		cfg.LLM.Provider = val
+	}
+	
+	// API keys from multiple possible environment variables
+	if val := os.Getenv("NOIDEA_API_KEY"); val != "" {
+		cfg.LLM.APIKey = val
+	}
+	
+	// Provider-specific API keys take precedence
+	switch cfg.LLM.Provider {
+	case "xai":
+		if val := os.Getenv("XAI_API_KEY"); val != "" {
+			cfg.LLM.APIKey = val
+		}
+	case "openai":
+		if val := os.Getenv("OPENAI_API_KEY"); val != "" {
+			cfg.LLM.APIKey = val
+		}
+	case "deepseek":
+		if val := os.Getenv("DEEPSEEK_API_KEY"); val != "" {
+			cfg.LLM.APIKey = val
+		}
+	}
+	
+	if val := os.Getenv("NOIDEA_MODEL"); val != "" {
+		cfg.LLM.Model = val
+	}
+	
+	if val := os.Getenv("NOIDEA_TEMPERATURE"); val != "" {
+		if temp, err := strconv.ParseFloat(val, 64); err == nil {
+			cfg.LLM.Temperature = temp
+		}
+	}
+	
+	// Moai settings
+	if val := os.Getenv("NOIDEA_USE_LINT"); val != "" {
+		cfg.Moai.UseLint = val == "true" || val == "1" || val == "yes"
+	}
+	
+	if val := os.Getenv("NOIDEA_FACES_MODE"); val != "" {
+		cfg.Moai.FacesMode = val
+	}
+	
+	if val := os.Getenv("NOIDEA_PERSONALITY"); val != "" {
+		cfg.Moai.Personality = val
+	}
+	
+	if val := os.Getenv("NOIDEA_PERSONALITY_FILE"); val != "" {
+		cfg.Moai.PersonalityFile = val
+	}
 	
 	return cfg
 }

@@ -8,6 +8,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Version information
+var (
+	Version   = "0.1.0" // Will be overridden during build
+	BuildDate = "dev"   // Will be overridden during build
+	Commit    = "none"  // Will be overridden during build
+)
+
+// Flag variables
+var versionFlag bool
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "noidea",
@@ -25,9 +35,20 @@ Main commands:
   init        Set up noidea in your Git repository
   config      Manage noidea configuration`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// If version flag is set, print version and exit
+		if versionFlag {
+			printVersion()
+			return
+		}
+		
 		// If no subcommand is provided, print help
 		cmd.Help()
 	},
+}
+
+func init() {
+	// Add version flag
+	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Print version information and exit")
 }
 
 // Execute executes the root command and handles any errors
@@ -36,4 +57,11 @@ func Execute() {
 		fmt.Println(color.RedString("Error:"), err)
 		os.Exit(1)
 	}
+}
+
+// printVersion prints detailed version information
+func printVersion() {
+	fmt.Printf("noidea version %s\n", Version)
+	fmt.Printf("Build date: %s\n", BuildDate)
+	fmt.Printf("Git commit: %s\n", Commit)
 }

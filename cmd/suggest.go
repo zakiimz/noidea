@@ -38,10 +38,10 @@ var (
 	interactiveFlag   bool
 	commitMsgFileFlag string
 	quietFlag         bool  // Flag for machine-readable output without UI elements
+	
+	// Add divider constant here, grouped with other constants
+	divider = "------------------------------------------------------"
 )
-
-// Add divider constant at the top of the file, near other constants
-const divider = "------------------------------------------------------"
 
 func init() {
 	rootCmd.AddCommand(suggestCmd)
@@ -340,9 +340,26 @@ func handleInteractiveMode(suggestion string, commitMsgFileFlag string) {
 	}
 }
 
-// writeToCommitMsgFile writes the message to the Git commit message file
+// writeToCommitMsgFile writes the commit message to the specified file
 func writeToCommitMsgFile(message string, filePath string) error {
-	return os.WriteFile(filePath, []byte(message), 0644)
+	// Verify file exists before attempting to write
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return fmt.Errorf("commit message file does not exist: %s", filePath)
+	}
+	
+	// Open file with proper error handling
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open commit message file: %w", err)
+	}
+	defer file.Close()
+	
+	// Write message with error handling
+	if _, err := file.WriteString(message); err != nil {
+		return fmt.Errorf("failed to write to commit message file: %w", err)
+	}
+	
+	return nil
 }
 
 // editSuggestion allows the user to edit the suggested commit message
