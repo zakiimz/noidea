@@ -550,6 +550,69 @@ Check out our test suite in the `tests/` directory to ensure your changes work a
 This tool will not improve your Git hygiene.
 It will, however, make it more entertaining.
 
+## 📦 Releases & Versioning
+
+noidea follows semantic versioning (SemVer) for predictable versioning:
+
+- **Major**: Incompatible API changes
+- **Minor**: Backwards-compatible new features
+- **Patch**: Backwards-compatible bug fixes
+
+### Creating a new release
+
+There are two ways to create a new release:
+
+#### 1. Using the version script
+
+```bash
+# Show current version
+./scripts/version.sh show
+
+# Bump patch version (0.0.x)
+./scripts/version.sh patch
+
+# Bump minor version (0.x.0)
+./scripts/version.sh minor
+
+# Bump major version (x.0.0)
+./scripts/version.sh major
+```
+
+The script will:
+1. Update version in source code
+2. Create a git commit and tag
+3. Offer to push changes and tag to GitHub
+4. GitHub Actions will automatically build and publish the release
+
+#### 2. Using GitHub Actions
+
+1. Go to the "Actions" tab in your GitHub repository
+2. Select the "Version Bump" workflow
+3. Click "Run workflow"
+4. Select the type of version bump (patch, minor, major)
+5. Click "Run workflow"
+
+GitHub Actions will automatically:
+1. Update version in the source code
+2. Create a git commit and tag
+3. Push changes to GitHub 
+4. Trigger the release workflow that builds and publishes the release
+
+### Docker Images
+
+Each release is also published as a Docker image to GitHub Container Registry:
+
+```bash
+# Pull the latest version
+docker pull ghcr.io/accursedgalaxy/noidea:latest
+
+# Pull a specific version
+docker pull ghcr.io/accursedgalaxy/noidea:v1.0.0
+
+# Run noidea using Docker
+docker run --rm -it -v $(pwd):/workspace -w /workspace ghcr.io/accursedgalaxy/noidea:latest init
+```
+
 ---
 
 <div align="center">
