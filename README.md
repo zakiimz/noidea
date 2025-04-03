@@ -26,11 +26,13 @@ Whether your code is clean or cursed, the Moai sees all.
 And before committing, get AI-powered suggestions:
 
 ```
+───────────────────────────────────────────────────
 🧠 Analyzing staged changes and 10 recent commits
 Generating professional commit message suggestion...
-
-Suggested commit message:
+───────────────────────────────────────────────────
+✨ Suggested commit message:
 feat(user-auth): implement password reset functionality with email verification
+───────────────────────────────────────────────────
 ```
 
 ---
@@ -74,8 +76,10 @@ And witness the Moai's judgment.
 Get immediate feedback after each commit with the Moai:
 
 ```
+───────────────────────────────────────────────────
 🗿  (ಠ_ಠ)  This is definitely the final fix
 "You've typed 'final fix' 17 times today. I'm not judging. (I am.)"
+───────────────────────────────────────────────────
 ```
 
 Options:
@@ -191,7 +195,6 @@ noidea suggest --full-diff
 ---
 
 ## 🧠 AI Integration
-
 
 noidea supports AI-powered feedback using LLM providers that offer OpenAI-compatible APIs:
 
@@ -359,8 +362,11 @@ export DEEPSEEK_API_KEY=your_api_key_here
 | Weekly summaries          | ✅ Done         |
 | On-demand commit analysis | ✅ Done         |
 | Commit message suggestions| ✅ Done         |
+| Enhanced terminal output  | ✅ Done         |
+| POSIX-compatible hooks    | ✅ Done         |
 | Lint feedback             | 🛠️ In progress  |
 | Commit streak insights    | 🔜 Coming Soon  |
+| Cross-platform releases   | 🔜 Coming Soon  |
 
 ---
 
@@ -375,6 +381,8 @@ Because Git is too serious. Coding is chaos. Let's embrace it.
 Got Moai faces? Snarky commit messages? Cursed feedback ideas?
 
 PRs are welcome. Open an issue or just drop a meme.
+
+Check out our test suite in the `tests/` directory to ensure your changes work as expected.
 
 ---
 
