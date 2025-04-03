@@ -16,8 +16,11 @@ ARG VERSION=dev
 ARG COMMIT=unknown
 ARG BUILD_DATE=unknown
 
+# Echo version info for debugging
+RUN echo "Building version: ${VERSION}, commit: ${COMMIT}, date: ${BUILD_DATE}"
+
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags "-X github.com/AccursedGalaxy/noidea/cmd.Version=${VERSION} -X github.com/AccursedGalaxy/noidea/cmd.Commit=${COMMIT} -X github.com/AccursedGalaxy/noidea/cmd.BuildDate=${BUILD_DATE}" \
+    -ldflags "-X github.com/AccursedGalaxy/noidea/cmd.Version=${VERSION} -X github.com/AccursedGalaxy/noidea/cmd.BuildDate=${BUILD_DATE} -X github.com/AccursedGalaxy/noidea/cmd.Commit=${COMMIT}" \
     -o noidea
 
 # Create a minimal image

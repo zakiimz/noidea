@@ -33,6 +33,10 @@ jobs:
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_OUTPUT
           echo "Current version: $latest_tag"
 
+      - name: Set lowercase repository owner
+        id: repository_owner
+        run: echo "OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Bump version
         id: bump_version
         run: |
