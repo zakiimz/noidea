@@ -38,7 +38,7 @@ var (
 	interactiveFlag   bool
 	commitMsgFileFlag string
 	quietFlag         bool  // Flag for machine-readable output without UI elements
-	
+
 	// Add divider constant here, grouped with other constants
 	divider = "------------------------------------------------------"
 )
@@ -58,7 +58,7 @@ var suggestCmd = &cobra.Command{
 	Use:   "suggest",
 	Short: "Suggest a commit message based on staged changes",
 	Long: `Analyze staged changes and commit history to suggest a descriptive commit message.
-	
+
 Commit message suggestions always follow professional conventional commit format
 and include detailed descriptions of WHAT actually changed in the files.
 The suggestions focus on the functionality modified rather than just listing file names.
@@ -166,13 +166,13 @@ This helps maintain a clear and informative commit history, regardless of the pe
 			} else {
 				// Just print the suggestion
 				fmt.Println(color.GreenString("✨ Suggested commit message:"))
-				
+
 				// Handle multi-line commit messages with better formatting
 				lines := strings.Split(suggestion, "\n")
 				if len(lines) > 1 {
 					// Print the first line (subject) in white
 					fmt.Println(color.HiWhiteString(lines[0]))
-					
+
 					// Print the rest with proper formatting
 					for i := 1; i < len(lines); i++ {
 						if lines[i] == "" {
@@ -187,9 +187,9 @@ This helps maintain a clear and informative commit history, regardless of the pe
 					// Single line message
 					fmt.Println(color.HiWhiteString(suggestion))
 				}
-				
+
 				fmt.Println(color.HiBlackString(divider))
-				
+
 				// If we have a commit message file, write to it
 				if commitMsgFileFlag != "" {
 					err := writeToCommitMsgFile(suggestion, commitMsgFileFlag)
@@ -228,17 +228,17 @@ func getStagedDiff() (string, error) {
 // It keeps file headers and a limited number of changed lines per file
 func summarizeDiff(diff string) string {
 	const maxLinesPerFile = 50 // Maximum number of diff lines to show per file
-	
+
 	// If the diff is small enough, just return it
 	lines := strings.Split(diff, "\n")
 	if len(lines) <= maxLinesPerFile * 2 {
 		return diff
 	}
-	
+
 	var result strings.Builder
 	linesInCurrentFile := 0
 	inFile := false
-	
+
 	for _, line := range lines {
 		// Always include file headers and chunk headers
 		if strings.HasPrefix(line, "diff --git") {
@@ -246,16 +246,16 @@ func summarizeDiff(diff string) string {
 			if inFile && linesInCurrentFile >= maxLinesPerFile {
 				result.WriteString("... (additional lines omitted for brevity) ...\n\n")
 			}
-			
+
 			// Reset for the next file
 			linesInCurrentFile = 0
 			inFile = true
-			
+
 			// Add the file header
 			result.WriteString(line + "\n")
-		} else if strings.HasPrefix(line, "index ") || 
-				  strings.HasPrefix(line, "---") || 
-				  strings.HasPrefix(line, "+++") || 
+		} else if strings.HasPrefix(line, "index ") ||
+				  strings.HasPrefix(line, "---") ||
+				  strings.HasPrefix(line, "+++") ||
 				  strings.HasPrefix(line, "@@") {
 			// Always include these git metadata lines
 			result.WriteString(line + "\n")
@@ -265,12 +265,12 @@ func summarizeDiff(diff string) string {
 			linesInCurrentFile++
 		}
 	}
-	
+
 	// Add a final truncation notice if needed
 	if inFile && linesInCurrentFile >= maxLinesPerFile {
 		result.WriteString("... (additional lines omitted for brevity) ...\n")
 	}
-	
+
 	return result.String()
 }
 
@@ -346,19 +346,19 @@ func writeToCommitMsgFile(message string, filePath string) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return fmt.Errorf("commit message file does not exist: %s", filePath)
 	}
-	
+
 	// Open file with proper error handling
 	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open commit message file: %w", err)
 	}
 	defer file.Close()
-	
+
 	// Write message with error handling
 	if _, err := file.WriteString(message); err != nil {
 		return fmt.Errorf("failed to write to commit message file: %w", err)
 	}
-	
+
 	return nil
 }
 

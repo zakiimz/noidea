@@ -29,7 +29,10 @@
 
 ```bash
 # Install noidea
-curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | bash
+git clone https://github.com/AccursedGalaxy/noidea
+cd noidea
+
+./install.sh (might require sudo)
 
 # Set up in your Git repo
 cd /path/to/your/repo
