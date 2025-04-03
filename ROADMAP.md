@@ -3,7 +3,7 @@
 
 ---
 
-### 🏗️ Phase 1: Core CLI + Moai Hook
+### 🏗️ Phase 1: Core CLI + Moai Hook ✅
 
 **🔹 Goal:** Fully working post-commit Moai display.
 
@@ -19,13 +19,15 @@
 
 ---
 
-### ⚙️ Phase 2: LLM Integration via OpenAI-compatible Framework
+### ⚙️ Phase 2: LLM Integration via OpenAI-compatible Framework ✅
 
 **🔹 Goal:** Use AI to give fun, context-aware Git commit feedback.
 
 #### ✅ Tasks:
 - [x] Define `FeedbackEngine` interface (abstraction for LLM agent)
 - [x] Implement OpenAI-compatible backend using `openai-go` or `ollama`, `openfga`, etc.
+  - [x] Create unified engine for all OpenAI-compatible APIs (xAI, OpenAI, DeepSeek)
+  - [x] Define provider configurations for easy switching
 - [x] Capture basic commit context:
   - Latest commit message
   - Timestamp
@@ -42,6 +44,8 @@
 **🔹 Goal:** Let the user configure LLM behavior.
 
 #### ✅ Tasks:
+- [x] Support multiple LLM providers (xAI, OpenAI, DeepSeek)
+- [x] Support environment variables for configuration
 - [ ] Create a config file:
   - Location: `~/.noidea/config.toml`
 - [ ] Config structure:
@@ -91,23 +95,26 @@
 
 ---
 
-### 🛠️ Project Structure (Suggested)
+### 🛠️ Current Project Structure
 
 ```
 noidea/
 ├── cmd/
-│   ├── root.go
-│   ├── init.go
-│   └── moai.go
+│   ├── root.go            # Root command
+│   ├── init.go            # Init command to install Git hook
+│   └── moai.go            # Moai command for feedback generation
 ├── internal/
 │   ├── config/
-│   │   └── config.go
+│   │   └── config.go      # Configuration loading and management
 │   ├── feedback/
-│   │   └── engine.go      # Interface + implementations
+│   │   ├── engine.go      # FeedbackEngine interface
+│   │   ├── unified.go     # Unified LLM engine for all providers
+│   │   ├── local.go       # Local feedback engine (no API)
+│   │   └── utils.go       # Shared utility functions
 │   ├── git/
-│   │   └── hooks.go       # Git hook logic
+│   │   └── hooks.go       # Git hook installation logic
 │   └── moai/
-│       └── faces.go       # Moai variations & messages
+│       └── faces.go       # Moai faces and random feedback
 ├── scripts/
 │   └── post-commit.sh     # Template Git hook
 ├── go.mod
