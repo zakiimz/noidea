@@ -172,3 +172,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# noidea test files
+# Keep important test infrastructure, but ignore generated files
+/tests/results/
+/tests/test_repo/
+# Keep test suite templates in version control
+!/tests/test_suites/*.json
+# Compiled binary
+/noidea
