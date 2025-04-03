@@ -10,6 +10,21 @@
 # Note: Commit message suggestions always use a professional format
 # regardless of any personality settings used elsewhere in noidea.
 
+# Define some terminal colors if supported
+if [ -t 1 ]; then
+    GREEN="\033[0;32m"
+    YELLOW="\033[1;33m"
+    CYAN="\033[0;36m"
+    RED="\033[0;31m"
+    RESET="\033[0m"
+else
+    GREEN=""
+    YELLOW=""
+    CYAN=""
+    RED=""
+    RESET=""
+fi
+
 # Get commit message file
 COMMIT_MSG_FILE=$1
 COMMIT_SOURCE=$2
@@ -23,6 +38,11 @@ fi
 if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ] || [ -n "$COMMIT_SOURCE" ]; then
     exit 0
 fi
+
+# Print a divider
+print_divider() {
+    echo "${CYAN}───────────────────────────────────────────────────${RESET}"
+}
 
 # Find the noidea binary in several possible locations
 # POSIX-compatible function definition
@@ -66,8 +86,8 @@ find_noidea() {
 # Find the noidea binary
 NOIDEA_BIN=$(find_noidea)
 if [ -z "$NOIDEA_BIN" ]; then
-    echo "Warning: noidea binary not found, but noidea.suggest is enabled"
-    echo "Please ensure noidea is in your PATH or at the repository root"
+    echo "${YELLOW}⚠️  Warning: noidea binary not found, but noidea.suggest is enabled${RESET}"
+    echo "${YELLOW}   Please ensure noidea is in your PATH or at the repository root${RESET}"
     exit 0
 fi
 
@@ -100,15 +120,28 @@ else
     DIFF_FLAG=""
 fi
 
+# Print a divider at the start
+print_divider
+
 # Generate a suggested commit message
-echo "🧠 Generating commit message suggestion..."
+echo "${CYAN}🧠 Generating commit message suggestion...${RESET}"
 "$NOIDEA_BIN" suggest $INTERACTIVE_FLAG $HISTORY_FLAG $DIFF_FLAG --file "$COMMIT_MSG_FILE"
 
-# Exit status depends on whether we successfully wrote to the file
-if [ -s "$COMMIT_MSG_FILE" ]; then
-    echo "✅ Commit message suggestion applied"
+# Check if we successfully wrote to the file and if it contains a valid message
+ORIGINAL_SIZE=$(wc -c < "$COMMIT_MSG_FILE")
+if [ -s "$COMMIT_MSG_FILE" ] && [ "$ORIGINAL_SIZE" -gt 5 ]; then
+    # Read the first few lines of the commit message for display
+    PREVIEW=$(head -n 1 "$COMMIT_MSG_FILE")
+    if [ ${#PREVIEW} -gt 60 ]; then
+        PREVIEW="${PREVIEW:0:60}..."
+    fi
+    
+    print_divider
+    echo "${GREEN}✅ Commit message suggestion applied:${RESET}"
+    echo "${PREVIEW}"
+    print_divider
     exit 0
 else
-    echo "❌ Failed to generate commit message suggestion"
+    echo "${RED}❌ Failed to generate commit message suggestion${RESET}"
     exit 1
 fi 

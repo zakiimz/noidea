@@ -309,7 +309,8 @@ Follow these guidelines:
 4. Keep the first line under 72 characters
 5. Use present tense (e.g., "add feature" not "added feature")
 6. Only include relevant details
-7. Always maintain a professional tone`
+7. Always maintain a professional tone
+8. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations, reasoning, or markdown formatting`
 
 	// Create a user prompt focused on commit message generation
 	userPrompt := fmt.Sprintf(`I'm about to commit these changes and need a good commit message.
@@ -350,19 +351,74 @@ Please suggest a concise, descriptive commit message that follows conventional c
 
 	// Extract the response content
 	if len(response.Choices) > 0 {
-		// Clean up the response
-		suggestion := response.Choices[0].Message.Content
-		suggestion = strings.TrimSpace(suggestion)
+		// Get the raw response
+		rawSuggestion := response.Choices[0].Message.Content
 		
-		// Remove quotes if the model wrapped the message in them
-		if strings.HasPrefix(suggestion, "\"") && strings.HasSuffix(suggestion, "\"") {
-			suggestion = suggestion[1 : len(suggestion)-1]
-		}
+		// Clean up the response and extract only the actual commit message
+		suggestion := extractCommitMessage(rawSuggestion)
 		
 		return suggestion, nil
 	}
 
 	return "", fmt.Errorf("no response from %s API", e.provider.Name)
+}
+
+// extractCommitMessage parses the LLM response to extract just the commit message
+func extractCommitMessage(response string) string {
+	// Trim whitespace
+	response = strings.TrimSpace(response)
+	
+	// If wrapped in quotes, remove them
+	if strings.HasPrefix(response, "\"") && strings.HasSuffix(response, "\"") {
+		response = response[1 : len(response)-1]
+	}
+	
+	// Check if the response contains a code block with ```
+	if strings.Contains(response, "```") {
+		// Extract content between code blocks
+		parts := strings.Split(response, "```")
+		if len(parts) >= 3 {
+			// The code block content is in the even indices (1, 3, etc.)
+			response = strings.TrimSpace(parts[1])
+		}
+	}
+	
+	// Check if there are multiple lines with a conventional commit format on one line
+	lines := strings.Split(response, "\n")
+	for _, line := range lines {
+		// Look for lines that match conventional commit format (type: message)
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, ":") && len(line) < 100 {
+			typePrefix := strings.Split(line, ":")[0]
+			// Common commit types
+			commitTypes := []string{"feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"}
+			for _, cType := range commitTypes {
+				if typePrefix == cType {
+					return line
+				}
+			}
+		}
+	}
+	
+	// If we couldn't extract a specific format, return the first non-empty line
+	// that is reasonable length for a commit message
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && len(line) < 100 && !strings.HasPrefix(line, "#") {
+			return line
+		}
+	}
+	
+	// If all else fails, return the first 72 chars of first line
+	if len(lines) > 0 {
+		firstLine := strings.TrimSpace(lines[0])
+		if len(firstLine) > 72 {
+			return firstLine[:72]
+		}
+		return firstLine
+	}
+	
+	return response
 }
 
 // formatCommitList creates a formatted string of commit messages
