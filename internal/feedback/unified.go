@@ -1197,3 +1197,34 @@ func formatCodeStructure(structure map[string]interface{}) string {
 	
 	return result.String()
 }
+
+// enhancedDiffAnalysis performs comprehensive analysis of code changes
+// to provide a complete picture of what was modified in the codebase
+// This combines multiple analysis techniques for better commit message generation
+func enhancedDiffAnalysis(diff string) map[string]interface{} {
+	// Combine results from multiple analyzers
+	result := make(map[string]interface{})
+	
+	// Get semantic changes
+	semanticChanges := extractCodeSemantics(diff)
+	
+	// Get structural changes
+	structuralChanges := analyzeCodeStructure(diff)
+	
+	// Merge results
+	for k, v := range semanticChanges {
+		result[k] = v
+	}
+	
+	for k, v := range structuralChanges {
+		if _, exists := result[k]; !exists {
+			result[k] = v
+		}
+	}
+	
+	// Add additional metadata
+	result["analysis_type"] = "enhanced"
+	result["analysis_version"] = "1.0"
+	
+	return result
+}
