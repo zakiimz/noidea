@@ -132,8 +132,11 @@ ORIGINAL_SIZE=$(wc -c < "$COMMIT_MSG_FILE")
 if [ -s "$COMMIT_MSG_FILE" ] && [ "$ORIGINAL_SIZE" -gt 5 ]; then
     # Read the first few lines of the commit message for display
     PREVIEW=$(head -n 1 "$COMMIT_MSG_FILE")
-    if [ ${#PREVIEW} -gt 60 ]; then
-        PREVIEW="${PREVIEW:0:60}..."
+    PREVIEW_LEN=$(echo "$PREVIEW" | wc -c)
+    
+    # Truncate preview if too long (POSIX compatible way)
+    if [ "$PREVIEW_LEN" -gt 60 ]; then
+        PREVIEW=$(echo "$PREVIEW" | cut -c 1-60)"..."
     fi
     
     print_divider
