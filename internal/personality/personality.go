@@ -194,12 +194,12 @@ func (p Personality) GeneratePrompt(ctx Context) (string, error) {
 			}
 			return t.Hour()
 		},
-		"time": func(format string, timeStr string) time.Time {
+		"time": func(format string, timeStr string) int {
 			t, err := time.Parse(format, timeStr)
 			if err != nil {
-				return time.Time{}
+				return 0
 			}
-			return t
+			return t.Hour()
 		},
 	}
 
