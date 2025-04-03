@@ -1,0 +1,77 @@
+#!/bin/sh
+#
+# prepare-commit-msg hook for noidea's commit message suggestion feature
+# 
+# To install this hook:
+# 1. Make it executable (chmod +x prepare-commit-msg)
+# 2. Copy it to .git/hooks/ in your repository
+# 3. Configure noidea with 'git config noidea.suggest true' to enable
+#
+# Note: Commit message suggestions always use a professional format
+# regardless of any personality settings used elsewhere in noidea.
+
+# Get commit message file
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Check if noidea's suggestion feature is enabled
+if [ "$(git config --get noidea.suggest)" != "true" ]; then
+    exit 0
+fi
+
+# Skip if it's a merge, rebase, or cherry-pick
+if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ] || [ -n "$COMMIT_SOURCE" ]; then
+    exit 0
+fi
+
+# Check if noidea is installed and available in PATH
+if ! command -v noidea >/dev/null 2>&1; then
+    echo "Warning: noidea command not found, but noidea.suggest is enabled"
+    exit 0
+fi
+
+# Check if the commit message already has content
+if [ -s "$COMMIT_MSG_FILE" ]; then
+    # Has content already - user may have specified a message with -m
+    # Skip if the file already has content beyond comments
+    if grep -v "^#" "$COMMIT_MSG_FILE" | grep -q "[^[:space:]]"; then
+        exit 0
+    fi
+fi
+
+# Get interactive setting from config
+INTERACTIVE=$(git config --get noidea.suggest.interactive)
+if [ "$INTERACTIVE" = "true" ]; then
+    INTERACTIVE_FLAG="--interactive"
+else
+    INTERACTIVE_FLAG=""
+fi
+
+# Check if there's enough history for context
+COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+if [ "$COMMIT_COUNT" -lt 5 ]; then
+    HISTORY_FLAG="--history 1"
+else
+    HISTORY_FLAG="--history 10"
+fi
+
+# Get full diff setting from config
+FULL_DIFF=$(git config --get noidea.suggest.full-diff)
+if [ "$FULL_DIFF" = "true" ]; then
+    DIFF_FLAG="--full-diff"
+else
+    DIFF_FLAG=""
+fi
+
+# Generate a suggested commit message
+echo "🧠 Generating commit message suggestion..."
+noidea suggest $INTERACTIVE_FLAG $HISTORY_FLAG $DIFF_FLAG --file "$COMMIT_MSG_FILE"
+
+# Exit status depends on whether we successfully wrote to the file
+if [ -s "$COMMIT_MSG_FILE" ]; then
+    echo "✅ Commit message suggestion applied"
+    exit 0
+else
+    echo "❌ Failed to generate commit message suggestion"
+    exit 1
+fi 

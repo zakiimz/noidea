@@ -20,6 +20,9 @@ type FeedbackEngine interface {
 	
 	// Generate insights for a weekly summary
 	GenerateSummaryFeedback(context CommitContext) (string, error)
+	
+	// Generate commit message suggestions based on staged changes and history
+	GenerateCommitSuggestion(context CommitContext) (string, error)
 }
 
 // EngineName returns a string identifier for an engine type

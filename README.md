@@ -74,7 +74,7 @@ noidea summary
 
 Options:
 - `--days <N>` - Analyze the last N days (default: 7)
-- `--personality <name>` - Use a specific personality for insights
+- `--personality <n>` - Use a specific personality for insights
 - `--export <format>` - Export to text, markdown, or HTML
 
 ### On-Demand Feedback
@@ -87,11 +87,11 @@ noidea feedback
 
 Options:
 - `--count <N>` - Analyze last N commits (default: 5)
-- `--author <name>` - Filter by commit author
-- `--branch <name>` - Filter by specific branch
+- `--author <n>` - Filter by commit author
+- `--branch <n>` - Filter by specific branch
 - `--files <list>` - Filter by files touched (comma-separated)
 - `--diff` - Include diff context for deeper analysis
-- `--personality <name>` - Use a specific personality
+- `--personality <n>` - Use a specific personality
 - `--export <format>` - Export to text, markdown, or HTML
 
 Examples:
@@ -111,6 +111,42 @@ noidea feedback --personality supportive_mentor --diff
 
 # Export your feedback to share with the team
 noidea feedback --export markdown
+```
+
+### Commit Message Suggestions
+
+Get AI-powered commit message suggestions based on your staged changes:
+
+```
+noidea suggest
+```
+
+Options:
+- `--history <N>` - Number of recent commits to analyze for context (default: 10)
+- `--full-diff` - Include full diff instead of summary
+- `--interactive` - Interactive mode to approve/reject suggestions
+- `--file <path>` - Path to commit message file (for hooks)
+
+> **Note:** Commit suggestions always use a professional conventional commit format, regardless of any personality settings used elsewhere in the tool.
+
+Git Hook Integration:
+- Automatically suggests commit messages during the commit process
+- Easily enable with `scripts/install-hooks.sh`
+
+Examples:
+
+```bash
+# Get a suggestion for your staged changes
+noidea suggest
+
+# Interactive mode to approve, regenerate, or edit suggestions
+noidea suggest --interactive
+
+# Consider more context from previous commits
+noidea suggest --history 20
+
+# Include the full diff for more detailed analysis
+noidea suggest --full-diff
 ```
 
 ---
@@ -161,6 +197,8 @@ noidea supports multiple AI personalities to provide different types of feedback
 - **Supportive Mentor** - Encouraging and positive feedback 
 - **Git Expert** - Technical feedback based on Git best practices
 - **Motivational Speaker** - Over-the-top enthusiasm for your commits!
+
+> **Note:** Personalities affect post-commit feedback and analysis, but commit message suggestions (via `noidea suggest`) always use a professional format regardless of the selected personality.
 
 ### Using personalities
 
@@ -273,6 +311,7 @@ export DEEPSEEK_API_KEY=your_api_key_here
 | Config file support       | ✅ Done         |
 | Weekly summaries          | ✅ Done         |
 | On-demand commit analysis | ✅ Done         |
+| Commit message suggestions| ✅ Done         |
 | Lint feedback             | 🛠️ In progress  |
 | Commit streak insights    | 🔜 Coming Soon  |
 

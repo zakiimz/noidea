@@ -282,6 +282,89 @@ Respond with thoughtful analysis and actionable suggestions:`,
 	return "", fmt.Errorf("no response from %s API", e.provider.Name)
 }
 
+// GenerateCommitSuggestion creates an AI-generated commit message based on staged changes
+func (e *UnifiedFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (string, error) {
+	// Load personality configuration - only needed for fallback, not for styling
+	personalities, err := personality.LoadPersonalities(e.personalityFile)
+	if err != nil {
+		// Fall back to default personalities if there's an error
+		personalities = personality.DefaultPersonalities()
+	}
+
+	// Get the selected personality - we'll only use this for basic functionality
+	_, err = personalities.GetPersonality(e.personalityName)
+	if err != nil {
+		// Just make sure we have a valid personality, but won't use its styling
+		_, _ = personalities.GetPersonality("")
+	}
+
+	// Use a custom system prompt focused on commit message generation
+	// This override ensures professional commit messages regardless of personality
+	systemPrompt := `You are a Git expert who writes clear, concise, and descriptive commit messages.
+Your task is to suggest a high-quality commit message based on the staged changes.
+Follow these guidelines:
+1. Use the conventional commits format (type: description) when appropriate
+2. Be specific about what changed and why, but remain concise
+3. Focus on the purpose and impact of the change, not just what files changed
+4. Keep the first line under 72 characters
+5. Use present tense (e.g., "add feature" not "added feature")
+6. Only include relevant details
+7. Always maintain a professional tone`
+
+	// Create a user prompt focused on commit message generation
+	userPrompt := fmt.Sprintf(`I'm about to commit these changes and need a good commit message.
+
+Diff summary of staged changes:
+%s
+
+Recent commit messages for context:
+%s
+
+Please suggest a concise, descriptive commit message that follows conventional commits format when appropriate:`,
+		diffContext(ctx.Diff),
+		formatCommitList(ctx.CommitHistory))
+
+	// Create the chat completion request
+	request := openai.ChatCompletionRequest{
+		Model: e.model,
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleSystem,
+				Content: systemPrompt,
+			},
+			{
+				Role:    openai.ChatMessageRoleUser,
+				Content: userPrompt,
+			},
+		},
+		Temperature: 0.3, // Fixed lower temperature for more precise, professional responses
+		MaxTokens:   150, // Commit messages are short
+		N:           1,
+	}
+
+	// Send the request to the API
+	response, err := e.client.CreateChatCompletion(context.Background(), request)
+	if err != nil {
+		return "", fmt.Errorf("%s API error: %w", e.provider.Name, err)
+	}
+
+	// Extract the response content
+	if len(response.Choices) > 0 {
+		// Clean up the response
+		suggestion := response.Choices[0].Message.Content
+		suggestion = strings.TrimSpace(suggestion)
+		
+		// Remove quotes if the model wrapped the message in them
+		if strings.HasPrefix(suggestion, "\"") && strings.HasSuffix(suggestion, "\"") {
+			suggestion = suggestion[1 : len(suggestion)-1]
+		}
+		
+		return suggestion, nil
+	}
+
+	return "", fmt.Errorf("no response from %s API", e.provider.Name)
+}
+
 // formatCommitList creates a formatted string of commit messages
 func formatCommitList(commits []string) string {
 	var result strings.Builder
