@@ -32,7 +32,7 @@
 git clone https://github.com/AccursedGalaxy/noidea
 cd noidea
 
-./install.sh (might require sudo)
+./install.sh # (might require sudo)
 
 # Set up in your Git repo
 cd /path/to/your/repo
@@ -45,7 +45,13 @@ git config noidea.suggest true
 echo "XAI_API_KEY=your_api_key_here" > ~/.noidea/.env
 ```
 
-Now make commits as usual and enjoy both helpful suggestions and sassy feedback!
+**your new commit workflow with noidea:**
+```bash
+# Commit Workflow With noidea
+git add .
+git commit
+```
+This will open your default editor with the suggested commit message. saving and closing will approve and commit.
 
 ## 🧠 Features in Action
 
