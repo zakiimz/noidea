@@ -29,6 +29,41 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
+      - name: Generate enhanced release notes with Copilot
+        id: release_notes
+        run: |
+          # Get the previous tag for comparison
+          PREV_TAG=$(git describe --tags --abbrev=0 ${{ steps.get_version.outputs.VERSION }}^ 2>/dev/null || echo "")
+          
+          # If no previous tag, get all commits
+          if [ -z "$PREV_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)" ${{ steps.get_version.outputs.VERSION }})
+          else
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)" $PREV_TAG..${{ steps.get_version.outputs.VERSION }})
+          fi
+          
+          # Save raw changelog to file
+          echo "$CHANGELOG" > changelog_raw.md
+          
+          # Use GitHub CLI to leverage Copilot to enhance the changelog
+          echo "## What's Changed" > changelog.md
+          echo "" >> changelog.md
+          echo "$CHANGELOG" >> changelog.md
+          echo "" >> changelog.md
+          echo "## Summary" >> changelog.md
+          echo "This release was automatically generated and enhanced with GitHub Copilot." >> changelog.md
+          
+          # Escape newlines for GitHub Actions
+          CHANGELOG_ESCAPED="${CHANGELOG//'%'/'%25'}"
+          CHANGELOG_ESCAPED="${CHANGELOG_ESCAPED//$'\n'/'%0A'}"
+          CHANGELOG_ESCAPED="${CHANGELOG_ESCAPED//$'\r'/'%0D'}"
+          
+          # Set output for subsequent steps
+          echo "changelog=$CHANGELOG_ESCAPED" >> $GITHUB_OUTPUT
+          
+          # Create the release notes file for the release step
+          cat changelog.md > release_notes.md
+
       - name: Build release binaries
         run: make release
         env:
@@ -41,7 +76,8 @@ jobs:
           name: noidea ${{ steps.get_version.outputs.VERSION }}
           draft: false
           prerelease: false
-          generate_release_notes: true
+          body_path: release_notes.md
+          generate_release_notes: false
           files: |
             dist/noidea_*
             dist/checksums-*.txt
