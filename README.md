@@ -93,6 +93,65 @@ To enable AI integration:
 
 ---
 
+## 🔧 Configuration
+
+noidea can be configured using environment variables, a `.env` file, or a TOML configuration file.
+
+### Using the config command
+
+noidea provides a config command to help you manage your configuration:
+
+```
+# Show current configuration
+noidea config --show
+
+# Create a new configuration file interactively
+noidea config --init
+
+# Validate your configuration
+noidea config --validate
+```
+
+### Configuration file
+
+Default location: `~/.noidea/config.toml`
+
+Example configuration:
+```toml
+[llm]
+enabled = true
+provider = "xai"
+api_key = "your_api_key_here"
+model = "grok-2-1212"
+temperature = 0.7
+
+[moai]
+use_lint = false
+faces_mode = "random"
+```
+
+### Environment variables
+
+You can override any configuration setting using environment variables:
+
+```
+# LLM settings
+export NOIDEA_LLM_ENABLED=true
+export NOIDEA_MODEL=grok-2-1212
+export NOIDEA_TEMPERATURE=0.5
+
+# Moai settings
+export NOIDEA_FACES_MODE=random
+export NOIDEA_USE_LINT=false
+
+# Provider API keys
+export XAI_API_KEY=your_api_key_here
+export OPENAI_API_KEY=your_api_key_here
+export DEEPSEEK_API_KEY=your_api_key_here
+```
+
+---
+
 ## 💡 Upcoming Features
 
 | Feature                   | Status          |

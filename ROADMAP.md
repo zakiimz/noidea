@@ -39,16 +39,16 @@
 
 ---
 
-### 🧪 Phase 3: LLM Config & User Settings
+### 🧪 Phase 3: LLM Config & User Settings ✅
 
 **🔹 Goal:** Let the user configure LLM behavior.
 
 #### ✅ Tasks:
 - [x] Support multiple LLM providers (xAI, OpenAI, DeepSeek)
 - [x] Support environment variables for configuration
-- [ ] Create a config file:
+- [x] Create a config file:
   - Location: `~/.noidea/config.toml`
-- [ ] Config structure:
+- [x] Config structure:
   ```toml
   [llm]
   enabled = true
@@ -61,9 +61,9 @@
   use_lint = true
   faces_mode = "random"
   ```
-- [ ] CLI command: `noidea config` (optional for manual key entry)
-- [ ] Validate config + give feedback on missing keys
-- [ ] Allow overriding config with env vars (e.g. `NOIDEA_API_KEY`)
+- [x] CLI command: `noidea config` (optional for manual key entry)
+- [x] Validate config + give feedback on missing keys
+- [x] Allow overriding config with env vars (e.g. `NOIDEA_API_KEY`)
 
 ---
 
@@ -102,6 +102,7 @@ noidea/
 ├── cmd/
 │   ├── root.go            # Root command
 │   ├── init.go            # Init command to install Git hook
+│   ├── config.go          # Config command for configuration management
 │   └── moai.go            # Moai command for feedback generation
 ├── internal/
 │   ├── config/

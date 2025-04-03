@@ -70,7 +70,7 @@ func InstallPostCommitHook(hooksDir string) error {
 	// Check if AI should be enabled by default
 	cfg := config.LoadConfig()
 	aiFlag := ""
-	if cfg.LLMEnabled {
+	if cfg.LLM.Enabled {
 		aiFlag = "--ai"
 	}
 	

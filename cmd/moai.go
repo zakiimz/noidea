@@ -66,7 +66,7 @@ var moaiCmd = &cobra.Command{
 		cfg := config.LoadConfig()
 
 		// Override AI flag from config if set
-		if !useAI && cfg.LLMEnabled {
+		if !useAI && cfg.LLM.Enabled {
 			useAI = true
 		}
 
@@ -83,7 +83,7 @@ var moaiCmd = &cobra.Command{
 			}
 
 			// Create feedback engine based on configuration
-			engine := feedback.NewFeedbackEngine(cfg.LLMProvider, cfg.LLMModel, cfg.APIKey)
+			engine := feedback.NewFeedbackEngine(cfg.LLM.Provider, cfg.LLM.Model, cfg.LLM.APIKey)
 
 			// Generate AI feedback
 			aiResponse, err := engine.GenerateFeedback(commitContext)

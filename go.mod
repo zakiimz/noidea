@@ -3,6 +3,7 @@ module github.com/AccursedGalaxy/noidea
 go 1.22.1
 
 require (
+	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
