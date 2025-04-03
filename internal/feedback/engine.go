@@ -33,21 +33,11 @@ const (
 
 // NewFeedbackEngine creates a new feedback engine based on the provided configuration
 func NewFeedbackEngine(provider string, model string, apiKey string) FeedbackEngine {
-	// If we have a valid xAI configuration, use it
-	if provider == string(EngineXAI) && apiKey != "" {
-		return NewXAIFeedbackEngine(apiKey, model)
+	// If we have a valid API key, use the unified engine
+	if apiKey != "" {
+		return NewUnifiedFeedbackEngine(provider, model, apiKey)
 	}
 
-	// If we have a valid OpenAI configuration, use it
-	if provider == string(EngineOpenAI) && apiKey != "" {
-		return NewOpenAIFeedbackEngine(apiKey, model)
-	}
-
-	// If we have a valid DeepSeek configuration, use it
-	if provider == string(EngineDeepSeek) && apiKey != "" {
-		return NewDeepSeekFeedbackEngine(apiKey, model)
-	}
-
-	// Fallback to local feedback engine
+	// Fallback to local feedback engine if no API key is provided
 	return NewLocalFeedbackEngine()
 } 
