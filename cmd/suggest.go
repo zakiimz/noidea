@@ -59,8 +59,10 @@ var suggestCmd = &cobra.Command{
 	Short: "Suggest a commit message based on staged changes",
 	Long: `Analyze staged changes and commit history to suggest a descriptive commit message.
 	
-Commit message suggestions always follow professional conventional commit format,
-regardless of the personality settings used elsewhere in noidea.`,
+Commit message suggestions always follow professional conventional commit format
+and include detailed descriptions of WHAT actually changed in the files.
+The suggestions focus on the functionality modified rather than just listing file names.
+This helps maintain a clear and informative commit history, regardless of the personality settings used elsewhere in noidea.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load configuration
 		cfg := config.LoadConfig()

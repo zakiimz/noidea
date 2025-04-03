@@ -116,7 +116,7 @@ fi
 print_divider
 
 # Generate a suggested commit message
-echo "${CYAN}🧠 Generating commit message suggestion...${RESET}"
+echo "${CYAN}🧠 Generating commit message suggestion with detailed description of changes...${RESET}"
 "$NOIDEA_BIN" suggest $INTERACTIVE_FLAG $HISTORY_FLAG $DIFF_FLAG --file "$COMMIT_MSG_FILE"
 
 # Check if we successfully wrote to the file and if it contains a valid message

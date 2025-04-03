@@ -329,7 +329,13 @@ Follow these guidelines:
      * Any important technical details
      * Group related changes into paragraphs with empty lines between them
 10. For simple changes affecting a single file or making minor modifications, a single line message is sufficient
-11. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations, reasoning, or markdown formatting`
+11. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations, reasoning, or markdown formatting
+12. NEVER just write generic messages like "feat: update file.go" or "chore: update config.go". Instead:
+    - ALWAYS describe WHAT specifically changed in the file (e.g., "feat: add new output format options to personality.go")
+    - Mention specific functions, classes, or components that were modified
+    - Include the purpose or impact of the change (e.g., "fix: correct error handling in config parsing function")
+13. Analyze the diff content to identify the actual changes made to the code/files, not just which files were changed
+14. If a file was updated, specify what functionality was added, removed, or modified within that file`
 
 	// Prepare the diff context - enhanced with file analysis
 	diffContext := `
