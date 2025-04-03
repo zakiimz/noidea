@@ -38,15 +38,42 @@ jobs:
           # If no previous tag, get all commits
           if [ -z "$PREV_TAG" ]; then
             CHANGELOG=$(git log --pretty=format:"* %s (%h)" ${{ steps.get_version.outputs.VERSION }})
+            COMMITS_FOR_HIGHLIGHTS=$(git log --pretty=format:"%s (%h)" ${{ steps.get_version.outputs.VERSION }})
           else
             CHANGELOG=$(git log --pretty=format:"* %s (%h)" $PREV_TAG..${{ steps.get_version.outputs.VERSION }})
+            COMMITS_FOR_HIGHLIGHTS=$(git log --pretty=format:"%s (%h)" $PREV_TAG..${{ steps.get_version.outputs.VERSION }})
           fi
           
           # Save raw changelog to file
           echo "$CHANGELOG" > changelog_raw.md
           
+          # Create a concise list of key changes for the highlights section
+          # First look for conventional commit prefixes
+          HIGHLIGHT_COMMITS=$(echo "$COMMITS_FOR_HIGHLIGHTS" | grep -E 'feat:|fix:|BREAKING CHANGE:|perf:|refactor:' | head -5)
+          
+          # If no commits match the pattern, just take the first few commits
+          if [ -z "$HIGHLIGHT_COMMITS" ]; then
+            HIGHLIGHT_COMMITS=$(echo "$COMMITS_FOR_HIGHLIGHTS" | head -5)
+          fi
+          
           # Use GitHub CLI to leverage Copilot to enhance the changelog
-          echo "## What's Changed" > changelog.md
+          echo "## Key Highlights" > changelog.md
+          echo "" >> changelog.md
+          echo "Most important changes in this release:" >> changelog.md
+          echo "$HIGHLIGHT_COMMITS" >> changelog.md
+          
+          # In the future, we could use GitHub Copilot to generate a more concise summary
+          # by uncommenting and implementing the following:
+          # 
+          # PROMPT="Summarize the following commit messages in 3-5 bullet points, highlighting only the most important changes:"
+          # PROMPT="$PROMPT\n\n$COMMITS_FOR_HIGHLIGHTS"
+          # 
+          # # Call to a hypothetical Copilot CLI tool (not yet available)
+          # # AI_HIGHLIGHTS=$(echo "$PROMPT" | gh copilot suggest --max-tokens 300)
+          # # echo "$AI_HIGHLIGHTS" >> changelog.md
+          
+          echo "" >> changelog.md
+          echo "## What's Changed" >> changelog.md
           echo "" >> changelog.md
           echo "$CHANGELOG" >> changelog.md
           echo "" >> changelog.md
