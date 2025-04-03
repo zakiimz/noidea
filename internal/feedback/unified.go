@@ -553,6 +553,9 @@ CODE CHANGES DETAIL:
 SEMANTIC ANALYSIS:
 %s
 
+CODE STRUCTURE ANALYSIS:
+%s
+
 Past commit messages for limited context (do not rely heavily on these patterns):
 %s
 
@@ -560,6 +563,7 @@ Based primarily on the ACTUAL CODE CHANGES shown above, suggest a concise, descr
 		diffContext,
 		formatCodeChanges(ctx.Diff),
 		formatSemanticChanges(extractCodeSemantics(ctx.Diff)),
+		formatCodeStructure(analyzeCodeStructure(ctx.Diff)),
 		formatCommitList(ctx.CommitHistory))
 
 	// Create the chat completion request
@@ -952,7 +956,7 @@ func extractCodeSemantics(diff string) map[string]interface{} {
 	return result
 }
 
-// Add a new helper function to format the semantic changes
+// formatSemanticChanges formats semantic changes for the prompt
 func formatSemanticChanges(semantics map[string]interface{}) string {
 	var result strings.Builder
 	
@@ -995,6 +999,198 @@ func formatSemanticChanges(semantics map[string]interface{}) string {
 		for varName, varValue := range variables {
 			result.WriteString(fmt.Sprintf("- %s = %s\n", varName, varValue))
 		}
+	}
+	
+	return result.String()
+}
+
+// analyzeCodeStructure performs deeper analysis of code structure in the diff
+// to identify structural changes like interface implementations, struct modifications, etc.
+func analyzeCodeStructure(diff string) map[string]interface{} {
+	result := make(map[string]interface{})
+	
+	// Track structural elements
+	interfaces := make(map[string][]string)       // Interface -> list of methods
+	structs := make(map[string][]string)          // Struct -> list of fields
+	typeDeclarations := make(map[string]string)   // Type name -> definition
+	constants := make(map[string]string)          // Const name -> value
+	
+	// Track current file and module
+	currentFile := ""
+	currentPackage := ""
+	
+	// State tracking
+	inTypeBlock := false
+	inConstBlock := false
+	currentType := ""
+	
+	// Regex patterns for semantic analysis
+	typeDefPattern := regexp.MustCompile(`^[+-]type\s+(\w+)\s+(struct|interface)`)
+	structFieldPattern := regexp.MustCompile(`^[+-]\s*(\w+)(\s+\w+\s*(?:\`+"`"+`[^`+"`"+`]*\`+"`"+`)?)`)
+	interfaceMethodPattern := regexp.MustCompile(`^[+-]\s*(\w+\([^)]*\))`)
+	constPattern := regexp.MustCompile(`^[+-]const\s+(\w+)\s+=\s+(.*)`)
+	packagePattern := regexp.MustCompile(`^[+-]package\s+(\w+)`)
+	
+	// Split the diff into lines
+	lines := strings.Split(diff, "\n")
+	
+	for _, line := range lines {
+		// Track current file
+		if strings.HasPrefix(line, "diff --git") {
+			parts := strings.Fields(line)
+			if len(parts) >= 3 {
+				filePath := strings.TrimPrefix(parts[2], "a/")
+				currentFile = filePath
+				// Reset state for new file
+				inTypeBlock = false
+				inConstBlock = false
+				currentType = ""
+			}
+			continue
+		}
+		
+		// Skip metadata lines
+		if strings.HasPrefix(line, "index ") || 
+		   strings.HasPrefix(line, "+++") || 
+		   strings.HasPrefix(line, "---") ||
+		   strings.HasPrefix(line, "@@") {
+			continue
+		}
+		
+		// Only process added or removed lines
+		if !strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "-") {
+			continue
+		}
+		
+		// Extract the actual code line without the +/-
+		codeLine := line[1:]
+		
+		// Check for package declaration
+		if matches := packagePattern.FindStringSubmatch(line); len(matches) > 1 {
+			currentPackage = matches[1]
+			continue
+		}
+		
+		// Check for type declarations
+		if matches := typeDefPattern.FindStringSubmatch(line); len(matches) > 1 {
+			typeName := matches[1]
+			typeKind := matches[2]
+			currentType = typeName
+			
+			if typeKind == "struct" {
+				inTypeBlock = true
+				inConstBlock = false
+				structs[typeName] = []string{}
+			} else if typeKind == "interface" {
+				inTypeBlock = true
+				inConstBlock = false
+				interfaces[typeName] = []string{}
+			}
+			
+			continue
+		}
+		
+		// Check for const blocks
+		if strings.HasPrefix(codeLine, "const (") {
+			inConstBlock = true
+			inTypeBlock = false
+			continue
+		} else if strings.HasPrefix(codeLine, ")") {
+			inConstBlock = false
+			inTypeBlock = false
+			continue
+		}
+		
+		// Process content inside blocks
+		if inTypeBlock {
+			if currentType != "" {
+				if _, ok := structs[currentType]; ok {
+					// This is a struct field
+					if matches := structFieldPattern.FindStringSubmatch(line); len(matches) > 1 {
+						fieldName := matches[1]
+						structs[currentType] = append(structs[currentType], fieldName)
+					}
+				} else if _, ok := interfaces[currentType]; ok {
+					// This is an interface method
+					if matches := interfaceMethodPattern.FindStringSubmatch(line); len(matches) > 1 {
+						methodSig := matches[1]
+						interfaces[currentType] = append(interfaces[currentType], methodSig)
+					}
+				}
+			}
+		} else if inConstBlock {
+			// Check for constants
+			if matches := constPattern.FindStringSubmatch(line); len(matches) > 1 {
+				constName := matches[1]
+				constValue := matches[2]
+				constants[constName] = constValue
+			}
+		} else {
+			// Check for standalone constants
+			if matches := constPattern.FindStringSubmatch(line); len(matches) > 1 {
+				constName := matches[1]
+				constValue := matches[2]
+				constants[constName] = constValue
+			}
+		}
+	}
+	
+	// Store the collected changes
+	result["file"] = currentFile
+	result["package"] = currentPackage
+	result["interfaces"] = interfaces
+	result["structs"] = structs
+	result["types"] = typeDeclarations
+	result["constants"] = constants
+	
+	return result
+}
+
+// formatCodeStructure formats code structure analysis for the prompt
+func formatCodeStructure(structure map[string]interface{}) string {
+	var result strings.Builder
+	
+	// Format interfaces
+	if interfaces, ok := structure["interfaces"].(map[string][]string); ok && len(interfaces) > 0 {
+		result.WriteString("Modified interfaces:\n")
+		for interfaceName, methods := range interfaces {
+			result.WriteString(fmt.Sprintf("- %s\n", interfaceName))
+			for _, method := range methods {
+				result.WriteString(fmt.Sprintf("  - %s\n", method))
+			}
+		}
+		result.WriteString("\n")
+	}
+	
+	// Format structs
+	if structs, ok := structure["structs"].(map[string][]string); ok && len(structs) > 0 {
+		result.WriteString("Modified structs:\n")
+		for structName, fields := range structs {
+			result.WriteString(fmt.Sprintf("- %s\n", structName))
+			for _, field := range fields {
+				result.WriteString(fmt.Sprintf("  - %s\n", field))
+			}
+		}
+		result.WriteString("\n")
+	}
+	
+	// Format type declarations
+	if types, ok := structure["types"].(map[string]string); ok && len(types) > 0 {
+		result.WriteString("Modified type declarations:\n")
+		for typeName, typeDef := range types {
+			result.WriteString(fmt.Sprintf("- %s\n", typeName))
+			result.WriteString(fmt.Sprintf("  - Definition: %s\n", typeDef))
+		}
+		result.WriteString("\n")
+	}
+	
+	// Format constants
+	if constants, ok := structure["constants"].(map[string]string); ok && len(constants) > 0 {
+		result.WriteString("Modified constants:\n")
+		for constName, constValue := range constants {
+			result.WriteString(fmt.Sprintf("- %s = %s\n", constName, constValue))
+		}
+		result.WriteString("\n")
 	}
 	
 	return result.String()
