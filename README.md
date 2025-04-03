@@ -153,6 +153,7 @@ noidea suggest --full-diff
 
 ## 🧠 AI Integration
 
+
 noidea supports AI-powered feedback using LLM providers that offer OpenAI-compatible APIs:
 
 - xAI (Grok models)
