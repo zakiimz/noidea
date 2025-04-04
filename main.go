@@ -12,6 +12,5 @@ import (
 )
 
 func main() {
-	// Execute the root command which handles errors internally
 	cmd.Execute()
 }
