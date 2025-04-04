@@ -12,6 +12,30 @@
 </script>
 {% endif %}
 
+<!-- Dark mode toggle script -->
+<script>
+  // Check for saved user preference, otherwise respect OS setting
+  const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+  const currentTheme = localStorage.getItem("theme");
+  
+  if (currentTheme == "dark" || (!currentTheme && prefersDarkScheme.matches)) {
+    document.body.classList.add("dark-theme");
+  } else {
+    document.body.classList.remove("dark-theme");
+  }
+  
+  // Add theme toggle functionality for later use
+  function toggleTheme() {
+    if (document.body.classList.contains("dark-theme")) {
+      document.body.classList.remove("dark-theme");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.body.classList.add("dark-theme");
+      localStorage.setItem("theme", "dark");
+    }
+  }
+</script>
+
 <!-- You can set your favicon here -->
 <link rel="shortcut icon" type="image/x-icon" href="{{ '/assets/images/favicon.ico' | relative_url }}">
 
