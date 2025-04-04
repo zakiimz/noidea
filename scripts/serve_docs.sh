@@ -1,17 +1,31 @@
 #!/bin/bash
+#
+# serve_docs.sh - Run the Jekyll docs site locally for testing
+#
 
-# Script to serve the Jekyll site locally for testing
+set -e
 
-# Navigate to the docs directory
-cd "$(dirname "$0")/../docs" || exit
+# Change to the docs directory
+cd "$(dirname "$0")/../docs"
 
-# Install dependencies if needed
-if ! bundle check > /dev/null; then
-  echo "Installing dependencies..."
-  bundle install
+echo "🌐 Setting up local Jekyll environment..."
+
+# Check if Ruby is installed
+if ! command -v ruby &> /dev/null; then
+    echo "❌ Ruby is not installed. Please install Ruby to run Jekyll."
+    exit 1
 fi
 
-# Build and serve the site
-echo "Starting Jekyll server..."
-echo "Visit http://localhost:4000/noidea/ in your browser"
-bundle exec jekyll serve --baseurl "/noidea" 
+# Check if Bundler is installed
+if ! command -v bundle &> /dev/null; then
+    echo "Installing Bundler..."
+    gem install bundler
+fi
+
+# Install dependencies
+echo "Installing dependencies..."
+bundle install
+
+# Run the Jekyll server
+echo "🚀 Starting Jekyll server at http://localhost:4000/noidea/"
+bundle exec jekyll serve --livereload --baseurl '/noidea' 

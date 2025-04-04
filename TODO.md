@@ -2,12 +2,12 @@
 
 ## 📚 Documentation
 - [x] Create `CONTRIBUTING.md` with clear guidelines for contributors
-- [ ] Set up GitHub Pages site:
-  - [ ] Initialize with a modern documentation theme (e.g., Docusaurus, Jekyll with Just-the-Docs)
-  - [ ] Create basic structure (Home, Getting Started, Usage, FAQ)
-  - [ ] Write user guides for all commands
-  - [ ] Add installation guides for different platforms
-  - [ ] Create troubleshooting section with common issues
+- [x] Set up GitHub Pages site:
+  - [x] Initialize with a modern documentation theme (e.g., Docusaurus, Jekyll with Just-the-Docs)
+  - [x] Create basic structure (Home, Getting Started, Usage, FAQ)
+  - [x] Write user guides for all commands
+  - [x] Add installation guides for different platforms
+  - [x] Create troubleshooting section with common issues
 - [ ] Create issue templates for GitHub:
   - [ ] Bug report template
   - [ ] Feature request template
