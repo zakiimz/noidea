@@ -54,15 +54,20 @@ func init() {
 	suggestCmd.Flags().BoolVarP(&quietFlag, "quiet", "q", false, "Output only the message without UI elements (for scripts)")
 }
 
+// suggestCmd represents the suggest command
 var suggestCmd = &cobra.Command{
 	Use:   "suggest",
-	Short: "Suggest a commit message based on staged changes",
-	Long: `Analyze staged changes and commit history to suggest a descriptive commit message.
+	Short: "Suggest a commit message for staged changes",
+	Long: `Generates an AI-suggested commit message based on your staged git changes.
+This provides a good starting point for your commits.
 
-Commit message suggestions always follow professional conventional commit format
-and include detailed descriptions of WHAT actually changed in the files.
-The suggestions focus on the functionality modified rather than just listing file names.
-This helps maintain a clear and informative commit history, regardless of the personality settings used elsewhere in noidea.`,
+Example:
+  noidea suggest                  # Get a commit message suggestion
+  noidea suggest -p coder         # Get a suggestion using the "coder" personality
+  noidea suggest -p silly         # Get a suggestion with a silly personality
+  noidea suggest | git commit -F- # Pipe suggestion directly into git commit
+  git noidea suggest              # Use the git extension (if installed)`,
+	// Added this comment to test the improved commit message generation algorithm
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load configuration
 		cfg := config.LoadConfig()
