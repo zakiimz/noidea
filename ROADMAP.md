@@ -21,6 +21,8 @@ All initial planned features have been successfully implemented, including:
 **🔹 Goal:** Enhance usability and fix any outstanding issues to create a more polished user experience.
 
 #### Tasks:
+- [ ] Fix Ai Feedback Cutoff in Feedback Command
+
 - [x] **Fix Multi-line Commit Messages:**
   - [x] Improve commit message generation for substantial changes
   - [x] Ensure proper formatting and display of multi-line messages
