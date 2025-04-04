@@ -22,7 +22,7 @@ All initial planned features have been successfully implemented, including:
 **🔹 Goal:** Enhance usability and fix any outstanding issues to create a more polished user experience.
 
 #### Tasks:
-- [ ] Fix Ai Feedback Cutoff in Feedback Command
+- [x] Fix Ai Feedback Cutoff in Feedback Command
 - [ ] Make sure users can easily update
 - [ ] Custom Commit Message Templates?
   - [ ] Think about how to implement this nicely

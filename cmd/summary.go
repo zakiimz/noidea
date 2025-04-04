@@ -323,61 +323,59 @@ func generateAIInsights(commits []history.CommitInfo, stats map[string]interface
 		selectedPersonality, _ = personalities.GetPersonality("")
 	}
 
-	// Get terminal width for dynamic token calculation
+	// Get terminal width for formatting constraints
 	width := 80
 	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
 		width = w
 	}
-	
-	// Calculate approximate tokens based on width
-	// A rough estimate: 4 chars per token, with box borders taking about 4 chars
-	// Also limit to max 60 chars per line for readability
-	charsPerLine := minInt(width-4, 60)
-	
-	// For a box with N chars per line, we can fit approximately:
-	// - About 10 lines of content maximum (conservative estimate)
-	// This gives us about (10 * charsPerLine) / 4 tokens total
-	// We'll be even more conservative with our estimate to ensure it fits
-	maxTokens := (10 * charsPerLine) / 5 // Using 5 chars per token to be conservative
-	
-	// Constrain between reasonable min and max values
-	maxTokens = minInt(maxInt(maxTokens, 80), 160)
+	// Account for box borders (typically 4 chars)
+	maxLineWidth := width - 8
 
-	// Create a modified version with dynamic token limit
-	modifiedPersonality := selectedPersonality
-	modifiedPersonality.MaxTokens = maxTokens
+	// Create a custom personality configuration for summary insights
+	customPersonality := selectedPersonality
 	
-	// Create a very targeted prompt to ensure the response fits
-	modifiedPersonality.SystemPrompt = fmt.Sprintf(
-		"You are a Git expert providing extremely concise insights. Respond with EXACTLY TWO short observations and ONE specific recommendation, formatted as bullet points. Keep each bullet to 1-2 sentences. Ensure your entire response is under %d words - this is critical. Be direct and clear.",
-		maxTokens/2, // rough estimate of words based on tokens
+	// Increase token limit but not excessively
+	customPersonality.MaxTokens = 400
+	
+	// Create a tailored system prompt for terminal-friendly output
+	customPersonality.SystemPrompt = fmt.Sprintf(`You are a Git expert named Moai providing concise, actionable insights about commit history.
+Your output MUST fit in a terminal box with maximum line width of %d characters.
+Format your response as:
+
+- 2-3 bullet points about commit message patterns
+- 1-2 bullet points about work habits/timing
+- 2 specific, actionable recommendations
+
+Use plain text formatting suitable for terminals - NO markdown headings or syntax.
+Keep each bullet point to 1-2 sentences maximum.
+Start each bullet with "• " and skip the introduction - go straight to insights.
+Maintain the personality tone (%s) but be extremely concise.`, 
+		maxLineWidth,
+		personalityName,
 	)
 
-	// Create feedback engine with the modified personality
+	// Use a simplified user prompt that focuses on terminal output
+	customPersonality.UserPromptFormat = fmt.Sprintf(`Analyze these %d Git commits:
+{{range .CommitHistory}}- {{.}}
+{{end}}
+
+Stats: {{index .CommitStats "totalCommits"}} commits, {{index .CommitStats "uniqueAuthors"}} authors, 
+{{index .CommitStats "filesChanged"}} files changed, +{{index .CommitStats "linesAdded"}} -{{index .CommitStats "linesRemoved"}} lines
+
+Provide CONCISE terminal-friendly insights focusing on patterns, quality, and actionable advice:`, 
+		len(commitMessages),
+	)
+
+	// Create feedback engine with the custom personality
 	engine := feedback.NewFeedbackEngineWithCustomPersonality(
 		cfg.LLM.Provider,
 		cfg.LLM.Model,
 		cfg.LLM.APIKey,
-		modifiedPersonality,
+		customPersonality,
 	)
 
 	// Generate AI insights
 	return engine.GenerateSummaryFeedback(summaryContext)
-}
-
-// Helper function for min/max
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // formatSummary combines all parts into a complete summary
