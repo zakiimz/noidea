@@ -2,23 +2,17 @@
 
 ## 📚 Documentation
 - [x] Create `CONTRIBUTING.md` with clear guidelines for contributors
-- [x] Set up GitHub Pages site:
-  - [x] Initialize with a modern documentation theme (e.g., Docusaurus, Jekyll with Just-the-Docs)
-  - [x] Create basic structure (Home, Getting Started, Usage, FAQ)
-  - [x] Write user guides for all commands
-  - [x] Add installation guides for different platforms
-  - [x] Create troubleshooting section with common issues
 - [ ] Create issue templates for GitHub:
   - [ ] Bug report template
   - [ ] Feature request template
   - [ ] Question/support template
 
 ## 🔒 Security & Configuration
-- [ ] Implement secure API key storage
-  - [ ] Move from plaintext `.env` to more secure storage
-  - [ ] Document best practices for API key management
-- [ ] Add example configuration with sensitive values redacted
-- [ ] Create fallback mechanisms for when API access fails
+- [x] Implement secure API key storage
+  - [x] Move from plaintext `.env` to more secure storage
+  - [x] Document best practices for API key management
+- [x] Add example configuration with sensitive values redacted
+- [x] Create fallback mechanisms for when API access fails
 - [ ] Document security practices for users
 
 ## 🧪 Testing & Quality Assurance
@@ -33,9 +27,9 @@
 ## 👥 Usability Improvements
 - [ ] Add version checking and update notification mechanism
 - [ ] Complete "Make sure users can easily update" roadmap item
-- [ ] Fix handling of multi-line commit messages
-- [ ] Implement proper command feedback when API calls fail
-- [ ] Add clear error messages for common configuration issues
+- [x] Fix handling of multi-line commit messages
+- [x] Implement proper command feedback when API calls fail
+- [x] Add clear error messages for common configuration issues
 - [ ] Make personality system more customizable
 
 ## 🏗️ Project Infrastructure
@@ -52,7 +46,7 @@
 
 ## 🏁 Final Preparations
 - [ ] Audit code for hardcoded values or personal references
-- [ ] Clean up any debug code or TODOs
+- [x] Clean up any debug code or TODOs
 - [ ] Create a pre-release checklist
 - [ ] Check license compatibility for all dependencies
 - [ ] Prepare announcement strategy for the release
