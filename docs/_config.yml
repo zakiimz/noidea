@@ -6,10 +6,12 @@ github_username: AccursedGalaxy
 
 # Build settings
 markdown: kramdown
-theme: just-the-docs/just-the-docs
+# Using remote_theme instead of theme for non-standard themes
+remote_theme: just-the-docs/just-the-docs
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
+  - jekyll-remote-theme
 
 # Exclude from processing
 exclude:
@@ -21,4 +23,10 @@ exclude:
 
 # Theme settings
 logo: /assets/images/header.png
-show_downloads: true 
+show_downloads: true
+
+# Just the Docs specific settings
+aux_links:
+  "noidea on GitHub":
+    - "https://github.com/AccursedGalaxy/noidea"
+search_enabled: true 
