@@ -34,7 +34,6 @@ Main commands:
   suggest     Generate commit message suggestions based on staged changes
   moai        Show feedback about your most recent commit
   summary     Generate a summary of your recent Git activity
-  feedback    Get detailed feedback on your recent commits
   init        Set up noidea in your Git repository
   config      Manage noidea configuration`,
 	Run: func(cmd *cobra.Command, args []string) {

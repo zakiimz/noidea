@@ -24,12 +24,17 @@ All initial planned features have been successfully implemented, including:
 #### Tasks:
 - [ ] Fix Ai Feedback Cutoff in Feedback Command
 - [ ] Make sure users can easily update
+- [ ] Custom Commit Message Templates?
+  - [ ] Think about how to implement this nicely
 
 - [x] **Fix Multi-line Commit Messages:**
   - [x] Improve commit message generation for substantial changes
   - [x] Ensure proper formatting and display of multi-line messages
   - [x] Remove artificial truncation of subject lines
   - [x] Refine guidance for commit message length while prioritizing clarity
+
+- [x] **Fix Ai Feedback Cutoff in Feedback Command:**
+  - [x] Feedback command removed (consolidated with summary command which provides the same functionality)
 
 - [ ] **Enhance Personalities:**
   - [x] Add "Professional with Sass" default personality
