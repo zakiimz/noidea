@@ -1,5 +1,6 @@
 ## 🧠 `noidea` — Development Roadmap 2.0
-**Vision:** To create the most delightful, intelligent Git companion that makes every commit experience both productive and enjoyable.
+**Vision:**
+To create the most delightful, intelligent Git companion that makes every commit experience both productive and enjoyable.
 
 ---
 
@@ -22,6 +23,7 @@ All initial planned features have been successfully implemented, including:
 
 #### Tasks:
 - [ ] Fix Ai Feedback Cutoff in Feedback Command
+- [ ] Make sure users can easily update
 
 - [x] **Fix Multi-line Commit Messages:**
   - [x] Improve commit message generation for substantial changes
