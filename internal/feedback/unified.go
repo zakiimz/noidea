@@ -175,19 +175,21 @@ func (e *UnifiedFeedbackEngine) GenerateSummaryFeedback(ctx CommitContext) (stri
 		isOnDemand := strings.Contains(ctx.Message, "On-Demand")
 
 		if isOnDemand {
-			// Specialized prompt for targeted code analysis
+			// Specialized prompt for targeted code analysis with professional-with-sass tone
 			systemPrompt = `You are an insightful Git expert who analyzes code practices and commit patterns.
-Your task is to provide targeted, actionable feedback on the specific set of commits being reviewed.
+Your task is to provide professional, actionable feedback on the specific set of commits being reviewed.
+Include occasional subtle wit or clever observations (about 20% of your response) while maintaining 80% professionalism.
 Focus on identifying patterns, potential issues, and specific suggestions for improvement.
 Consider best practices related to commit message quality, code organization, and development workflow.
 Your response should be 2-4 paragraphs with useful observations and actionable recommendations.
 If diffs are provided, focus your analysis on the actual code changes too.`
 		} else {
-			// Original weekly summary prompt
-			systemPrompt = `You are an insightful Git expert who analyzes commit patterns.
-Provide a thoughtful, detailed analysis of the commit history.
-Focus on patterns, trends, and actionable insights.
-Your response should be 3-5 paragraphs with useful observations and suggestions.`
+			// Weekly summary prompt with professional-with-sass tone
+			systemPrompt = `You are an insightful Git expert who analyzes commit patterns with a professional tone and occasional wit.
+Provide a thoughtful, detailed analysis of the commit history that's 80% professional insights and 20% clever observations.
+Focus on patterns, trends, and actionable insights while occasionally adding a light touch of sass or humor.
+Your response should be 3-5 paragraphs with useful observations and suggestions.
+Maintain a helpful and informative tone throughout, with just enough personality to keep it engaging.`
 		}
 	}
 
@@ -302,20 +304,21 @@ func (e *UnifiedFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (str
 
 	// Use a custom system prompt focused on commit message generation
 	// This override ensures professional commit messages regardless of personality
-	systemPrompt := `You are a Git expert who writes clear, concise, and descriptive commit messages.
-Your task is to suggest an extremely short, focused commit message based on the changes.
+	systemPrompt := `You are a professional Git expert who writes clear, precise, and effective commit messages.
+Your task is to suggest a concise, focused commit message that accurately describes the changes.
 Follow these guidelines:
-1. CRITICAL: Messages MUST be extremely brief - use as few words as possible
-2. Use conventional commits format (type: description)
-3. First line MUST be under 50 characters, NEVER exceed 60
-4. Avoid all unnecessary words - be ruthlessly concise
+1. Use conventional commits format (type: description)
+2. First line must be under 50 characters
+3. Be specific but concise about what changed
+4. Use present tense imperative mood (e.g., "fix bug" not "fixes bug")
 5. Focus only on the most significant aspect of the change
-6. Use present tense (e.g., "add feature" not "added feature")
-7. For multi-line commits, keep follow-up lines extremely short (max 2-3 lines total)
-8. Respond with ONLY the commit message itself, no explanations
-9. Be specific but extremely brief about what changed
-10. Write in the imperative mood (e.g., "fix bug" not "fixes bug")
-11. Most changes should result in a single-line commit message`
+6. For multi-part changes, use a brief subject line and 1-2 bullet points if needed
+7. Consider the semantic meaning of the change, not just the files modified
+8. Include scope in parentheses when appropriate: type(scope): description
+9. Common types: feat, fix, docs, style, refactor, test, chore
+10. Respond with ONLY the commit message, no explanations
+
+Your suggestions should be professional, clear, and immediately usable.`
 
 	// Prepare the diff context - enhanced with file analysis
 	diffContext := `

@@ -109,6 +109,14 @@ if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
     chown -R "$SUDO_USER" "$CONFIG_DIR"
 fi
 
+# Copy personalities.toml.example to the config directory
+echo "Installing personality configurations"
+cp "$SCRIPT_DIR/personalities.toml.example" "$CONFIG_DIR/personalities.toml"
+# If running as root, ensure the file is owned by the real user
+if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+    chown "$SUDO_USER" "$CONFIG_DIR/personalities.toml"
+fi
+
 # Interactive configuration setup
 setup_config() {
     CONFIG_FILE="$CONFIG_DIR/config.json"

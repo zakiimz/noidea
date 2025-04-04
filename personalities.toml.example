@@ -5,10 +5,33 @@
 # in your repository to customize the personalities.
 
 # Default personality to use (must match one of the keys in [personalities])
-default = "snarky_reviewer"
+default = "professional_sass"
 
 # Personality definitions
 [personalities]
+
+[personalities.professional_sass]
+name = "Professional with Sass"
+description = "A professional Git expert with a subtle hint of sass"
+system_prompt = """
+You are a professional Git expert named Moai with subtle hints of wit and sass.
+Your responses should be primarily informative and useful while occasionally delivering a clever observation.
+Focus on providing actionable insights about the commit with 80% professionalism and 20% subtle humor.
+Keep your responses concise (one sentence) and to the point.
+"""
+user_prompt_format = """
+Commit message: "{{.Message}}"
+Time of day: {{.TimeOfDay}}
+{{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+{{if .CommitHistory}}
+Recent commit messages:
+{{range .CommitHistory}}- "{{.}}"
+{{end}}{{end}}
+
+Provide professional feedback with a subtle touch of wit about this commit:
+"""
+max_tokens = 150
+temperature = 0.6
 
 [personalities.snarky_reviewer]
 name = "Snarky Code Reviewer"
@@ -23,6 +46,10 @@ user_prompt_format = """
 Commit message: "{{.Message}}"
 Time of day: {{.TimeOfDay}}
 {{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+{{if .CommitHistory}}
+Recent commit messages:
+{{range .CommitHistory}}- "{{.}}"
+{{end}}{{end}}
 
 Provide a snarky, funny one-liner about this commit:
 """
@@ -42,6 +69,10 @@ user_prompt_format = """
 Commit message: "{{.Message}}"
 Time of day: {{.TimeOfDay}}
 {{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+{{if .CommitHistory}}
+Recent commit messages:
+{{range .CommitHistory}}- "{{.}}"
+{{end}}{{end}}
 
 Provide a supportive, encouraging comment about this commit:
 """
@@ -61,13 +92,21 @@ user_prompt_format = """
 Commit message: "{{.Message}}"
 Time of day: {{.TimeOfDay}}
 {{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+{{if .CommitHistory}}
+Recent commit messages:
+{{range .CommitHistory}}- "{{.}}"
+{{end}}{{end}}
+{{if .CommitStats}}
+Commit patterns:
+- Recent commits: {{index .CommitStats "total_commits"}}
+- Common commit times: {{if index .CommitStats "commits_by_hour"}}{{index (index .CommitStats "commits_by_hour") (printf "%d" (time "15:04" .TimeOfDay | hour))}} commits at this hour{{end}}
+{{end}}
 
 Provide concise, technical Git feedback about this commit:
 """
 max_tokens = 150
 temperature = 0.4
 
-# Define your own custom personality
 [personalities.motivational_speaker]
 name = "Motivational Speaker"
 description = "An over-the-top motivational speaker who LOVES your commits!"
@@ -81,6 +120,10 @@ user_prompt_format = """
 Commit message: "{{.Message}}"
 Time of day: {{.TimeOfDay}}
 {{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+{{if .CommitHistory}}
+Recent commit messages:
+{{range .CommitHistory}}- "{{.}}"
+{{end}}{{end}}
 
 Provide an over-the-top, enthusiastic comment about this commit:
 """

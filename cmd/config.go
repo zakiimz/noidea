@@ -176,6 +176,33 @@ func createConfigInteractive(path string) {
 	if facesMode != "" {
 		cfg.Moai.FacesMode = facesMode
 	}
+	
+	// Personality
+	fmt.Println(color.CyanString("\nPersonality Settings:"))
+	fmt.Println("1. Professional with Sass (professional with a touch of wit)")
+	fmt.Println("2. Snarky Code Reviewer (witty and sarcastic)")
+	fmt.Println("3. Supportive Mentor (encouraging and positive)")
+	fmt.Println("4. Git Expert (technical and professional)")
+	fmt.Println("5. Motivational Speaker (enthusiastic and energetic)")
+	
+	fmt.Print("Choose personality (1-5, default: 1): ")
+	response, _ = reader.ReadString('\n')
+	personalityChoice := strings.TrimSpace(response)
+	
+	// Map choices to personality names
+	switch personalityChoice {
+	case "2":
+		cfg.Moai.Personality = "snarky_reviewer"
+	case "3":
+		cfg.Moai.Personality = "supportive_mentor"
+	case "4":
+		cfg.Moai.Personality = "git_expert"
+	case "5":
+		cfg.Moai.Personality = "motivational_speaker"
+	default:
+		// Default or "1" option
+		cfg.Moai.Personality = "professional_sass"
+	}
 
 	// Validate the config
 	issues := config.ValidateConfig(cfg)

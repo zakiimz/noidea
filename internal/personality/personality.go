@@ -42,8 +42,27 @@ type PersonalityConfig struct {
 // DefaultPersonalities returns the built-in personality configurations
 func DefaultPersonalities() PersonalityConfig {
 	return PersonalityConfig{
-		Default: "snarky_reviewer",
+		Default: "professional_sass",
 		Personalities: map[string]Personality{
+			"professional_sass": {
+				Name:        "Professional with Sass",
+				Description: "A professional Git expert with a subtle hint of sass",
+				SystemPrompt: `You are a professional Git expert named Moai with subtle hints of wit and sass.
+Your responses should be primarily informative and useful while occasionally delivering a clever observation.
+Focus on providing actionable insights about the commit with 80% professionalism and 20% subtle humor.
+Keep your responses concise (one sentence) and to the point.`,
+				UserPromptFormat: `Commit message: "{{.Message}}"
+Time of day: {{.TimeOfDay}}
+{{if .Diff}}Commit diff summary: {{.Diff}}{{end}}
+{{if .CommitHistory}}
+Recent commit messages:
+{{range .CommitHistory}}- "{{.}}"
+{{end}}{{end}}
+
+Provide professional feedback with a subtle touch of wit about this commit:`,
+				MaxTokens:   150,
+				Temperature: 0.6,
+			},
 			"snarky_reviewer": {
 				Name:        "Snarky Code Reviewer",
 				Description: "A code reviewer with a sarcastic and witty attitude",

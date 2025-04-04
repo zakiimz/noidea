@@ -31,21 +31,20 @@ type Config struct {
 	} `json:"moai"`
 }
 
-// DefaultConfig returns a configuration with default values
+// DefaultConfig returns a default configuration
 func DefaultConfig() Config {
-	cfg := Config{}
+	var cfg Config
 	
-	// Set default LLM configuration
+	// LLM settings
 	cfg.LLM.Enabled = false
 	cfg.LLM.Provider = "xai"
-	cfg.LLM.APIKey = ""
-	cfg.LLM.Model = "xai-chat"
+	cfg.LLM.Model = "grok-2-1212"
 	cfg.LLM.Temperature = 0.7
 	
-	// Set default Moai configuration
+	// Moai settings
 	cfg.Moai.UseLint = false
 	cfg.Moai.FacesMode = "random"
-	cfg.Moai.Personality = "default"
+	cfg.Moai.Personality = "professional_sass"
 	
 	// Get home directory for default personality file path
 	homeDir, err := os.UserHomeDir()
