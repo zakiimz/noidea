@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -10,8 +12,11 @@ import (
 	"github.com/AccursedGalaxy/noidea/internal/config"
 	"github.com/AccursedGalaxy/noidea/internal/feedback"
 	"github.com/AccursedGalaxy/noidea/internal/history"
+	"github.com/AccursedGalaxy/noidea/internal/personality"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var (
@@ -105,6 +110,19 @@ Examples:
 			}
 		}
 
+		// Use a direct Git command to get commits as a test
+		if len(commits) == 0 {
+			// Execute a direct Git command to see if we can get commits
+			cmd := exec.Command("git", "log", "--pretty=format:%s", "-n", "10")
+			out, err := cmd.Output()
+			if err == nil && len(out) > 0 {
+				// We got direct git output but no commits from our history function
+				fmt.Println(color.YellowString("Warning:"), "Git history is available but our history collector couldn't retrieve it.")
+				fmt.Println(color.YellowString("Recent commits from Git:"))
+				fmt.Println(string(out))
+			}
+		}
+
 		// Check if we have any commits after all attempts
 		if len(commits) == 0 {
 			fmt.Println(color.YellowString("No commits found in this repository."))
@@ -124,6 +142,7 @@ Examples:
 		}
 
 		// Generate statistics
+		// Directly get Git stats if collector doesn't provide data
 		collector, err := history.NewHistoryCollector()
 		if err != nil {
 			fmt.Println(color.RedString("Error:"), "Failed to create history collector:", err)
@@ -131,8 +150,114 @@ Examples:
 		}
 		stats := collector.CalculateStats(commits)
 
+		// Verify stats are not all zero
+		allZeros := true
+		if val, ok := stats["totalCommits"]; ok && val != nil {
+			if v, ok := val.(int); ok && v > 0 {
+				allZeros = false
+			}
+		}
+
+		// If stats appear to be all zeros but we have commits, try to get stats directly
+		if allZeros && len(commits) > 0 {
+			// Directly calculate basic stats
+			stats["totalCommits"] = len(commits)
+			
+			// Calculate unique authors
+			authors := make(map[string]bool)
+			for _, commit := range commits {
+				authors[commit.Author] = true
+			}
+			stats["uniqueAuthors"] = len(authors)
+			
+			// Calculate timespan in hours
+			if len(commits) >= 2 {
+				newest := commits[0].Timestamp
+				oldest := commits[len(commits)-1].Timestamp
+				timeSpan := newest.Sub(oldest).Hours()
+				stats["timeSpan"] = fmt.Sprintf("%.1f", timeSpan)
+			} else {
+				stats["timeSpan"] = "0.0"
+			}
+			
+			// Calculate commits by day
+			commitsByDay := make(map[string]int)
+			for _, commit := range commits {
+				day := commit.Timestamp.Weekday().String()
+				commitsByDay[day]++
+			}
+			stats["commitsByDay"] = commitsByDay
+			
+			// Calculate commits by hour range
+			commitsByHourRange := make(map[string]int)
+			for _, commit := range commits {
+				hour := commit.Timestamp.Hour()
+				var hourRange string
+				
+				switch {
+				case hour >= 4 && hour < 8:
+					hourRange = "Morning (4-8)"
+				case hour >= 8 && hour < 12:
+					hourRange = "Work Hours (8-12)"
+				case hour >= 12 && hour < 16:
+					hourRange = "Afternoon (12-16)"
+				case hour >= 16 && hour < 20:
+					hourRange = "Evening (16-20)"
+				case hour >= 20 && hour < 24:
+					hourRange = "Late PM (20-24)"
+				default:
+					hourRange = "Night (0-4)"
+				}
+				
+				commitsByHourRange[hourRange]++
+			}
+			stats["commitsByHourRange"] = commitsByHourRange
+			
+			// Try to get file stats using git command
+			cmd := exec.Command("git", "diff", "--shortstat", commits[len(commits)-1].Hash, commits[0].Hash)
+			out, err := cmd.Output()
+			if err == nil {
+				// Parse output like: " 10 files changed, 100 insertions(+), 50 deletions(-)"
+				statStr := string(out)
+				filesRe := regexp.MustCompile(`(\d+) files? changed`)
+				addRe := regexp.MustCompile(`(\d+) insertions?\(\+\)`)
+				delRe := regexp.MustCompile(`(\d+) deletions?\(-\)`)
+				
+				if matches := filesRe.FindStringSubmatch(statStr); len(matches) > 1 {
+					if val, err := strconv.Atoi(matches[1]); err == nil {
+						stats["filesChanged"] = val
+					}
+				}
+				
+				if matches := addRe.FindStringSubmatch(statStr); len(matches) > 1 {
+					if val, err := strconv.Atoi(matches[1]); err == nil {
+						stats["linesAdded"] = val
+					}
+				}
+				
+				if matches := delRe.FindStringSubmatch(statStr); len(matches) > 1 {
+					if val, err := strconv.Atoi(matches[1]); err == nil {
+						stats["linesRemoved"] = val
+					}
+				}
+				
+				// Calculate net change
+				added := 0
+				if val, ok := stats["linesAdded"].(int); ok {
+					added = val
+				}
+				
+				removed := 0
+				if val, ok := stats["linesRemoved"].(int); ok {
+					removed = val
+				}
+				
+				stats["netChange"] = added - removed
+			}
+		}
+
 		// Format statistics and get basic summary
-		statsSummary := history.FormatStatsForDisplay(stats)
+		statsSummary := formatStatsForDisplay(stats)
 
 		// Get list of commits
 		commitList := history.FormatCommitList(commits)
@@ -164,6 +289,12 @@ Examples:
 
 // generateAIInsights creates AI-powered insights for the commit history
 func generateAIInsights(commits []history.CommitInfo, stats map[string]interface{}, personalityName string, cfg config.Config) (string, error) {
+	// Check if we have any commits to analyze
+	if len(commits) == 0 {
+		// If no commits found, return a simple message
+		return "No commits found in the specified time period to analyze.", nil
+	}
+
 	// Build a condensed representation of commit messages
 	var commitMessages []string
 	for _, commit := range commits {
@@ -177,57 +308,245 @@ func generateAIInsights(commits []history.CommitInfo, stats map[string]interface
 		CommitHistory: commitMessages,
 		CommitStats:   stats,
 	}
+	
+	// Load personality configuration to modify
+	personalities, err := personality.LoadPersonalities(cfg.Moai.PersonalityFile)
+	if err != nil {
+		// Fall back to default personalities if there's an error
+		personalities = personality.DefaultPersonalities()
+	}
 
-	// Create feedback engine based on configuration
-	engine := feedback.NewFeedbackEngine(
+	// Get the selected personality
+	selectedPersonality, err := personalities.GetPersonality(personalityName)
+	if err != nil {
+		// Fall back to default personality
+		selectedPersonality, _ = personalities.GetPersonality("")
+	}
+
+	// Get terminal width for dynamic token calculation
+	width := 80
+	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
+		width = w
+	}
+	
+	// Calculate approximate tokens based on width
+	// A rough estimate: 4 chars per token, with box borders taking about 4 chars
+	// Also limit to max 60 chars per line for readability
+	charsPerLine := minInt(width-4, 60)
+	
+	// For a box with N chars per line, we can fit approximately:
+	// - About 10 lines of content maximum (conservative estimate)
+	// This gives us about (10 * charsPerLine) / 4 tokens total
+	// We'll be even more conservative with our estimate to ensure it fits
+	maxTokens := (10 * charsPerLine) / 5 // Using 5 chars per token to be conservative
+	
+	// Constrain between reasonable min and max values
+	maxTokens = minInt(maxInt(maxTokens, 80), 160)
+
+	// Create a modified version with dynamic token limit
+	modifiedPersonality := selectedPersonality
+	modifiedPersonality.MaxTokens = maxTokens
+	
+	// Create a very targeted prompt to ensure the response fits
+	modifiedPersonality.SystemPrompt = fmt.Sprintf(
+		"You are a Git expert providing extremely concise insights. Respond with EXACTLY TWO short observations and ONE specific recommendation, formatted as bullet points. Keep each bullet to 1-2 sentences. Ensure your entire response is under %d words - this is critical. Be direct and clear.",
+		maxTokens/2, // rough estimate of words based on tokens
+	)
+
+	// Create feedback engine with the modified personality
+	engine := feedback.NewFeedbackEngineWithCustomPersonality(
 		cfg.LLM.Provider,
 		cfg.LLM.Model,
 		cfg.LLM.APIKey,
-		personalityName,
-		cfg.Moai.PersonalityFile,
+		modifiedPersonality,
 	)
 
 	// Generate AI insights
 	return engine.GenerateSummaryFeedback(summaryContext)
 }
 
+// Helper function for min/max
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 // formatSummary combines all parts into a complete summary
 func formatSummary(stats, commits, aiInsights string, days int, showHistory bool) string {
 	var result strings.Builder
 
-	// Header
-	result.WriteString(color.CyanString("📊 Git Activity Summary") + "\n")
-	
-	// Adjust time range text based on whether we're showing all history
-	if days >= 365*10 || days == 0 { // Check for our arbitrary large number or explicit 0
-		result.WriteString(color.CyanString("Complete repository history\n\n"))
-	} else {
-		// Compute the actual date from time.Now() to maintain consistency
-		result.WriteString(color.CyanString(fmt.Sprintf("Last %d days - %s to %s\n\n",
-			days,
-			time.Now().AddDate(0, 0, -days).Format("2006-01-02"),
-			time.Now().Format("2006-01-02"))))
+	// Get terminal width for better formatting
+	width := 80
+	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
+		width = w
 	}
 
-	// Statistics
-	result.WriteString(color.CyanString("## Statistics\n\n"))
-	result.WriteString(stats)
-	result.WriteString("\n")
+	// Create styled boxes
+	boxStylePrimary := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#2980b9")).
+		Padding(0, 1).
+		Width(width - 4)
+
+	boxStyleSecondary := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#27ae60")).
+		Padding(0, 1).
+		Width(width - 4)
+
+	subHeaderStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#2980b9")).
+		Bold(true)
+
+	// Statistics section with combined date range and header
+	var statsHeader string
+	if days >= 365*10 || days == 0 {
+		statsHeader = subHeaderStyle.Render("Git Statistics: Complete repository history")
+	} else {
+		statsHeader = subHeaderStyle.Render(fmt.Sprintf("Git Statistics: Last %d days (%s to %s)",
+			days,
+			time.Now().AddDate(0, 0, -days).Format("2006-01-02"),
+			time.Now().Format("2006-01-02")))
+	}
+	result.WriteString(statsHeader + "\n")
+	result.WriteString(boxStylePrimary.Render(stats))
+	result.WriteString("\n\n")
 
 	// AI Insights (if available)
 	if aiInsights != "" {
-		result.WriteString(color.CyanString("## AI Insights\n\n"))
-		result.WriteString(aiInsights)
+		insightsHeader := subHeaderStyle.Render("AI Insights")
+		result.WriteString(insightsHeader + "\n")
+		result.WriteString(boxStyleSecondary.Render(aiInsights))
 		result.WriteString("\n\n")
 	}
 
 	// Only include commit history if explicitly requested
 	if showHistory {
-		result.WriteString(color.CyanString("## Commit History\n\n"))
-		result.WriteString(commits)
+		historyHeader := subHeaderStyle.Render("Commit History")
+		result.WriteString(historyHeader + "\n")
+		result.WriteString(boxStylePrimary.Render(commits))
 	}
 
 	return result.String()
+}
+
+// Format the stats sections in a more visually appealing way
+func formatStatsForDisplay(stats map[string]interface{}) string {
+	var result strings.Builder
+
+	// Basic stats with highlighted numbers - with nil checks
+	totalCommits := safeGetValue(stats, "totalCommits", "0")
+	timeSpan := safeGetValue(stats, "timeSpan", "0")
+	uniqueAuthors := safeGetValue(stats, "uniqueAuthors", "0")
+	
+	result.WriteString(fmt.Sprintf("Total Commits: %s\n", color.New(color.FgHiGreen, color.Bold).Sprint(totalCommits)))
+	result.WriteString(fmt.Sprintf("Time Span: %s hours\n", color.New(color.FgHiGreen, color.Bold).Sprint(timeSpan)))
+	result.WriteString(fmt.Sprintf("Unique Authors: %s\n\n", color.New(color.FgHiGreen, color.Bold).Sprint(uniqueAuthors)))
+
+	// File changes with highlighted numbers - with nil checks
+	filesChanged := safeGetValue(stats, "filesChanged", "0")
+	linesAdded := safeGetValue(stats, "linesAdded", "0")
+	linesRemoved := safeGetValue(stats, "linesRemoved", "0")
+	
+	result.WriteString(fmt.Sprintf("Files Changed: %s\n", color.New(color.FgHiYellow, color.Bold).Sprint(filesChanged)))
+	result.WriteString(fmt.Sprintf("Lines Added: %s\n", color.New(color.FgGreen, color.Bold).Sprint(linesAdded)))
+	result.WriteString(fmt.Sprintf("Lines Removed: %s\n", color.New(color.FgRed, color.Bold).Sprint(linesRemoved)))
+	
+	netChange := 0
+	if val, ok := stats["netChange"]; ok && val != nil {
+		if intVal, ok := val.(int); ok {
+			netChange = intVal
+		}
+	}
+	
+	netChangeColor := color.New(color.Bold)
+	if netChange > 0 {
+		netChangeColor = color.New(color.FgGreen, color.Bold)
+	} else if netChange < 0 {
+		netChangeColor = color.New(color.FgRed, color.Bold)
+	}
+	
+	result.WriteString(fmt.Sprintf("Net Change: %s\n\n", netChangeColor.Sprint(netChange)))
+
+	// Commits by day section
+	result.WriteString(color.New(color.FgHiMagenta, color.Bold).Sprint("📅 Commits by Day:\n"))
+	
+	if commitsByDay, ok := stats["commitsByDay"].(map[string]int); ok && commitsByDay != nil {
+		maxDay := 0
+		for _, count := range commitsByDay {
+			if count > maxDay {
+				maxDay = count
+			}
+		}
+		
+		// Days of week in order
+		daysOrder := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
+		
+		for _, day := range daysOrder {
+			if count, exists := commitsByDay[day]; exists && count > 0 {
+				barLength := int(float64(count) / float64(maxDay) * 50)
+				if maxDay == 0 {
+					barLength = 0
+				}
+				bar := strings.Repeat("█", barLength)
+				dayFormatted := fmt.Sprintf("%-10s", day)
+				result.WriteString(fmt.Sprintf("%s : %s %s\n", 
+					color.New(color.FgHiWhite).Sprint(dayFormatted),
+					color.New(color.FgBlue).Sprint(bar),
+					color.New(color.FgHiBlue).Sprintf("(%d)", count)))
+			}
+		}
+		result.WriteString("\n")
+	}
+
+	// Commits by hour with emoji
+	result.WriteString(color.New(color.FgHiCyan, color.Bold).Sprint("🕒 Commits by Hour:\n"))
+	
+	if commitsByHour, ok := stats["commitsByHourRange"].(map[string]int); ok && commitsByHour != nil {
+		maxHour := 0
+		for _, count := range commitsByHour {
+			if count > maxHour {
+				maxHour = count
+			}
+		}
+		
+		// Hour ranges in chronological order
+		hourRanges := []string{"Morning (4-8)", "Work Hours (8-12)", "Afternoon (12-16)", "Evening (16-20)", "Late PM (20-24)", "Night (0-4)"}
+		
+		for _, hourRange := range hourRanges {
+			if count, exists := commitsByHour[hourRange]; exists && count > 0 {
+				barLength := int(float64(count) / float64(maxHour) * 50)
+				if maxHour == 0 {
+					barLength = 0
+				}
+				bar := strings.Repeat("█", barLength)
+				rangeFormatted := fmt.Sprintf("%-16s", hourRange)
+				result.WriteString(fmt.Sprintf("%s : %s %s\n", 
+					color.New(color.FgHiWhite).Sprint(rangeFormatted),
+					color.New(color.FgCyan).Sprint(bar),
+					color.New(color.FgHiCyan).Sprintf("(%d)", count)))
+			}
+		}
+	}
+
+	return result.String()
+}
+
+// safeGetValue safely extracts a value from a map, returning defaultValue if nil or not found
+func safeGetValue(m map[string]interface{}, key string, defaultValue string) string {
+	if val, ok := m[key]; ok && val != nil {
+		return fmt.Sprintf("%v", val)
+	}
+	return defaultValue
 }
 
 // exportSummary exports the summary to a file in the requested format

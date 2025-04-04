@@ -4,6 +4,8 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"github.com/AccursedGalaxy/noidea/internal/personality"
 )
 
 // CommitContext contains information about a commit
@@ -43,39 +45,40 @@ const (
 
 // NewFeedbackEngine creates a new feedback engine based on the provided configuration
 func NewFeedbackEngine(provider string, model string, apiKey string, personalityName string, personalityFile string) FeedbackEngine {
-	// Normalize provider name to lowercase for case-insensitive comparison
-	provider = strings.ToLower(strings.TrimSpace(provider))
-	
-	// Validate provider if API key is provided
-	if apiKey != "" {
-		validProviders := map[string]bool{
-			"xai":      true,
-			"openai":   true,
-			"deepseek": true,
-		}
-		
-		if !validProviders[provider] {
-			// Log warning and default to a known provider
-			log.Printf("Warning: Unknown provider '%s', defaulting to 'xai'", provider)
-			provider = "xai"
-		}
-		
-		// Ensure we have a valid model name
-		if model == "" {
-			// Set default model based on provider
-			switch provider {
-			case "xai":
-				model = "grok-2-1212"
-			case "openai":
-				model = "gpt-3.5-turbo"
-			case "deepseek":
-				model = "deepseek-chat"
-			}
-		}
-		
-		return NewUnifiedFeedbackEngine(provider, model, apiKey, personalityName, personalityFile)
+	// No API key means we have to use the local engine
+	if apiKey == "" {
+		log.Println("No API key provided, falling back to local feedback engine")
+		return NewLocalFeedbackEngine()
 	}
 
-	// Fallback to local feedback engine if no API key is provided
-	return NewLocalFeedbackEngine()
+	// Handle different providers
+	switch strings.ToLower(provider) {
+	case "xai", "openai", "deepseek":
+		// Use the unified engine with the appropriate provider
+		return NewUnifiedFeedbackEngine(provider, model, apiKey, personalityName, personalityFile)
+	default:
+		// If provider not recognized, fallback to local
+		log.Printf("Unknown provider %s, falling back to local feedback engine", provider)
+		return NewLocalFeedbackEngine()
+	}
+}
+
+// NewFeedbackEngineWithCustomPersonality creates a feedback engine using a custom personality configuration
+func NewFeedbackEngineWithCustomPersonality(provider string, model string, apiKey string, customPersonality personality.Personality) FeedbackEngine {
+	// No API key means we have to use the local engine
+	if apiKey == "" {
+		log.Println("No API key provided, falling back to local feedback engine")
+		return NewLocalFeedbackEngine()
+	}
+
+	// Handle different providers
+	switch strings.ToLower(provider) {
+	case "xai", "openai", "deepseek":
+		// Use the unified engine with the custom personality
+		return NewUnifiedFeedbackEngineWithCustomPersonality(provider, model, apiKey, customPersonality)
+	default:
+		// If provider not recognized, fallback to local
+		log.Printf("Unknown provider %s, falling back to local feedback engine", provider)
+		return NewLocalFeedbackEngine()
+	}
 }

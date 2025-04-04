@@ -42,11 +42,12 @@ var (
 
 // UnifiedFeedbackEngine generates feedback using any OpenAI-compatible API
 type UnifiedFeedbackEngine struct {
-	client          *openai.Client
-	model           string
-	provider        ProviderConfig
-	personalityName string
-	personalityFile string
+	client            *openai.Client
+	model             string
+	provider          ProviderConfig
+	personalityName   string
+	personalityFile   string
+	customPersonality *personality.Personality // Custom personality configuration if provided
 }
 
 // NewUnifiedFeedbackEngine creates a new unified feedback engine
@@ -85,6 +86,49 @@ func NewUnifiedFeedbackEngine(provider string, model string, apiKey string, pers
 		personalityName: personalityName,
 		personalityFile: personalityFile,
 	}
+}
+
+// NewUnifiedFeedbackEngineWithCustomPersonality creates a new unified feedback engine with a custom personality
+func NewUnifiedFeedbackEngineWithCustomPersonality(provider string, model string, apiKey string, customPersonality personality.Personality) *UnifiedFeedbackEngine {
+	var providerConfig ProviderConfig
+
+	// Select provider configuration
+	switch provider {
+	case "xai":
+		providerConfig = ProviderXAI
+	case "openai":
+		providerConfig = ProviderOpenAI
+	case "deepseek":
+		providerConfig = ProviderDeepSeek
+	default:
+		// Default to OpenAI if unknown provider
+		providerConfig = ProviderOpenAI
+	}
+
+	// Use provider's default model if none specified
+	if model == "" {
+		model = providerConfig.DefaultModel
+	}
+
+	// Configure the client
+	config := openai.DefaultConfig(apiKey)
+	if providerConfig.BaseURL != "" {
+		config.BaseURL = providerConfig.BaseURL
+	}
+
+	client := openai.NewClientWithConfig(config)
+	engine := &UnifiedFeedbackEngine{
+		client:          client,
+		model:           model,
+		provider:        providerConfig,
+		personalityName: customPersonality.Name,
+		personalityFile: "", // Not used when passing custom personality
+	}
+	
+	// Store the custom personality for later use
+	engine.customPersonality = &customPersonality
+	
+	return engine
 }
 
 // GenerateFeedback implements the FeedbackEngine interface
@@ -154,18 +198,26 @@ func (e *UnifiedFeedbackEngine) GenerateFeedback(ctx CommitContext) (string, err
 
 // GenerateSummaryFeedback provides insights for a weekly summary or on-demand analysis
 func (e *UnifiedFeedbackEngine) GenerateSummaryFeedback(ctx CommitContext) (string, error) {
-	// Load personality configuration
-	personalities, err := personality.LoadPersonalities(e.personalityFile)
-	if err != nil {
-		// Fall back to default personalities if there's an error
-		personalities = personality.DefaultPersonalities()
-	}
+	var personalityConfig personality.Personality
+	var err error
 
-	// Get the selected personality
-	personalityConfig, err := personalities.GetPersonality(e.personalityName)
-	if err != nil {
-		// Fall back to default personality
-		personalityConfig, _ = personalities.GetPersonality("")
+	// Use custom personality if provided
+	if e.customPersonality != nil {
+		personalityConfig = *e.customPersonality
+	} else {
+		// Load personality configuration from file
+		personalities, err := personality.LoadPersonalities(e.personalityFile)
+		if err != nil {
+			// Fall back to default personalities if there's an error
+			personalities = personality.DefaultPersonalities()
+		}
+
+		// Get the selected personality
+		personalityConfig, err = personalities.GetPersonality(e.personalityName)
+		if err != nil {
+			// Fall back to default personality
+			personalityConfig, _ = personalities.GetPersonality("")
+		}
 	}
 
 	// Create a custom system prompt for summaries or on-demand feedback
@@ -173,28 +225,46 @@ func (e *UnifiedFeedbackEngine) GenerateSummaryFeedback(ctx CommitContext) (stri
 	if strings.Contains(systemPrompt, "one-liner") || strings.Contains(systemPrompt, "one sentence") {
 		// Determine if this is a weekly summary or on-demand feedback
 		isOnDemand := strings.Contains(ctx.Message, "On-Demand")
-
+		
+		// For personalities that are configured for one-liners, override to provide more comprehensive analysis
+		systemPrompt = `You are a professional Git expert named Moai who provides thorough and insightful analysis.
+Your responses should be well-structured, focused on actionable insights, and tailored to the user's Git usage patterns.
+Highlight patterns, suggest improvements, and recognize positive behaviors.
+Be professional but conversational.`
+		
+		// For on-demand analysis, adjust to be more targeted
 		if isOnDemand {
-			// Specialized prompt for targeted code analysis with professional-with-sass tone
-			systemPrompt = `You are an insightful Git expert who analyzes code practices and commit patterns.
-Your task is to provide professional, actionable feedback on the specific set of commits being reviewed.
-Include occasional subtle wit or clever observations (about 20% of your response) while maintaining 80% professionalism.
-Focus on identifying patterns, potential issues, and specific suggestions for improvement.
-Consider best practices related to commit message quality, code organization, and development workflow.
-Your response should be 2-4 paragraphs with useful observations and actionable recommendations.
-If diffs are provided, focus your analysis on the actual code changes too.`
-		} else {
-			// Weekly summary prompt with professional-with-sass tone
-			systemPrompt = `You are an insightful Git expert who analyzes commit patterns with a professional tone and occasional wit.
-Provide a thoughtful, detailed analysis of the commit history that's 80% professional insights and 20% clever observations.
-Focus on patterns, trends, and actionable insights while occasionally adding a light touch of sass or humor.
-Your response should be 3-5 paragraphs with useful observations and suggestions.
-Maintain a helpful and informative tone throughout, with just enough personality to keep it engaging.`
+			systemPrompt += `
+Focus specifically on the commits provided and give direct feedback on their quality and patterns.`
 		}
 	}
 
-	// Determine the appropriate user prompt based on context
+	// User prompt
 	var userPrompt string
+	
+	// Check for safeGetValue-style access to avoid panics
+	totalCommits := "0"
+	uniqueAuthors := "0"
+	filesChanged := "0"
+	linesAdded := "0"
+	linesRemoved := "0"
+	
+	if val, ok := ctx.CommitStats["total_commits"]; ok && val != nil {
+		totalCommits = fmt.Sprintf("%v", val)
+	}
+	if val, ok := ctx.CommitStats["unique_authors"]; ok && val != nil {
+		uniqueAuthors = fmt.Sprintf("%v", val)
+	}
+	if val, ok := ctx.CommitStats["total_files_changed"]; ok && val != nil {
+		filesChanged = fmt.Sprintf("%v", val)
+	}
+	if val, ok := ctx.CommitStats["total_insertions"]; ok && val != nil {
+		linesAdded = fmt.Sprintf("%v", val)
+	}
+	if val, ok := ctx.CommitStats["total_deletions"]; ok && val != nil {
+		linesRemoved = fmt.Sprintf("%v", val)
+	}
+
 	isOnDemand := strings.Contains(ctx.Message, "On-Demand")
 
 	if isOnDemand {
@@ -205,10 +275,10 @@ Commit messages:
 %s
 
 Commit statistics:
-- Total commits: %v
-- Files changed: %v
-- Lines added: %v
-- Lines deleted: %v
+- Total commits: %s
+- Files changed: %s
+- Lines added: %s
+- Lines deleted: %s
 
 %s
 
@@ -220,10 +290,10 @@ Please provide targeted feedback about:
 
 Focus on giving actionable, specific feedback for these particular commits:`,
 			formatCommitList(ctx.CommitHistory),
-			ctx.CommitStats["total_commits"],
-			ctx.CommitStats["total_files_changed"],
-			ctx.CommitStats["total_insertions"],
-			ctx.CommitStats["total_deletions"],
+			totalCommits,
+			filesChanged,
+			linesAdded,
+			linesRemoved,
 			diffContext(ctx.Diff))
 	} else {
 		// Original weekly summary prompt
@@ -233,11 +303,11 @@ Commit messages:
 %s
 
 Commit statistics:
-- Total commits: %v
-- Unique authors: %v
-- Files changed: %v
-- Lines added: %v
-- Lines deleted: %v
+- Total commits: %s
+- Unique authors: %s
+- Files changed: %s
+- Lines added: %s
+- Lines deleted: %s
 
 Please provide insights about:
 1. Commit message patterns and quality
@@ -247,11 +317,11 @@ Please provide insights about:
 
 Respond with thoughtful analysis and actionable suggestions:`,
 			formatCommitList(ctx.CommitHistory),
-			ctx.CommitStats["total_commits"],
-			ctx.CommitStats["unique_authors"],
-			ctx.CommitStats["total_files_changed"],
-			ctx.CommitStats["total_insertions"],
-			ctx.CommitStats["total_deletions"])
+			totalCommits,
+			uniqueAuthors,
+			filesChanged,
+			linesAdded,
+			linesRemoved)
 	}
 
 	// Create the chat completion request
@@ -268,7 +338,7 @@ Respond with thoughtful analysis and actionable suggestions:`,
 			},
 		},
 		Temperature: float32(personalityConfig.Temperature),
-		MaxTokens:   800, // Increase token limit for more detailed analysis
+		MaxTokens:   personalityConfig.MaxTokens,
 		N:           1,
 	}
 
