@@ -3,10 +3,14 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/AccursedGalaxy/noidea/internal/config"
+	"github.com/AccursedGalaxy/noidea/internal/secure"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -54,6 +58,19 @@ func init() {
 
 	// Add version flag
 	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Print version information and exit")
+	
+	// Check API key validity during startup, but only for certain commands
+	cobra.OnInitialize(func() {
+		// Only validate API key when using commands that need it
+		if len(os.Args) > 1 {
+			cmd := os.Args[1]
+			// Only check for certain commands that need API key
+			if cmd == "suggest" || cmd == "moai" || cmd == "summary" {
+				// Check API key in background to avoid slowing down startup
+				go validateApiKeyOnStartup()
+			}
+		}
+	})
 }
 
 // loadEnvFiles loads environment variables from .env files in various locations
@@ -69,6 +86,10 @@ func loadEnvFiles() {
 		locations = append(locations, filepath.Join(homeDir, ".noidea", ".env"))
 	}
 
+	// Note: .env files are being deprecated in favor of secure storage.
+	// This is kept for backward compatibility.
+	found := false
+	
 	for _, location := range locations {
 		if _, err := os.Stat(location); err == nil {
 			// File exists, try to load it
@@ -106,7 +127,19 @@ func loadEnvFiles() {
 			}
 
 			file.Close()
+			found = true
 			break // Successfully loaded one file, stop looking
+		}
+	}
+	
+	// If we loaded a .env file with API keys, print a deprecation warning
+	if found {
+		for _, key := range []string{"XAI_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "NOIDEA_API_KEY"} {
+			if val, exists := os.LookupEnv(key); exists && val != "" {
+				fmt.Fprintf(os.Stderr, "Warning: Using API keys from .env files is deprecated and less secure.\n")
+				fmt.Fprintf(os.Stderr, "Consider switching to secure storage with 'noidea config apikey'\n")
+				break
+			}
 		}
 	}
 }
@@ -127,4 +160,110 @@ func printVersion() {
 	fmt.Printf("noidea version %s\n", Version)
 	fmt.Printf("Build date: %s\n", BuildDate)
 	fmt.Printf("Git commit: %s\n", Commit)
+}
+
+// validateApiKeyOnStartup checks API key validity on startup and warns if there are issues
+func validateApiKeyOnStartup() {
+	// Load config to get API key and provider
+	cfg := config.LoadConfig()
+	
+	// Only check if LLM is enabled and API key is set
+	if cfg.LLM.Enabled && cfg.LLM.APIKey != "" {
+		// Try to validate the API key
+		isValid, err := secure.ValidateAPIKey(cfg.LLM.Provider, cfg.LLM.APIKey)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "\n%s API key validation error: %v\n", color.YellowString("Warning:"), err)
+			fmt.Fprintf(os.Stderr, "You may want to check your API key with 'noidea config apikey-status'\n\n")
+		} else if !isValid {
+			fmt.Fprintf(os.Stderr, "\n%s Your API key for %s appears to be invalid.\n", 
+				color.RedString("Warning:"), cfg.LLM.Provider)
+			fmt.Fprintf(os.Stderr, "Please update it with 'noidea config apikey'\n\n")
+		}
+	}
+}
+
+// validateAPIKey checks if the API key works with the provider
+func validateAPIKey(provider, apiKey string) (bool, error) {
+	switch provider {
+	case "xai":
+		return validateXAIKey(apiKey)
+	case "openai":
+		return validateOpenAIKey(apiKey)
+	case "deepseek":
+		return validateDeepSeekKey(apiKey)
+	default:
+		return false, fmt.Errorf("unknown provider: %s", provider)
+	}
+}
+
+// validateXAIKey checks if the xAI API key is valid
+func validateXAIKey(apiKey string) (bool, error) {
+	// Simple HTTP request to xAI API to verify key
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	
+	req, err := http.NewRequest("GET", "https://api.groq.com/v1/models", nil)
+	if err != nil {
+		return false, err
+	}
+	
+	req.Header.Add("Authorization", "Bearer "+apiKey)
+	
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	
+	// Check if the request was successful
+	return resp.StatusCode >= 200 && resp.StatusCode < 300, nil
+}
+
+// validateOpenAIKey checks if the OpenAI API key is valid
+func validateOpenAIKey(apiKey string) (bool, error) {
+	// Simple HTTP request to OpenAI API to verify key
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	
+	req, err := http.NewRequest("GET", "https://api.openai.com/v1/models", nil)
+	if err != nil {
+		return false, err
+	}
+	
+	req.Header.Add("Authorization", "Bearer "+apiKey)
+	
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	
+	// Check if the request was successful
+	return resp.StatusCode >= 200 && resp.StatusCode < 300, nil
+}
+
+// validateDeepSeekKey checks if the DeepSeek API key is valid
+func validateDeepSeekKey(apiKey string) (bool, error) {
+	// Simple HTTP request to DeepSeek API to verify key
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	
+	req, err := http.NewRequest("GET", "https://api.deepseek.com/v1/models", nil)
+	if err != nil {
+		return false, err
+	}
+	
+	req.Header.Add("Authorization", "Bearer "+apiKey)
+	
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	
+	// Check if the request was successful
+	return resp.StatusCode >= 200 && resp.StatusCode < 300, nil
 }

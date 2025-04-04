@@ -186,14 +186,18 @@ EOF
         esac
         
         # API Key
-        read -p "Enter your API key (required for AI features): " api_key
+        read -p "Enter your API key (required for AI features, will be stored securely): " api_key
         if [ -n "$api_key" ]; then
-            # Properly escape the API key for sed
+            # Store the API key temporarily in the config file
+            # It will be moved to secure storage on first run
             api_key_escaped=$(echo "$api_key" | sed 's/[\/&]/\\&/g')
             sed -i "s/\"api_key\": \"\"/\"api_key\": \"$api_key_escaped\"/g" "$CONFIG_FILE"
+            
+            # Note about secure storage
+            echo -e "${GREEN}✓${NC} API key will be moved to secure storage on first run"
         else
             echo -e "${YELLOW}⚠️  Warning: No API key provided. AI features will not work properly.${NC}"
-            echo -e "${YELLOW}   You can add your API key later by editing $CONFIG_FILE${NC}"
+            echo -e "${YELLOW}   You can add your API key later with: noidea config apikey${NC}"
         fi
         
         # Temperature setting

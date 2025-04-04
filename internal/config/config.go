@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/AccursedGalaxy/noidea/internal/secure"
 )
 
 // Config represents the application configuration
@@ -110,10 +112,40 @@ func LoadConfig() Config {
 		}
 	}
 	
+	// Try to load API key from secure storage if it's not already set
+	// Note: This happens BEFORE environment variable overrides to prioritize secure storage
+	if cfg.LLM.APIKey == "" {
+		provider := cfg.LLM.Provider
+		apiKey, err := secure.GetAPIKey(provider)
+		if err == nil && apiKey != "" {
+			cfg.LLM.APIKey = apiKey
+		}
+	}
+	
+	// Check if we should log a warning about environment variables overriding secure storage
+	secureApiKey, secureErr := secure.GetAPIKey(cfg.LLM.Provider)
+	apiKeyFromEnv := false
+	if secureErr == nil && secureApiKey != "" {
+		// We have a secure key, check if environment vars might override
+		for _, envKey := range []string{"XAI_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "NOIDEA_API_KEY"} {
+			if os.Getenv(envKey) != "" {
+				apiKeyFromEnv = true
+				break
+			}
+		}
+		
+		if apiKeyFromEnv {
+			fmt.Fprintf(os.Stderr, "Warning: API key in environment variables will override securely stored key.\n")
+			fmt.Fprintf(os.Stderr, "Consider removing API key environment variables to use secure storage.\n")
+		}
+	}
+	
 	// Ensure all fields are set properly
 	ensureDefaults(&cfg)
 	
 	// Apply environment variable overrides
+	// Note: In a future version, you might want to reverse this priority
+	// by having secure storage override environment variables
 	return applyEnvironmentOverrides(cfg)
 }
 
@@ -311,4 +343,59 @@ func ParseFloat(s string, defaultVal float64) float64 {
 		return defaultVal
 	}
 	return f
+}
+
+// SaveAPIKey saves the API key to secure storage and updates the config file
+// The API key is intentionally NOT saved in the config file for security
+func SaveAPIKey(provider, apiKey string) error {
+	// Trim the API key first
+	apiKey = strings.TrimSpace(apiKey)
+	
+	// Don't save empty keys
+	if apiKey == "" {
+		return fmt.Errorf("cannot save empty API key")
+	}
+	
+	// Load current config
+	cfg := LoadConfig()
+	
+	// Update provider if necessary
+	if cfg.LLM.Provider != provider && provider != "" {
+		cfg.LLM.Provider = provider
+	}
+	
+	// Store in secure storage
+	if err := secure.StoreAPIKey(provider, apiKey); err != nil {
+		return fmt.Errorf("failed to store API key securely: %w", err)
+	}
+	
+	// Update in-memory config with new API key
+	cfg.LLM.APIKey = apiKey
+	
+	// Save config, but WITHOUT the API key
+	configToSave := cfg
+	configToSave.LLM.APIKey = "" // Don't save the key in the config file
+	
+	return SaveConfig(configToSave)
+}
+
+// DeleteAPIKey removes the API key from secure storage and config
+func DeleteAPIKey(provider string) error {
+	// Delete from secure storage
+	if err := secure.DeleteAPIKey(provider); err != nil {
+		// Non-fatal, continue
+		fmt.Fprintf(os.Stderr, "Warning: Could not delete API key from secure storage: %v\n", err)
+	}
+	
+	// Load current config
+	cfg := LoadConfig()
+	
+	// Check if we're deleting the current provider's key
+	if cfg.LLM.Provider == provider {
+		cfg.LLM.APIKey = ""
+		// Save config without the API key
+		return SaveConfig(cfg)
+	}
+	
+	return nil
 }

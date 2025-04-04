@@ -113,20 +113,27 @@ cd noidea
 
 For AI-powered features, add your API key:
 
-1. Add to environment:
+1. Securely store your API key (recommended):
+   ```bash
+   noidea config apikey
+   ```
+
+2. Add to environment (alternative):
    ```bash
    export XAI_API_KEY=your_api_key_here
    ```
 
-2. Or create `~/.noidea/.env`:
+3. Or create `~/.noidea/.env` (not recommended):
    ```
    XAI_API_KEY=your_api_key_here
    ```
 
-3. Configure interactively:
+4. Configure interactively:
    ```bash
    noidea config --init
    ```
+
+See [API Key Management](./docs/api-key-management.md) for best practices and secure storage details.
 
 ## 🔧 Commands
 
