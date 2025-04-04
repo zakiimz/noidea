@@ -391,18 +391,14 @@ Follow these guidelines:
 For small changes, a single line is sufficient.
 For major changes (>100 lines or multiple files), ALWAYS use multi-line format with bullet points.`
 
-	// Prepare the diff context - enhanced with file analysis
-	diffContext := `
-Here's the current diff of staged changes:
+	// TOKEN LIMIT MANAGEMENT
+	// We'll analyze the diff first, then include only what fits in the token limit
+	// Maximum estimated tokens we want to send (leaving room for overhead and system message)
+	const maxTokens = 100000
 
-` + ctx.Diff + `
-
-Analysis of changes:
-`
-
-	// Add simple analysis of the types of files changed and how many lines were modified
-	var totalAdditions, totalDeletions int
-	changedFiles := make(map[string]bool)
+	// Simple diff parser to count lines and identify files
+	lines := strings.Split(ctx.Diff, "\n")
+	currentFile := ""
 	
 	// Track different types of files
 	docFiles := make(map[string]bool)     // Documentation files (.md, .txt, etc)
@@ -413,9 +409,12 @@ Analysis of changes:
 	scriptFiles := make(map[string]bool)  // Scripts (.sh, .bat, etc)
 	
 	// Track file operations
+	changedFiles := make(map[string]bool)
 	addedFiles := make(map[string]bool)
 	modifiedFiles := make(map[string]bool)
 	deletedFiles := make(map[string]bool)
+
+	var totalAdditions, totalDeletions int
 	
 	// File extension categorization maps for better maintainability
 	extensionCategories := map[string]map[string]bool{
@@ -450,10 +449,7 @@ Analysis of changes:
 		".bat": "script", ".cmd": "script", ".ps1": "script",
 	}
 	
-	// Simple diff parser to count lines and identify files
-	lines := strings.Split(ctx.Diff, "\n")
-	currentFile := ""
-	
+	// Process the diff to collect information
 	for _, line := range lines {
 		if strings.HasPrefix(line, "diff --git") {
 			parts := strings.Fields(line)
@@ -501,10 +497,10 @@ Analysis of changes:
 		delete(modifiedFiles, file)
 	}
 
-	// Format the analysis
-	diffContext += fmt.Sprintf("- Total files changed: %d (%d added, %d modified, %d deleted)\n",
+	// Create a summarized diff analysis
+	diffAnalysis := fmt.Sprintf("- Total files changed: %d (%d added, %d modified, %d deleted)\n",
 		len(changedFiles), len(addedFiles), len(modifiedFiles), len(deletedFiles))
-	diffContext += fmt.Sprintf("- Lines: +%d, -%d\n\n", totalAdditions, totalDeletions)
+	diffAnalysis += fmt.Sprintf("- Lines: +%d, -%d\n\n", totalAdditions, totalDeletions)
 
 	// Add file categories analysis
 	if len(docFiles) > 0 {
@@ -512,7 +508,7 @@ Analysis of changes:
 		for file := range docFiles {
 			fileList = append(fileList, file)
 		}
-		diffContext += fmt.Sprintf("Documentation files: %s\n", strings.Join(fileList, ", "))
+		diffAnalysis += fmt.Sprintf("Documentation files: %s\n", strings.Join(fileList, ", "))
 	}
 
 	if len(codeFiles) > 0 {
@@ -520,7 +516,7 @@ Analysis of changes:
 		for file := range codeFiles {
 			fileList = append(fileList, file)
 		}
-		diffContext += fmt.Sprintf("Code files: %s\n", strings.Join(fileList, ", "))
+		diffAnalysis += fmt.Sprintf("Code files: %s\n", strings.Join(fileList, ", "))
 	}
 
 	if len(buildFiles) > 0 {
@@ -528,7 +524,7 @@ Analysis of changes:
 		for file := range buildFiles {
 			fileList = append(fileList, file)
 		}
-		diffContext += fmt.Sprintf("Build files: %s\n", strings.Join(fileList, ", "))
+		diffAnalysis += fmt.Sprintf("Build files: %s\n", strings.Join(fileList, ", "))
 	}
 
 	if len(scriptFiles) > 0 {
@@ -536,7 +532,7 @@ Analysis of changes:
 		for file := range scriptFiles {
 			fileList = append(fileList, file)
 		}
-		diffContext += fmt.Sprintf("Script files: %s\n", strings.Join(fileList, ", "))
+		diffAnalysis += fmt.Sprintf("Script files: %s\n", strings.Join(fileList, ", "))
 	}
 
 	if len(configFiles) > 0 {
@@ -544,7 +540,7 @@ Analysis of changes:
 		for file := range configFiles {
 			fileList = append(fileList, file)
 		}
-		diffContext += fmt.Sprintf("Config files: %s\n", strings.Join(fileList, ", "))
+		diffAnalysis += fmt.Sprintf("Config files: %s\n", strings.Join(fileList, ", "))
 	}
 
 	if len(testFiles) > 0 {
@@ -552,18 +548,18 @@ Analysis of changes:
 		for file := range testFiles {
 			fileList = append(fileList, file)
 		}
-		diffContext += fmt.Sprintf("Test files: %s\n", strings.Join(fileList, ", "))
+		diffAnalysis += fmt.Sprintf("Test files: %s\n", strings.Join(fileList, ", "))
 	}
 
 	// Add operations analysis
-	diffContext += "\nFile operations:\n"
+	diffAnalysis += "\nFile operations:\n"
 
 	if len(addedFiles) > 0 {
 		fileList := make([]string, 0, len(addedFiles))
 		for file := range addedFiles {
 			fileList = append(fileList, file)
 		}
-		diffContext += fmt.Sprintf("Added: %s\n", strings.Join(fileList, ", "))
+		diffAnalysis += fmt.Sprintf("Added: %s\n", strings.Join(fileList, ", "))
 	}
 
 	if len(modifiedFiles) > 0 {
@@ -571,7 +567,7 @@ Analysis of changes:
 		for file := range modifiedFiles {
 			fileList = append(fileList, file)
 		}
-		diffContext += fmt.Sprintf("Modified: %s\n", strings.Join(fileList, ", "))
+		diffAnalysis += fmt.Sprintf("Modified: %s\n", strings.Join(fileList, ", "))
 	}
 
 	if len(deletedFiles) > 0 {
@@ -579,27 +575,79 @@ Analysis of changes:
 		for file := range deletedFiles {
 			fileList = append(fileList, file)
 		}
-		diffContext += fmt.Sprintf("Deleted: %s\n", strings.Join(fileList, ", "))
+		diffAnalysis += fmt.Sprintf("Deleted: %s\n", strings.Join(fileList, ", "))
+	}
+
+	// Create the diff context: Now with smart truncation
+	// Estimate tokens: ~4 chars per token as a conservative estimate
+	diffContext := fmt.Sprintf(`
+Here's an analysis of the staged changes:
+
+%s
+`, diffAnalysis)
+
+	// Get a sample of the diff that fits in token limits
+	// Limit original diff to about 30% of the max tokens
+	maxDiffChars := int(float64(maxTokens) * 0.3 * 4)
+	truncatedDiff := ctx.Diff
+	if len(truncatedDiff) > maxDiffChars {
+		// Extract the beginning of the diff with meaningful changes
+		fileCount := len(changedFiles)
+		
+		// For repositories with many files, limit to showing the first few most important files
+		if fileCount > 5 {
+			// Extract a reasonable snippet from the start 
+			truncatedDiff = TruncateWithEllipsis(truncatedDiff, maxDiffChars)
+		} else {
+			// For fewer files, try to allocate space evenly
+			truncatedDiff = TruncateWithEllipsis(truncatedDiff, maxDiffChars)
+		}
+	}
+
+	// Only include a compact version of the diff itself
+	diffContext += fmt.Sprintf(`
+Here's a sample of the staged changes:
+
+%s
+`, truncatedDiff)
+
+	// Skip the intensive semantic analysis if the diff is large
+	var semanticAnalysis string
+	var structureAnalysis string
+	
+	// For small to medium changes, include deeper analysis
+	if len(ctx.Diff) < 30000 {
+		// Extract minimal semantic changes with token limit in mind
+		semantics := extractCodeSemantics(ctx.Diff)
+		semanticAnalysis = formatSemanticChanges(semantics)
+		
+		// Extract structure analysis but only include if we have space
+		if len(diffContext) + len(semanticAnalysis) < (maxTokens / 2) {
+			structure := analyzeCodeStructure(ctx.Diff)
+			structureAnalysis = formatCodeStructure(structure)
+		}
 	}
 
 	// Create a user prompt focused on commit message generation with emphasis on changes
 	isSubstantialChange := len(changedFiles) > 2 || totalAdditions+totalDeletions > 50
 	
+	// Limit commit history to save tokens
+	var commitHistoryStr string
+	historyLimit := 5 // Limit to 5 most recent commits
+	
+	if len(ctx.CommitHistory) > 0 {
+		historyToUse := ctx.CommitHistory
+		if len(historyToUse) > historyLimit {
+			historyToUse = historyToUse[:historyLimit]
+		}
+		commitHistoryStr = formatCommitList(historyToUse)
+	} else {
+		commitHistoryStr = "(No recent commit history available)"
+	}
+	
 	var userPrompt string
 	basePrompt := fmt.Sprintf(`I need a%s commit message for these staged changes.
 
-%s
-
-CODE CHANGES DETAIL:
-%s
-
-SEMANTIC ANALYSIS:
-%s
-
-CODE STRUCTURE ANALYSIS:
-%s
-
-Past commit messages for limited context (do not rely heavily on these patterns):
 %s`,
 		func() string {
 			if isSubstantialChange {
@@ -607,11 +655,28 @@ Past commit messages for limited context (do not rely heavily on these patterns)
 			}
 			return ""
 		}(),
-		diffContext,
-		formatCodeChanges(ctx.Diff),
-		formatSemanticChanges(extractCodeSemantics(ctx.Diff)),
-		formatCodeStructure(analyzeCodeStructure(ctx.Diff)),
-		formatCommitList(ctx.CommitHistory))
+		diffContext)
+		
+	// Only add semantic analysis if not empty and we have token space
+	if semanticAnalysis != "" {
+		basePrompt += fmt.Sprintf(`
+SEMANTIC ANALYSIS:
+%s`, semanticAnalysis)
+	}
+	
+	// Only add structure analysis if not empty and we have token space
+	if structureAnalysis != "" && len(basePrompt) < (maxTokens / 2) {
+		basePrompt += fmt.Sprintf(`
+CODE STRUCTURE ANALYSIS:
+%s`, structureAnalysis)
+	}
+	
+	// Add commit history at the end with lowest priority
+	if len(basePrompt) < (maxTokens * 3 / 4) {
+		basePrompt += fmt.Sprintf(`
+Past commit messages for limited context (do not rely heavily on these patterns):
+%s`, commitHistoryStr)
+	}
 		
 	// Add instructions based on change size
 	if isSubstantialChange {
@@ -629,6 +694,12 @@ Based primarily on the ACTUAL CODE CHANGES shown above, create a detailed commit
 		userPrompt = basePrompt + `
 
 Based primarily on the ACTUAL CODE CHANGES shown above, suggest a BRIEF, CONCISE commit message that accurately describes the most important changes. Focus on being direct and to the point - every word must justify its inclusion:`
+	}
+
+	// Ensure final prompt isn't too large
+	if len(userPrompt) > maxTokens*4 {
+		// Truncate with a note about truncation
+		userPrompt = TruncateWithEllipsis(userPrompt, maxTokens*4-100) + "\n\n[Note: Some context was truncated due to size constraints]"
 	}
 
 	// Create the chat completion request
@@ -667,6 +738,16 @@ Based primarily on the ACTUAL CODE CHANGES shown above, suggest a BRIEF, CONCISE
 	}
 
 	return "", fmt.Errorf("no response from %s API", e.provider.Name)
+}
+
+// TruncateWithEllipsis truncates a string to maxLen and adds an ellipsis
+func TruncateWithEllipsis(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	
+	// Leave room for the ellipsis
+	return s[:maxLen-3] + "..."
 }
 
 // extractCommitMessage parses the LLM response to extract just the commit message
