@@ -1,6 +1,8 @@
-@import "just-the-docs/functions";
-@import "just-the-docs/variables";
-@import "just-the-docs/color_schemes/dark";
-@import "just-the-docs/modules";
+@import "{{ site.theme }}";
 
-// Custom styles can be added here 
+// Custom styles
+.page-header {
+  padding: 1rem;
+}
+
+// Add any additional custom styles here 
