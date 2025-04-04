@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="https://golang.org/doc/go1.18"><img src="https://img.shields.io/badge/Go-1.18+-00ADD8?logo=go" alt="Go Version"></a>
+  <a href="https://golang.org/doc/go1.18"><img src="https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go" alt="Go Version"></a>
 </p>
 
 </div>
