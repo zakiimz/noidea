@@ -21,17 +21,22 @@ All initial planned features have been successfully implemented, including:
 **🔹 Goal:** Enhance usability and fix any outstanding issues to create a more polished user experience.
 
 #### Tasks:
-- [ ] **Fix Multi-line Commit Messages:**
+- [x] **Fix Multi-line Commit Messages:**
   - [x] Improve commit message generation for substantial changes
   - [x] Ensure proper formatting and display of multi-line messages
+  - [x] Remove artificial truncation of subject lines
+  - [x] Refine guidance for commit message length while prioritizing clarity
 
 - [ ] **Enhance Personalities:**
   - [x] Add "Professional with Sass" default personality
+  - [x] Add support for custom personality configurations in the feedback engine
   - [ ] Fine-tune prompt templates for better context sensitivity
   - [ ] Update ./install.sh to properly reflect new personalities and default setup
   - [ ] Add visual indicators for different personalities (icons, colors)
 
 - [ ] **Usability Improvements:**
+  - [x] Enhance summary command output formatting and error handling
+  - [x] Fix issue with nil values in commit statistics
   - [ ] Implement intelligent fallbacks when no API key is available
   - [ ] Add support for project-specific configurations
   - [ ] Improve error handling and user-friendly error messages
