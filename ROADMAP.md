@@ -22,6 +22,16 @@ All initial planned features have been successfully implemented, including:
 **🔹 Goal:** Enhance usability and fix any outstanding issues to create a more polished user experience.
 
 #### Tasks:
+
+Future Vision Idea:
+- Integrate with GitHub Issues
+- AI Powered GitHub Issue Creation
+- Link commit messages to Issues and close them upon completion.
+- Complete Issue tracking logic for your project within the terminal
+    - Super easy to use with little commands.
+    - Make it easy to check issues, work on them, commit changes, close issue. wokflow.
+-> Expand current hook setup to seemlesly integrate these features
+
 - [x] Fix Ai Feedback Cutoff in Feedback Command
 - [ ] Make sure users can easily update
 - [ ] Custom Commit Message Templates?
