@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -174,15 +174,15 @@ func exportSummary(summary, format string) error {
 	switch strings.ToLower(format) {
 	case "text", "txt":
 		filename = fmt.Sprintf("git-summary-%s.txt", timestamp)
-		return ioutil.WriteFile(filename, []byte(plainSummary), 0644)
+		return os.WriteFile(filename, []byte(plainSummary), 0644)
 
 	case "markdown", "md":
 		filename = fmt.Sprintf("git-summary-%s.md", timestamp)
-		return ioutil.WriteFile(filename, []byte(convertToMarkdown(plainSummary)), 0644)
+		return os.WriteFile(filename, []byte(convertToMarkdown(plainSummary)), 0644)
 
 	case "html":
 		filename = fmt.Sprintf("git-summary-%s.html", timestamp)
-		return ioutil.WriteFile(filename, []byte(convertToHTML(plainSummary)), 0644)
+		return os.WriteFile(filename, []byte(convertToHTML(plainSummary)), 0644)
 
 	default:
 		return fmt.Errorf("unsupported export format: %s", format)

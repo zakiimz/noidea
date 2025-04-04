@@ -156,7 +156,7 @@ func checkGitVersion() error {
 	versionCmd := exec.Command("git", "--version")
 	output, err := versionCmd.Output()
 	if err != nil {
-		return fmt.Errorf("Git not found or not executable: %w", err)
+		return fmt.Errorf("git not found or not executable: %w", err)
 	}
 	
 	// Parse git version (example output: "git version 2.34.1")
