@@ -378,7 +378,7 @@ func (e *UnifiedFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (str
 Your task is to suggest a commit message that accurately describes the changes.
 Follow these guidelines:
 1. Use conventional commits format for the subject line: type(scope): description
-2. First line must be under 50 characters
+2. Subject line should ideally be around 50 characters - aim for this as a guideline, but prioritize clarity and completeness over strict length
 3. For SUBSTANTIAL changes (multiple files or significant code changes), ALWAYS add a blank line followed by 2-4 bullet points explaining key changes
 4. Use present tense imperative mood (e.g., "fix bug" not "fixes bug")
 5. The subject line should focus on the most significant aspect of the change
@@ -701,10 +701,8 @@ func extractCommitMessage(response string) string {
 		}
 	}
 
-	// Ensure first line is under 60 characters
-	if len(firstLine) > 60 {
-		firstLine = firstLine[:57] + "..."
-	}
+	// Don't artificially truncate the first line - let git's UI handle this naturally
+	// We tell the model to aim for 50 chars in the prompt, but we won't enforce it
 
 	// If we have a conventional commit format, ensure it's properly formatted
 	if strings.Contains(firstLine, ":") {
