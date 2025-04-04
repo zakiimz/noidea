@@ -1,8 +1,75 @@
 @import "{{ site.theme }}";
 
-// Custom styles
+// Custom styles for noidea
+
+// Logo styling
+.project-logo {
+  max-height: 80px;
+  margin-bottom: 1rem;
+}
+
+// Header styling
 .page-header {
-  padding: 1rem;
+  padding: 2rem 1rem;
+  background: linear-gradient(120deg, #155799, #159957);
+  
+  .header-content {
+    max-width: 64rem;
+    margin: 0 auto;
+    text-align: center;
+  }
+}
+
+// Navigation
+.main-nav {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  
+  .btn {
+    margin: 0.5rem 0.25rem;
+  }
+}
+
+// Download section
+.downloads-section {
+  margin-top: 1rem;
+  
+  .btn {
+    margin: 0.5rem 0.25rem;
+  }
+}
+
+// Content styling
+.main-content {
+  h1, h2, h3, h4, h5, h6 {
+    color: #155799;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  img {
+    max-width: 100%;
+    border-radius: 0.3rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  code {
+    background-color: #f3f6fa;
+    padding: 0.2em 0.4em;
+    border-radius: 0.3rem;
+  }
+  
+  pre {
+    background-color: #f3f6fa;
+    border: solid 1px #dce6f0;
+    border-radius: 0.3rem;
+    padding: 0.8rem;
+    
+    > code {
+      padding: 0;
+      background-color: transparent;
+    }
+  }
 }
 
 // Add any additional custom styles here 

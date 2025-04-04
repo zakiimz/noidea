@@ -7,7 +7,7 @@ repository: AccursedGalaxy/noidea
 
 # Build settings
 markdown: kramdown
-theme: jekyll-theme-midnight
+theme: jekyll-theme-cayman
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
@@ -22,6 +22,7 @@ exclude:
 
 # Theme settings
 show_downloads: true
+logo: /assets/images/logo.svg
 
 # Navigation
 nav:
