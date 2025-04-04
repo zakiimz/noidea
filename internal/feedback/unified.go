@@ -305,20 +305,21 @@ func (e *UnifiedFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (str
 	// Use a custom system prompt focused on commit message generation
 	// This override ensures professional commit messages regardless of personality
 	systemPrompt := `You are a professional Git expert who writes clear, precise, and effective commit messages.
-Your task is to suggest a concise, focused commit message that accurately describes the changes.
+Your task is to suggest a commit message that accurately describes the changes.
 Follow these guidelines:
-1. Use conventional commits format (type: description)
+1. Use conventional commits format for the subject line: type(scope): description
 2. First line must be under 50 characters
-3. Be specific but concise about what changed
+3. For SUBSTANTIAL changes (multiple files or significant code changes), ALWAYS add a blank line followed by 2-4 bullet points explaining key changes
 4. Use present tense imperative mood (e.g., "fix bug" not "fixes bug")
-5. Focus only on the most significant aspect of the change
-6. For multi-part changes, use a brief subject line and 1-2 bullet points if needed
-7. Consider the semantic meaning of the change, not just the files modified
-8. Include scope in parentheses when appropriate: type(scope): description
-9. Common types: feat, fix, docs, style, refactor, test, chore
+5. The subject line should focus on the most significant aspect of the change
+6. Include scope in parentheses when appropriate: type(scope): description
+7. Common types: feat, fix, docs, style, refactor, test, chore
+8. Make bullet points start with "- " and be concise but descriptive
+9. If changes affect more than 3 files or have >100 line changes, DEFINITELY use a multi-line format
 10. Respond with ONLY the commit message, no explanations
 
-Your suggestions should be professional, clear, and immediately usable.`
+For small changes, a single line is sufficient.
+For major changes (>100 lines or multiple files), ALWAYS use multi-line format with bullet points.`
 
 	// Prepare the diff context - enhanced with file analysis
 	diffContext := `
@@ -512,7 +513,10 @@ Analysis of changes:
 	}
 
 	// Create a user prompt focused on commit message generation with emphasis on changes
-	userPrompt := fmt.Sprintf(`I need a CONCISE and focused commit message for these staged changes.
+	isSubstantialChange := len(changedFiles) > 2 || totalAdditions+totalDeletions > 50
+	
+	var userPrompt string
+	basePrompt := fmt.Sprintf(`I need a%s commit message for these staged changes.
 
 %s
 
@@ -526,14 +530,36 @@ CODE STRUCTURE ANALYSIS:
 %s
 
 Past commit messages for limited context (do not rely heavily on these patterns):
-%s
-
-Based primarily on the ACTUAL CODE CHANGES shown above, suggest a BRIEF, CONCISE commit message that accurately describes the most important changes. Focus on being direct and to the point - every word must justify its inclusion:`,
+%s`,
+		func() string {
+			if isSubstantialChange {
+				return " multi-line"
+			}
+			return ""
+		}(),
 		diffContext,
 		formatCodeChanges(ctx.Diff),
 		formatSemanticChanges(extractCodeSemantics(ctx.Diff)),
 		formatCodeStructure(analyzeCodeStructure(ctx.Diff)),
 		formatCommitList(ctx.CommitHistory))
+		
+	// Add instructions based on change size
+	if isSubstantialChange {
+		userPrompt = basePrompt + fmt.Sprintf(`
+
+This is a SUBSTANTIAL change affecting %d files with %d insertions and %d deletions.
+Therefore, please provide a multi-line commit message with:
+1. A clear, concise subject line following conventional commit format (type(scope): description)
+2. A blank line
+3. 2-4 bullet points that summarize the key components or areas changed
+
+Based primarily on the ACTUAL CODE CHANGES shown above, create a detailed commit message that accurately captures the scope and meaning of these changes:`, 
+			len(changedFiles), totalAdditions, totalDeletions)
+	} else {
+		userPrompt = basePrompt + `
+
+Based primarily on the ACTUAL CODE CHANGES shown above, suggest a BRIEF, CONCISE commit message that accurately describes the most important changes. Focus on being direct and to the point - every word must justify its inclusion:`
+	}
 
 	// Create the chat completion request
 	request := openai.ChatCompletionRequest{
@@ -548,8 +574,8 @@ Based primarily on the ACTUAL CODE CHANGES shown above, suggest a BRIEF, CONCISE
 				Content: userPrompt,
 			},
 		},
-		Temperature: 0.2, // Lower temperature for more consistent, concise responses
-		MaxTokens:   150, // Reduced token limit for shorter messages
+		Temperature: 0.3, // Slightly higher temperature for more nuanced messages
+		MaxTokens:   250, // Increased token limit to accommodate multi-line messages
 		N:           1,
 	}
 
@@ -607,7 +633,7 @@ func extractCommitMessage(response string) string {
 
 	// Ensure first line is under 60 characters
 	if len(firstLine) > 60 {
-		firstLine = firstLine[:60]
+		firstLine = firstLine[:57] + "..."
 	}
 
 	// If we have a conventional commit format, ensure it's properly formatted
@@ -620,10 +646,10 @@ func extractCommitMessage(response string) string {
 			// Known conventional commit types
 			commitTypes := []string{"feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"}
 			
-			// Check if prefix is a valid commit type
+			// Check if prefix is a valid commit type or a type with scope
 			isValidType := false
 			for _, cType := range commitTypes {
-				if prefix == cType {
+				if prefix == cType || strings.HasPrefix(prefix, cType+"(") && strings.HasSuffix(prefix, ")") {
 					isValidType = true
 					break
 				}
@@ -636,26 +662,43 @@ func extractCommitMessage(response string) string {
 		}
 	}
 
-	// Filter out empty lines from body
+	// Process body lines - preserve bullet points and maintain proper multi-line format
 	var bodyLines []string
-	if len(lines) > 1 {
-		for i := 1; i < len(lines); i++ {
-			if trimmed := strings.TrimSpace(lines[i]); trimmed != "" && !strings.HasPrefix(trimmed, "#") {
-				bodyLines = append(bodyLines, trimmed)
+	var inBody = false
+	
+	for i := 1; i < len(lines); i++ {
+		trimmedLine := strings.TrimSpace(lines[i])
+		
+		// Skip empty lines until we reach body content
+		if !inBody && trimmedLine == "" {
+			continue
+		}
+		
+		// We've now reached body content
+		inBody = true
+		
+		// Skip comment lines and empty lines after we've found body content
+		if trimmedLine != "" && !strings.HasPrefix(trimmedLine, "#") {
+			// Ensure bullet points have proper format
+			if strings.HasPrefix(trimmedLine, "* ") {
+				trimmedLine = "- " + trimmedLine[2:]
+			} else if strings.HasPrefix(trimmedLine, "•") {
+				trimmedLine = "- " + trimmedLine[1:]
+			} else if strings.HasPrefix(trimmedLine, "-") && !strings.HasPrefix(trimmedLine, "- ") {
+				trimmedLine = "- " + trimmedLine[1:]
 			}
+			
+			bodyLines = append(bodyLines, trimmedLine)
 		}
 	}
 	
-	// For conciseness, limit body to max 2 lines
+	// For significant changes, keep full body content with all bullet points
 	if len(bodyLines) > 0 {
 		// Ensure blank line after subject
-		if len(bodyLines) > 2 {
-			bodyLines = bodyLines[:2] // Limit to first 2 body lines
-		}
 		return firstLine + "\n\n" + strings.Join(bodyLines, "\n")
 	}
 	
-	// Most commonly, return just the first line
+	// If no body lines, return just the first line
 	return firstLine
 }
 

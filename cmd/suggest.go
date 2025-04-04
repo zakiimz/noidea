@@ -209,8 +209,31 @@ Example:
 						fmt.Println(color.RedString("❌ Error:"), "Failed to write commit message:", err)
 						return
 					}
-					// Success message only (the hook will handle the full display)
-					fmt.Println(color.GreenString("✅ Commit message generated successfully"))
+					// Success message with the complete commit message
+					fmt.Println(color.GreenString("✅ Commit message suggestion applied:"))
+					
+					// Show the full message in the success notification
+					lines := strings.Split(suggestion, "\n")
+					if len(lines) > 1 {
+						// Print the first line (subject) in white
+						fmt.Println(color.HiWhiteString(lines[0]))
+						
+						// Print the rest with proper formatting
+						for i := 1; i < len(lines); i++ {
+							if lines[i] == "" {
+								// Print empty lines as is
+								fmt.Println()
+							} else {
+								// Print content lines in white but not highlighted
+								fmt.Println(color.WhiteString(lines[i]))
+							}
+						}
+					} else {
+						// Single line message
+						fmt.Println(color.HiWhiteString(suggestion))
+					}
+					
+					fmt.Println(color.HiBlackString(divider))
 				}
 			}
 		}
