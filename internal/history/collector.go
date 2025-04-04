@@ -108,8 +108,17 @@ func (h *HistoryCollector) GetCommitHistory(filter HistoryFilter) ([]CommitInfo,
 	// Apply filters
 	if filter.Since != 0 {
 		// Time-based filtering
-		sinceStr := fmt.Sprintf("--since=%s", filter.Since.String())
-		args = append(args, sinceStr)
+		// Format as "N days" instead of using Duration.String() which produces "NNh0m0s"
+		days := int(filter.Since.Hours() / 24)
+		if days > 0 {
+			sinceStr := fmt.Sprintf("--since=%d.days.ago", days)
+			args = append(args, sinceStr)
+		} else {
+			// For less than a day, use hours
+			hours := int(filter.Since.Hours())
+			sinceStr := fmt.Sprintf("--since=%d.hours.ago", hours)
+			args = append(args, sinceStr)
+		}
 	} else if filter.Count > 0 {
 		// Count-based filtering
 		args = append(args, fmt.Sprintf("-n%d", filter.Count))

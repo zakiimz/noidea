@@ -17,27 +17,41 @@ import (
 var (
 	// Summary command flags
 	daysFlag              int
+	allHistoryFlag        bool
 	exportFlag            string
 	statsOnlyFlag         bool
 	aiInsightFlag         bool
 	personalityForSummary string
+	showCommitHistoryFlag bool
 )
 
 func init() {
 	rootCmd.AddCommand(summaryCmd)
 
 	// Add flags
-	summaryCmd.Flags().IntVarP(&daysFlag, "days", "d", 7, "Number of days to include in summary (default: 7)")
+	summaryCmd.Flags().IntVarP(&daysFlag, "days", "d", 7, "Number of days to include in summary (default: 7, use 0 for all history)")
+	summaryCmd.Flags().BoolVarP(&allHistoryFlag, "all", "A", false, "Show complete repository history regardless of --days value")
 	summaryCmd.Flags().StringVarP(&exportFlag, "export", "e", "", "Export format: text, markdown, or html")
 	summaryCmd.Flags().BoolVarP(&statsOnlyFlag, "stats-only", "s", false, "Show only statistics without AI insights")
 	summaryCmd.Flags().BoolVarP(&aiInsightFlag, "ai", "a", false, "Include AI insights (default: use config)")
 	summaryCmd.Flags().StringVarP(&personalityForSummary, "personality", "p", "", "Personality to use for insights (default: from config)")
+	summaryCmd.Flags().BoolVarP(&showCommitHistoryFlag, "show-commits", "c", false, "Include detailed commit history in the output")
 }
 
 var summaryCmd = &cobra.Command{
 	Use:   "summary",
 	Short: "Generate a summary of recent Git activity",
-	Long:  `Analyze your Git history and provide statistics and insights about your recent commits.`,
+	Long:  `Analyze your Git history and provide statistics and insights about your recent commits.
+
+By default, this command shows commits from the last 7 days. If no commits are found
+in this period, it automatically shows all repository history.
+
+Examples:
+  noidea summary                # Show commits from the last 7 days
+  noidea summary --days 30      # Show commits from the last 30 days
+  noidea summary --all          # Show all repository history
+  noidea summary --days 0       # Same as --all, shows all history
+  noidea summary --show-commits # Include detailed commit history in output`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load configuration
 		cfg := config.LoadConfig()
@@ -51,17 +65,62 @@ var summaryCmd = &cobra.Command{
 			personalityName = personalityForSummary
 		}
 
-		// Get commit data for the specified period
-		commits, err := history.GetCommitsFromLastNDays(daysFlag, useAI)
-		if err != nil {
-			fmt.Println(color.RedString("Error:"), "Failed to retrieve commit history:", err)
+		var commits []history.CommitInfo
+		var err error
+
+		// Check if user requested all history
+		if allHistoryFlag || daysFlag == 0 {
+			// Fetch all commits
+			commits, err = history.GetLastNCommits(1000, useAI)
+			if err != nil {
+				fmt.Println(color.RedString("Error:"), "Failed to retrieve commit history:", err)
+				return
+			}
+			// Set days to a large value to indicate complete history in the summary
+			daysFlag = 365 * 10 // 10 years, arbitrary large number
+		} else {
+			// Get commit data for the specified period
+			commits, err = history.GetCommitsFromLastNDays(daysFlag, useAI)
+			if err != nil {
+				fmt.Println(color.RedString("Error:"), "Failed to retrieve commit history:", err)
+				return
+			}
+
+			// Only show the fallback message and fetch all history if we truly have zero commits
+			if len(commits) == 0 {
+				// No commits in the specified time period, automatically fetch all history
+				fmt.Println(color.YellowString("No commits found in the last"), 
+					color.CyanString(strconv.Itoa(daysFlag)), 
+					color.YellowString("days. Showing complete history instead."))
+				
+				// Get all commits by using GetLastNCommits with a high number
+				commits, err = history.GetLastNCommits(1000, useAI)
+				if err != nil {
+					fmt.Println(color.RedString("Error:"), "Failed to retrieve commit history:", err)
+					return
+				}
+				
+				// Set days to a large value to indicate complete history in the summary
+				daysFlag = 365 * 10 // 10 years, arbitrary large number
+			}
+		}
+
+		// Check if we have any commits after all attempts
+		if len(commits) == 0 {
+			fmt.Println(color.YellowString("No commits found in this repository."))
 			return
 		}
 
-		// Check if we have any commits
-		if len(commits) == 0 {
-			fmt.Println(color.YellowString("No commits found in the last"), color.CyanString(strconv.Itoa(daysFlag)), color.YellowString("days."))
-			return
+		// If showing all history, update the days value to reflect the actual time span
+		if daysFlag >= 365*10 && len(commits) > 0 {
+			// Find the oldest commit timestamp
+			oldestCommit := commits[len(commits)-1].Timestamp
+			days := int(time.Since(oldestCommit).Hours() / 24) + 1
+			
+			// Only update if it's less than our arbitrary large number
+			if days < 365*10 {
+				daysFlag = days
+			}
 		}
 
 		// Generate statistics
@@ -87,7 +146,7 @@ var summaryCmd = &cobra.Command{
 		}
 
 		// Generate the complete summary
-		summary := formatSummary(statsSummary, commitList, aiInsight, daysFlag)
+		summary := formatSummary(statsSummary, commitList, aiInsight, daysFlag, showCommitHistoryFlag)
 
 		// Export if requested, otherwise print to console
 		if exportFlag != "" {
@@ -133,15 +192,22 @@ func generateAIInsights(commits []history.CommitInfo, stats map[string]interface
 }
 
 // formatSummary combines all parts into a complete summary
-func formatSummary(stats, commits, aiInsights string, days int) string {
+func formatSummary(stats, commits, aiInsights string, days int, showHistory bool) string {
 	var result strings.Builder
 
 	// Header
 	result.WriteString(color.CyanString("📊 Git Activity Summary") + "\n")
-	result.WriteString(color.CyanString(fmt.Sprintf("Last %d days - %s to %s\n\n",
-		days,
-		time.Now().AddDate(0, 0, -days).Format("2006-01-02"),
-		time.Now().Format("2006-01-02"))))
+	
+	// Adjust time range text based on whether we're showing all history
+	if days >= 365*10 || days == 0 { // Check for our arbitrary large number or explicit 0
+		result.WriteString(color.CyanString("Complete repository history\n\n"))
+	} else {
+		// Compute the actual date from time.Now() to maintain consistency
+		result.WriteString(color.CyanString(fmt.Sprintf("Last %d days - %s to %s\n\n",
+			days,
+			time.Now().AddDate(0, 0, -days).Format("2006-01-02"),
+			time.Now().Format("2006-01-02"))))
+	}
 
 	// Statistics
 	result.WriteString(color.CyanString("## Statistics\n\n"))
@@ -155,9 +221,11 @@ func formatSummary(stats, commits, aiInsights string, days int) string {
 		result.WriteString("\n\n")
 	}
 
-	// Commit List
-	result.WriteString(color.CyanString("## Commit History\n\n"))
-	result.WriteString(commits)
+	// Only include commit history if explicitly requested
+	if showHistory {
+		result.WriteString(color.CyanString("## Commit History\n\n"))
+		result.WriteString(commits)
+	}
 
 	return result.String()
 }

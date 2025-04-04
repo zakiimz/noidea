@@ -29,6 +29,9 @@ GO?=$(shell command -v go 2>/dev/null || \
 	   command -v $(REAL_HOME)/go/bin/go 2>/dev/null || \
 	   echo "go")
 
+# Add a configurable install location with sensible defaults
+INSTALL_DIR ?= $(shell if test -d "$(HOME)/bin"; then echo "$(HOME)/bin"; else echo "/usr/local/bin"; fi)
+
 # Default: build the binary
 build:
 	@echo "Building $(BINARY) version $(VERSION) (commit: $(COMMIT))..."
@@ -41,9 +44,9 @@ build:
 
 # Install binary and set up global config directory
 install: build
-	@echo "Installing $(BINARY) to $(BINDIR)..."
-	mkdir -p $(BINDIR)
-	cp $(BINARY) $(BINDIR)/
+	@echo "Installing $(BINARY) to $(INSTALL_DIR)..."
+	mkdir -p $(INSTALL_DIR)
+	cp $(BINARY) $(INSTALL_DIR)/
 	@echo "Setting up configuration directory..."
 	mkdir -p $(REAL_HOME)/.noidea
 	@# Create default config.json file if it doesn't exist
