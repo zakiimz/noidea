@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/AccursedGalaxy/noidea/internal/config"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 // Version information
 var (
-	Version   = "v0.1.7" // Will be overridden during build
+	Version   = "v0.1.8" // Will be overridden during build
 	BuildDate = "dev"   // Will be overridden during build
 	Commit    = "none"  // Will be overridden during build
 )
@@ -47,6 +48,9 @@ Main commands:
 }
 
 func init() {
+	// Load environment variables from .env file
+	config.LoadEnvFromFile()
+	
 	// Add version flag
 	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Print version information and exit")
 }
