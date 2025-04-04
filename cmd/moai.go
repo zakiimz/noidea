@@ -26,6 +26,8 @@ var (
 	listPersonalities bool
 	// Flag to include commit history context
 	includeHistory bool
+	// Flag to enable debug mode
+	debugMode bool
 )
 
 func init() {
@@ -37,6 +39,7 @@ func init() {
 	moaiCmd.Flags().StringVarP(&personalityFlag, "personality", "p", "", "Personality to use for feedback (default: from config)")
 	moaiCmd.Flags().BoolVarP(&listPersonalities, "list-personalities", "l", false, "List available personalities")
 	moaiCmd.Flags().BoolVarP(&includeHistory, "history", "H", false, "Include recent commit history context")
+	moaiCmd.Flags().BoolVarP(&debugMode, "debug", "D", false, "Enable debug mode to show detailed API information")
 }
 
 var moaiCmd = &cobra.Command{
@@ -130,6 +133,27 @@ var moaiCmd = &cobra.Command{
 				// On error, fallback to local feedback
 				fmt.Println(color.YellowString(moai.GetRandomFeedback(commitMsg)))
 				fmt.Println(color.RedString("AI Error:"), err)
+				
+				// If debug mode is enabled, show more details
+				if debugMode {
+					fmt.Println(color.CyanString("\nDebug information:"))
+					fmt.Printf("Provider: %s\n", cfg.LLM.Provider)
+					fmt.Printf("Model: %s\n", cfg.LLM.Model)
+					apiKeyLength := 0
+					if cfg.LLM.APIKey != "" {
+						apiKeyLength = len(cfg.LLM.APIKey)
+						fmt.Printf("API key length: %d\n", apiKeyLength)
+						
+						// Show a short prefix of the API key for debugging
+						prefixLen := 10
+						if apiKeyLength < prefixLen {
+							prefixLen = apiKeyLength
+						}
+						fmt.Printf("API key prefix: %s\n", cfg.LLM.APIKey[:prefixLen])
+					} else {
+						fmt.Printf("API key length: 0 (no API key found)\n")
+					}
+				}
 			} else {
 				// Display AI-generated feedback
 				fmt.Println(color.CyanString(aiResponse))

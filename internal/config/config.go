@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 // Config represents the application configuration
@@ -130,22 +131,27 @@ func applyEnvironmentOverrides(cfg Config) Config {
 	
 	// API keys from multiple possible environment variables
 	if val := os.Getenv("NOIDEA_API_KEY"); val != "" {
-		cfg.LLM.APIKey = val
+		cfg.LLM.APIKey = strings.TrimSpace(val)
 	}
 	
 	// Provider-specific API keys take precedence
 	switch cfg.LLM.Provider {
 	case "xai":
 		if val := os.Getenv("XAI_API_KEY"); val != "" {
-			cfg.LLM.APIKey = val
+			// Ensure the key is properly formatted and trimmed
+			cfg.LLM.APIKey = strings.TrimSpace(val)
+			// Log a warning if key doesn't have expected prefix
+			if !strings.HasPrefix(cfg.LLM.APIKey, "xai-") {
+				fmt.Fprintf(os.Stderr, "Warning: XAI API key doesn't start with 'xai-' prefix\n")
+			}
 		}
 	case "openai":
 		if val := os.Getenv("OPENAI_API_KEY"); val != "" {
-			cfg.LLM.APIKey = val
+			cfg.LLM.APIKey = strings.TrimSpace(val)
 		}
 	case "deepseek":
 		if val := os.Getenv("DEEPSEEK_API_KEY"); val != "" {
-			cfg.LLM.APIKey = val
+			cfg.LLM.APIKey = strings.TrimSpace(val)
 		}
 	}
 	
