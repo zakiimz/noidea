@@ -1,28 +1,47 @@
-# noidea Documentation
+---
+layout: home
+title: Home
+nav_order: 1
+permalink: /
+---
 
-This directory contains the GitHub Pages documentation site for the noidea project.
+# 🧠 noidea
+{: .fs-9 }
 
-## Local Development
+Git assistant with AI commit messages and sassy feedback
+{: .fs-6 .fw-300 }
 
-To run this site locally:
+[Get Started](./docs/getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[View on GitHub](https://github.com/AccursedGalaxy/noidea){: .btn .fs-5 .mb-4 .mb-md-0 }
 
-1. Install Ruby and Bundler
-2. Run `bundle install` to install dependencies
-3. Run `bundle exec jekyll serve` to start the local server
-4. Visit `http://localhost:4000/noidea/` in your browser
+---
 
-## Structure
+## What is noidea?
 
-- `_config.yml`: Jekyll configuration
-- `Gemfile`: Ruby dependencies
-- `index.md`: Home page
-- `docs/`: Documentation pages
-  - `getting-started.md`: Getting started guide
-  - `usage.md`: Usage documentation
-  - `faq.md`: Frequently asked questions
-  - `configuration.md`: Advanced configuration
-- `assets/`: Images and other assets
+**noidea** is a Git companion that makes your commits better and funnier:
 
-## Deployment
+- **Get smart commit messages** based on your changes
+- **Receive sassy feedback** from a judgmental Moai after each commit
+- **Analyze your Git history** for insights and patterns
 
-The site is automatically deployed to GitHub Pages when changes are pushed to the `main` branch. The deployment is handled by the GitHub workflow defined in `.github/workflows/docs.yml`. 
+![noidea in action](assets/images/demo.gif)
+
+## Features
+
+- AI-powered commit message suggestions
+- Post-commit feedback with customizable personalities
+- Weekly Git activity summaries
+- Multiple AI personalities for feedback
+- Easy configuration and setup
+
+## Quick Installation
+
+```bash
+# One-line quick install
+curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | bash
+
+# OR Clone and install
+git clone https://github.com/AccursedGalaxy/noidea.git
+cd noidea
+./install.sh
+``` 

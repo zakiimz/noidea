@@ -1,12 +1,12 @@
 title: noidea
 description: Git assistant with AI commit messages and sassy feedback
-baseurl: "/noidea" # the subpath of your site, e.g. /blog
-url: "https://accursedgalaxy.github.io" # use your GitHub username instead
+baseurl: "/noidea"
+url: "https://accursedgalaxy.github.io"
 
 # Build settings
 markdown: kramdown
 remote_theme: just-the-docs/just-the-docs
-color_scheme: dark
+theme: jekyll-theme-cayman # Fallback theme
 
 # Enable search
 search_enabled: true
@@ -38,7 +38,7 @@ footer_content: "Copyright &copy; 2023 AccursedGalaxy. Distributed under an MIT 
 defaults:
   -
     scope:
-      path: "" # an empty string here means all files in the project
+      path: ""
     values:
       layout: "default"
 
