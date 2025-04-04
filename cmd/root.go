@@ -25,8 +25,8 @@ var versionFlag bool
 var rootCmd = &cobra.Command{
 	Use:   "noidea",
 	Short: "noidea - The Git Extension You Never Knew You Needed",
-	Long: `🧠 noidea - A lightweight, plug-and-play Git extension that adds 
-✨fun and occasionally useful ✨feedback into your normal Git workflow.
+	Long: `🧠 noidea - A lightweight, plug-and-play Git extension that adds
+✨fun and occasionally usefulfeedback into your normal Git workflow.
 
 Every time you commit, a mysterious Moai appears to judge your code.
 
@@ -43,7 +43,7 @@ Main commands:
 			printVersion()
 			return
 		}
-		
+
 		// If no subcommand is provided, print help
 		cmd.Help()
 	},
@@ -52,7 +52,7 @@ Main commands:
 func init() {
 	// Load environment variables from .env files
 	loadEnvFiles()
-	
+
 	// Add version flag
 	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Print version information and exit")
 }
@@ -64,7 +64,7 @@ func loadEnvFiles() {
 		".env",                              // Current directory
 		".noidea.env",                       // Alternative name in current directory
 	}
-	
+
 	// Try to get home directory for additional locations
 	if homeDir, err := os.UserHomeDir(); err == nil {
 		locations = append(locations, filepath.Join(homeDir, ".noidea", ".env"))
@@ -78,34 +78,34 @@ func loadEnvFiles() {
 				fmt.Fprintf(os.Stderr, "Warning: Error opening %s: %v\n", location, err)
 				continue
 			}
-			
+
 			scanner := bufio.NewScanner(file)
 			for scanner.Scan() {
 				line := scanner.Text()
-				
+
 				// Skip empty lines and comments
 				if line == "" || strings.HasPrefix(line, "#") {
 					continue
 				}
-				
+
 				// Split by first equals sign
 				parts := strings.SplitN(line, "=", 2)
 				if len(parts) != 2 {
 					continue
 				}
-				
+
 				key := strings.TrimSpace(parts[0])
 				value := strings.TrimSpace(parts[1])
-				
+
 				// Remove quotes if present
 				value = strings.Trim(value, `"'`)
-				
+
 				// Only set if not already in environment
 				if _, exists := os.LookupEnv(key); !exists {
 					os.Setenv(key, value)
 				}
 			}
-			
+
 			file.Close()
 			break // Successfully loaded one file, stop looking
 		}
