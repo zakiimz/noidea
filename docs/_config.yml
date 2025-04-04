@@ -29,4 +29,19 @@ show_downloads: true
 aux_links:
   "noidea on GitHub":
     - "https://github.com/AccursedGalaxy/noidea"
-search_enabled: true 
+search_enabled: true
+
+# Enable dark mode
+color_scheme: dark
+
+# Navigation
+nav_external_links:
+  - title: noidea on GitHub
+    url: https://github.com/AccursedGalaxy/noidea
+    hide_icon: false
+
+# Enable copy code button
+enable_copy_code_button: true
+
+# Footer content
+footer_content: "Copyright &copy; 2025 Accursed Galaxy. Distributed under an <a href=\"https://github.com/AccursedGalaxy/noidea/blob/main/LICENSE\">MIT license.</a>" 
