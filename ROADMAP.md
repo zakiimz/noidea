@@ -2,25 +2,6 @@
 **Vision:**
 To create the most delightful, intelligent Git companion that makes every commit experience both productive and enjoyable.
 
----
-
-### ✅ Phase 1-6: Core Features & Initial Implementation (COMPLETED)
-
-All initial planned features have been successfully implemented, including:
-- Core CLI structure with Git hook integration
-- LLM integration with multiple providers (xAI, OpenAI, DeepSeek)
-- Advanced personality system with customizable prompts
-- Commit message suggestions with intelligent diff analysis
-- Commit feedback with contextual awareness
-- Weekly summaries and commit history insights
-- Installation and configuration utilities
-
----
-
-### 🔍 Phase 7: Polish & User Experience (Current)
-
-**🔹 Goal:** Enhance usability and fix any outstanding issues to create a more polished user experience.
-
 #### Tasks:
 
 Future Vision Idea:
@@ -35,128 +16,109 @@ Future Vision Idea:
 -> We could possibly link this with GitHub Projects. This way we can track Tasks we need to do, currently doing and done etc.
 -> Need to explore how we could integrate with this nicely code whise
 
-- [x] Fix Ai Feedback Cutoff in Feedback Command
-- [ ] Make sure users can easily update
-- [ ] Custom Commit Message Templates?
-  - [ ] Think about how to implement this nicely
 
-- [x] **Fix Multi-line Commit Messages:**
-  - [x] Improve commit message generation for substantial changes
-  - [x] Ensure proper formatting and display of multi-line messages
-  - [x] Remove artificial truncation of subject lines
-  - [x] Refine guidance for commit message length while prioritizing clarity
+# NoIdea → AI Project Assistant: Integration Plan
 
-- [x] **Fix Ai Feedback Cutoff in Feedback Command:**
-  - [x] Feedback command removed (consolidated with summary command which provides the same functionality)
+## GitHub API Integration
 
-- [ ] **Enhance Personalities:**
-  - [x] Add "Professional with Sass" default personality
-  - [x] Add support for custom personality configurations in the feedback engine
-  - [ ] Fine-tune prompt templates for better context sensitivity
-  - [ ] Update ./install.sh to properly reflect new personalities and default setup
-  - [ ] Add visual indicators for different personalities (icons, colors)
+- **GitHub REST/GraphQL API**: Implement a new `github` package in the `internal` directory to handle all GitHub API interactions.
+  - Use GitHub's GraphQL API for efficient querying of issues, projects and complex relationships
+  - Use REST API for simpler operations when appropriate
 
-- [ ] **Usability Improvements:**
-  - [x] Enhance summary command output formatting and error handling
-  - [x] Fix issue with nil values in commit statistics
-  - [x] Implement intelligent fallbacks when no API key is available
-  - [ ] Add support for project-specific configurations
-  - [x] Improve error handling and user-friendly error messages
-  - [x] Implement secure API key storage with proper validation for multiple providers
-  - [x] Add clean API status output with meaningful feedback
+- **Authentication Options**:
+  - GitHub Personal Access Tokens (PATs) stored securely using existing `secure` package
+  - GitHub CLI authentication compatibility (gh auth)
+  - OAuth flow for better security and scoped permissions
 
-- [ ] **Documentation Upgrades:**
-  - [ ] Enhance README with more detailed examples and GIFs
-  - [ ] Create a comprehensive user guide
-  - [ ] Add a troubleshooting section for common issues
+## Command Structure
 
----
+Extend the current CLI with new commands:
 
-### 📊 Phase 8: Visual & Analytics Enhancement
+```
+noidea issue list              # List issues for current repo and their status + project relation
+noidea issue view <number>     # View details of a specific issue
+noidea issue create            # Create a new issue (with AI assistance)
 
-**🔹 Goal:** Add more visual elements and deeper analytics to make Git history more insightful.
+noidea project init             # Initialize a new Project inside the current git repository. (Offer AI Assitance)
+```
 
-#### Tasks:
-- [ ] **Visual Summary Improvements:**
-  - [ ] Add ASCII/Unicode charts for commit frequency
-  - [ ] Implement heat maps for commit activity
-  - [ ] Create visual representations of code change patterns
+think about how to integrate into dev workflow so starting to work on issues and closing them with a commit flows and feels nice
 
-- [ ] **Enhanced Analytics:**
-  - [ ] Implement code quality metrics in feedback
-  - [ ] Add linting feedback based on diff changes or actual file contents?
-  - [ ] Add "time of day" analysis for productivity patterns
+## Core Components
 
-- [ ] **Team Insights:**
-  - [ ] Add team collaboration metrics
-  - [ ] Implement author-specific feedback and suggestions
-  - [ ] Create collaborative progress tracking
+1. **GitHub Module** (`internal/github/`):
+   - Authentication handlers
+   - Issue CRUD operations
+   - Project boards interaction
+   - Repository metadata management
+   - Tracking relationships between commits and issues
 
----
+2. **Workflow Engine** (`internal/workflow/`):
+   - Branch naming conventions based on issues
+   - Automated status transitions
+   - Smart linking between commits and issues
 
-### 🌐 Phase 9: Integration & Extensibility
+3. **Enhanced AI Context** (`internal/context/`):
+   - Expand existing AI capabilities to analyze issue descriptions
+   - Generate issue summaries from code changes
+   - Suggest issue status changes based on commit content
 
-**🔹 Goal:** Enhance integration with other tools and create extension points.
+## Technical Implementation Details
 
-#### Tasks:
-- [ ] **IDE Integration:**
-  - [ ] Create VS Code extension
-  - [ ] Develop JetBrains IDE plugin
-  - [ ] Add support for other popular editors
+1. **Local Cache and Syncing**:
+   - Implement a local cache of GitHub issues/projects to improve performance
+   - Use webhooks or polling to keep local state in sync
+   - Store in SQLite or similar lightweight DB in user profile
 
-- [ ] **CI/CD Integration:**
-  - [ ] Add GitHub Actions integration
+2. **State Management**:
+   - Track which issue is currently being worked on
+   - Associate branches with issues
+   - Maintain project board state locally
 
-- [ ] **Plugin System:**
-  - [ ] Design a plugin architecture
-  - [ ] Create documentation for plugin development
-  - [ ] Develop sample plugins
+3. **Git Hooks Enhancement**:
+   - Update existing hooks to detect issue references
+   - Automatically add issue links to commits
+   - Prompt for issue closure when appropriate
 
----
+4. **AI Integration Points**:
+   - Issue summarization (convert verbose issues to concise tasks)
+   - Issue creation (generate well-formed issues from natural language)
+   - Commit-to-issue matching (suggest which issue a commit addresses)
+   - Work estimation (suggest timeframes based on issue complexity)
 
-### 👥 Phase 10: Community & Ecosystem
+## User Experience Workflow
 
-**🔹 Goal:** Build a vibrant community around the tool and support ecosystem growth.
+1. User runs `noidea issue list` to see pending tasks
+2. User selects an issue with `noidea issue start #123`
+   - Creates branch automatically
+   - Updates issue status in GitHub Projects
+3. User makes changes, commits with regular git workflow
+   - The enhanced commit hook links to the issue
+4. User completes work with `noidea issue close #123`
+   - Tool generates AI summary of changes
+   - Updates GitHub issue with relevant details
+   - Moves card in project board
 
-#### Tasks:
-- [ ] **Community Building:**
-  - [ ] Create a dedicated website/documentation portal
-  - [ ] Establish community guidelines and contribution processes
-  - [ ] Set up discussion forums and channels
+## Integration Plan Phases
 
-- [ ] **Contribution Support:**
-  - [ ] Create detailed contributor documentation
-  - [ ] Implement automated testing and CI for contributions
-  - [ ] Develop a mentorship system for new contributors
+1. **Phase 1**: Basic GitHub Issues integration
+   - Authentication
+   - Issue listing/viewing
+   - Simple issue creation
 
-- [ ] **Ecosystem Growth:**
-  - [ ] Create a personality template repository
-  - [ ] Build a showcase for community-created plugins
-  - [ ] Develop integration examples with other tools
+2. **Phase 2**: Workflow integration
+   - Branch management
+   - Issue status transitions
+   - Commit linking
 
----
+3. **Phase 3**: Projects integration
+   - Project board visualization
+   - Card movement
+   - Advanced AI assistance
 
-### 🚀 Phase 11: Enterprise & Advanced Features
-
-**🔹 Goal:** Add features for larger teams and enterprises.
-
-#### Tasks:
-- [ ] **Enterprise Support:**
-  - [ ] Implement team-wide configuration management
-  - [ ] Add role-based access controls
-  - [ ] Create enterprise deployment documentation
-
-- [ ] **Advanced AI Features:**
-  - [ ] Implement code review suggestions
-  - [ ] Add PR description generation
-  - [ ] Develop release notes automation
-  - [ ] Create documentation generation from code changes
-
-- [ ] **Performance & Scalability:**
-  - [ ] Optimize for large repositories
-  - [ ] Add caching and performance improvements
-  - [ ] Implement batched operations for large commit histories
-
----
+4. **Phase 4**: Full workflow automation
+   - Smart suggestions
+   - Predictive issue management
+   - Team collaboration features
 
 This roadmap is a living document that will evolve based on community feedback and emerging priorities. The team welcomes suggestions and contributions to help shape the future of `noidea`.
