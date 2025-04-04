@@ -3,7 +3,6 @@ package secure
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 )
@@ -26,9 +25,6 @@ func ValidateAPIKey(provider, apiKey string) (bool, error) {
 		baseURL = "https://api.openai.com/v1/models"
 	}
 	
-	// Debug info to help troubleshoot
-	fmt.Printf("Debug: Validating %s API key with API endpoint: %s\n", provider, baseURL)
-	
 	return validateAPIKeyWithEndpoint(apiKey, baseURL)
 }
 
@@ -50,15 +46,6 @@ func validateAPIKeyWithEndpoint(apiKey, baseURL string) (bool, error) {
 		return false, fmt.Errorf("connection error: %w", err)
 	}
 	defer resp.Body.Close()
-	
-	// Debug response
-	body, _ := io.ReadAll(resp.Body)
-	fmt.Printf("Debug: API response status: %d\n", resp.StatusCode)
-	if len(body) < 1000 {
-		fmt.Printf("Debug: API response body: %s\n", string(body))
-	} else {
-		fmt.Printf("Debug: API response body length: %d bytes\n", len(body))
-	}
 	
 	// For our purposes, consider any response (even error) as valid
 	// Since many providers will return errors for invalid models, etc.
