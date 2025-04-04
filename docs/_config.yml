@@ -1,0 +1,27 @@
+title: noidea
+description: Git assistant with AI commit messages and sassy feedback
+baseurl: "/noidea" # the subpath of your site, e.g. /blog
+url: "https://accursedgalaxy.github.io" # use your GitHub username instead
+
+# Theme settings
+remote_theme: just-the-docs/just-the-docs
+color_scheme: dark
+
+# Aux links for the upper right navigation
+aux_links:
+  "noidea on GitHub":
+    - "//github.com/AccursedGalaxy/noidea"
+
+# Footer content
+footer_content: "Copyright &copy; 2025 AccursedGalaxy. Distributed under an MIT license."
+
+# Collections for site structure
+collections:
+  docs:
+    permalink: "/:collection/:path/"
+    output: true
+
+just_the_docs:
+  collections:
+    docs:
+      name: Documentation 
