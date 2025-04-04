@@ -1,8 +1,7 @@
 # 🚀 Critical TODO Items for Open Source Release
 
 ## 📚 Documentation
-- [ ] Create `CONTRIBUTING.md` with clear guidelines for contributors
-- [ ] Add `CODE_OF_CONDUCT.md` based on Contributor Covenant
+- [x] Create `CONTRIBUTING.md` with clear guidelines for contributors
 - [ ] Set up GitHub Pages site:
   - [ ] Initialize with a modern documentation theme (e.g., Docusaurus, Jekyll with Just-the-Docs)
   - [ ] Create basic structure (Home, Getting Started, Usage, FAQ)
