@@ -303,32 +303,19 @@ func (e *UnifiedFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (str
 	// Use a custom system prompt focused on commit message generation
 	// This override ensures professional commit messages regardless of personality
 	systemPrompt := `You are a Git expert who writes clear, concise, and descriptive commit messages.
-Your task is to suggest a high-quality commit message based on the staged changes.
+Your task is to suggest an extremely short, focused commit message based on the changes.
 Follow these guidelines:
-1. IMPORTANT: Focus primarily on the ACTUAL CHANGES in the diff, not on past commit patterns
-2. Write EXTREMELY CONCISE and FOCUSED commit messages - be brief but precise
-3. Use the conventional commits format (type: description) when appropriate
-   - docs: for documentation changes
-   - feat: for new features
-   - fix: for bug fixes
-   - refactor: for code restructuring without behavior changes
-   - style: for formatting/style changes
-   - test: for adding or fixing tests
-   - chore: for routine maintenance tasks
-   - build: for changes to build system or dependencies
-4. Keep the first line under 50 characters whenever possible, never exceed 72 characters
-5. For multi-line commits, ensure each additional line is CONCISE and FOCUSED on essential details only
+1. CRITICAL: Messages MUST be extremely brief - use as few words as possible
+2. Use conventional commits format (type: description)
+3. First line MUST be under 50 characters, NEVER exceed 60
+4. Avoid all unnecessary words - be ruthlessly concise
+5. Focus only on the most significant aspect of the change
 6. Use present tense (e.g., "add feature" not "added feature")
-7. For simple changes affecting a single file or making minor modifications, a single line message is sufficient
-8. For complex changes, use a multi-line format:
-   - First line: Extremely concise summary (type: description)
-   - Second line: BLANK line
-   - Following lines: BRIEF explanation with ONLY essential details - be economical with words
-9. IMPORTANT: Your response must ONLY contain the commit message itself, with no explanations or markdown
-10. Avoid generic messages - be specific but BRIEF about what changed
-11. When describing functionality changes, focus on the MOST SIGNIFICANT aspects only
-12. Ruthlessly eliminate unnecessary words and details - every word must justify its inclusion
-13. MOST IMPORTANT: Be concise and to the point - developers should understand the changes without reading a lengthy message`
+7. For multi-line commits, keep follow-up lines extremely short (max 2-3 lines total)
+8. Respond with ONLY the commit message itself, no explanations
+9. Be specific but extremely brief about what changed
+10. Write in the imperative mood (e.g., "fix bug" not "fixes bug")
+11. Most changes should result in a single-line commit message`
 
 	// Prepare the diff context - enhanced with file analysis
 	diffContext := `
@@ -558,8 +545,8 @@ Based primarily on the ACTUAL CODE CHANGES shown above, suggest a BRIEF, CONCISE
 				Content: userPrompt,
 			},
 		},
-		Temperature: 0.3, // Fixed lower temperature for more precise, professional responses
-		MaxTokens:   300, // Increased token limit for multi-line commit messages
+		Temperature: 0.2, // Lower temperature for more consistent, concise responses
+		MaxTokens:   150, // Reduced token limit for shorter messages
 		N:           1,
 	}
 
@@ -606,98 +593,67 @@ func extractCommitMessage(response string) string {
 	// Split into lines to process
 	lines := strings.Split(response, "\n")
 
-	// Always look for conventional commit format in the first line
-	if len(lines) > 0 {
-		firstLine := strings.TrimSpace(lines[0])
-
-		// Ensure first line is under 72 characters
-		if len(firstLine) > 72 {
-			firstLine = firstLine[:72]
+	// Get first non-empty line
+	var firstLine string
+	for _, line := range lines {
+		if trimmedLine := strings.TrimSpace(line); trimmedLine != "" && !strings.HasPrefix(trimmedLine, "#") {
+			firstLine = trimmedLine
+			break
 		}
+	}
 
-		// Check if first line matches conventional commit format
-		if strings.Contains(firstLine, ":") && len(firstLine) < 100 {
-			typePrefix := strings.Split(firstLine, ":")[0]
-			// Common commit types
+	// Ensure first line is under 60 characters
+	if len(firstLine) > 60 {
+		firstLine = firstLine[:60]
+	}
+
+	// If we have a conventional commit format, ensure it's properly formatted
+	if strings.Contains(firstLine, ":") {
+		parts := strings.SplitN(firstLine, ":", 2)
+		if len(parts) == 2 {
+			prefix := parts[0]
+			message := strings.TrimSpace(parts[1])
+			
+			// Known conventional commit types
 			commitTypes := []string{"feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"}
+			
+			// Check if prefix is a valid commit type
+			isValidType := false
 			for _, cType := range commitTypes {
-				if typePrefix == cType {
-					// If it's a multi-line commit message, return a condensed version
-					if len(lines) > 2 {
-						// Ensure we have a blank line after the first line
-						if strings.TrimSpace(lines[1]) == "" {
-							// Only include essential follow-up lines (up to 5 max)
-							maxBodyLines := 5
-							if len(lines) > maxBodyLines+2 {
-								return firstLine + "\n\n" + strings.Join(lines[2:2+maxBodyLines], "\n")
-							}
-							return firstLine + "\n\n" + strings.Join(lines[2:], "\n")
-						} else {
-							// Insert blank line if missing, and limit body lines
-							maxBodyLines := 5
-							if len(lines) > maxBodyLines+1 {
-								return firstLine + "\n\n" + strings.Join(lines[1:1+maxBodyLines], "\n")
-							}
-							return firstLine + "\n\n" + strings.Join(lines[1:], "\n")
-						}
-					}
-					// Single line commit message
-					return firstLine
+				if prefix == cType {
+					isValidType = true
+					break
 				}
 			}
-		}
-	}
-
-	// If first line doesn't match conventional format but we have multiple lines,
-	// it might still be a valid multi-line commit
-	if len(lines) > 2 && len(strings.TrimSpace(lines[0])) > 0 {
-		firstLine := strings.TrimSpace(lines[0])
-		
-		// Ensure first line is under 72 characters
-		if len(firstLine) > 72 {
-			firstLine = firstLine[:72]
-		}
-		
-		// Check if we have a blank second line
-		if strings.TrimSpace(lines[1]) == "" {
-			// Limit the body to a reasonable number of lines (5 max)
-			maxBodyLines := 5
-			if len(lines) > maxBodyLines+2 {
-				return firstLine + "\n\n" + strings.Join(lines[2:2+maxBodyLines], "\n")
+			
+			if isValidType {
+				// Proper formatting with no space before colon and one space after
+				firstLine = prefix + ": " + message
 			}
-			return firstLine + "\n\n" + strings.Join(lines[2:], "\n")
-		} else if strings.TrimSpace(lines[1]) != "" && len(lines) > 2 {
-			// Add blank line separator if missing, and limit body lines
-			maxBodyLines := 5
-			if len(lines) > maxBodyLines+1 {
-				return firstLine + "\n\n" + strings.Join(lines[1:1+maxBodyLines], "\n")
+		}
+	}
+
+	// Filter out empty lines from body
+	var bodyLines []string
+	if len(lines) > 1 {
+		for i := 1; i < len(lines); i++ {
+			if trimmed := strings.TrimSpace(lines[i]); trimmed != "" && !strings.HasPrefix(trimmed, "#") {
+				bodyLines = append(bodyLines, trimmed)
 			}
-			return firstLine + "\n\n" + strings.Join(lines[1:], "\n")
 		}
 	}
-
-	// If no valid format found, use the first non-empty line as subject
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" && len(line) < 100 && !strings.HasPrefix(line, "#") {
-			// Ensure line is under 72 characters
-			if len(line) > 72 {
-				return line[:72]
-			}
-			return line
+	
+	// For conciseness, limit body to max 2 lines
+	if len(bodyLines) > 0 {
+		// Ensure blank line after subject
+		if len(bodyLines) > 2 {
+			bodyLines = bodyLines[:2] // Limit to first 2 body lines
 		}
+		return firstLine + "\n\n" + strings.Join(bodyLines, "\n")
 	}
-
-	// If all else fails, return the first 72 chars of first line
-	if len(lines) > 0 {
-		firstLine := strings.TrimSpace(lines[0])
-		if len(firstLine) > 72 {
-			return firstLine[:72]
-		}
-		return firstLine
-	}
-
-	return response
+	
+	// Most commonly, return just the first line
+	return firstLine
 }
 
 // formatCommitList creates a formatted string of commit messages
