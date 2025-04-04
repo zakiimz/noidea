@@ -32,6 +32,9 @@ Future Vision Idea:
     - Make it easy to check issues, work on them, commit changes, close issue. wokflow.
 -> Expand current hook setup to seemlesly integrate these features
 
+-> We could possibly link this with GitHub Projects. This way we can track Tasks we need to do, currently doing and done etc.
+-> Need to explore how we could integrate with this nicely code whise
+
 - [x] Fix Ai Feedback Cutoff in Feedback Command
 - [ ] Make sure users can easily update
 - [ ] Custom Commit Message Templates?
