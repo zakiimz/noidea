@@ -11,7 +11,7 @@ title: Home
 - **Receive sassy feedback** from a judgmental Moai after each commit
 - **Analyze your Git history** for insights and patterns
 
-![noidea in action](/assets/images/header.png)
+![noidea in action](/noidea/assets/images/header.png)
 
 ## ⚡ Quick Start
 

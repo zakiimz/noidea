@@ -3,6 +3,7 @@ description: A Git companion with AI commit messages and sassy feedback
 baseurl: "/noidea" # the subpath of your site, e.g. /blog
 url: "https://accursedgalaxy.github.io" # the base hostname & protocol for your site
 github_username: AccursedGalaxy
+repository: AccursedGalaxy/noidea
 
 # Build settings
 markdown: kramdown
