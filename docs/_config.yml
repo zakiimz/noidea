@@ -6,7 +6,7 @@ github_username: AccursedGalaxy
 
 # Build settings
 markdown: kramdown
-theme: jekyll-theme-dinky
+theme: jekyll-theme-hacker
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
