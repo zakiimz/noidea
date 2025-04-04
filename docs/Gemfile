@@ -7,6 +7,9 @@ source "https://rubygems.org"
 # To upgrade, run `bundle update github-pages`.
 gem "github-pages", group: :jekyll_plugins
 
+# Add faraday-retry for GitHub Pages
+gem "faraday-retry"
+
 # If you have any plugins, put them here!
 group :jekyll_plugins do
   gem "jekyll-feed", "~> 0.12"
@@ -27,4 +30,7 @@ gem "wdm", "~> 0.1.1", :platforms => [:mingw, :x64_mingw, :mswin]
 # Lock jekyll-sass-converter to 2.x on Linux/macOS
 if RUBY_PLATFORM =~ /linux|darwin/
   gem "jekyll-sass-converter", "~> 2.0"
-end 
+end
+
+# For webrick on Ruby 3.0+
+gem "webrick", "~> 1.7" 

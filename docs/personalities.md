@@ -62,6 +62,7 @@ A personality configuration includes:
 
 ### Example Custom Personality
 
+{% raw %}
 ```toml
 [personalities.cyberpunk_hacker]
 name = "Cyberpunk Hacker"
@@ -80,4 +81,5 @@ Give me your cyberpunk hacker take on this code commit:
 """
 max_tokens = 150
 temperature = 0.8
-``` 
+```
+{% endraw %} 
