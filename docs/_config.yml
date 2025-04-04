@@ -3,6 +3,9 @@ description: Git assistant with AI commit messages and sassy feedback
 baseurl: "/noidea" # the subpath of your site, e.g. /blog
 url: "https://accursedgalaxy.github.io" # use your GitHub username instead
 
+# Build settings
+markdown: kramdown
+
 # Theme settings
 remote_theme: just-the-docs/just-the-docs
 color_scheme: dark
@@ -11,6 +14,16 @@ color_scheme: dark
 plugins:
   - jekyll-remote-theme
   - jekyll-feed
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
 
 # Aux links for the upper right navigation
 aux_links:

@@ -1,15 +1,13 @@
 ---
-layout: home
+layout: default
 title: Home
 nav_order: 1
 permalink: /
 ---
 
 # 🧠 noidea
-{: .fs-9 }
 
 Git assistant with AI commit messages and sassy feedback
-{: .fs-6 .fw-300 }
 
 [Get Started](./docs/getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/AccursedGalaxy/noidea){: .btn .fs-5 .mb-4 .mb-md-0 }
@@ -24,7 +22,7 @@ Git assistant with AI commit messages and sassy feedback
 - **Receive sassy feedback** from a judgmental Moai after each commit
 - **Analyze your Git history** for insights and patterns
 
-![noidea in action](/noidea/assets/images/demo.gif)
+![noidea in action](assets/images/demo.gif)
 
 ## Features
 
