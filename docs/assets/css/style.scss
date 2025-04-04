@@ -1,3 +1,6 @@
-@import "{{ site.theme }}";
+@import "just-the-docs/functions";
+@import "just-the-docs/variables";
+@import "just-the-docs/color_schemes/dark";
+@import "just-the-docs/modules";
 
 // Custom styles can be added here 

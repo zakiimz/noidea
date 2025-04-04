@@ -12,8 +12,8 @@ gem "faraday-retry"
 
 # If you have any plugins, put them here!
 group :jekyll_plugins do
-  gem "jekyll-feed", "~> 0.12"
-  gem "jekyll-seo-tag", "~> 2.6"
+  gem "jekyll-feed"
+  gem "jekyll-seo-tag"
   gem "jekyll-remote-theme"
 end
 
@@ -26,11 +26,6 @@ end
 
 # Performance-booster for watching directories on Windows
 gem "wdm", "~> 0.1.1", :platforms => [:mingw, :x64_mingw, :mswin]
-
-# Lock jekyll-sass-converter to 2.x on Linux/macOS
-if RUBY_PLATFORM =~ /linux|darwin/
-  gem "jekyll-sass-converter", "~> 2.0"
-end
 
 # For webrick on Ruby 3.0+
 gem "webrick", "~> 1.7" 

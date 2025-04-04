@@ -32,7 +32,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
-          bundler-cache: true
+          bundler-cache: false
           working-directory: './docs'
       - name: Setup Pages
         id: pages
@@ -40,6 +40,7 @@ jobs:
       - name: Build with Jekyll
         run: |
           cd docs
+          bundle update
           bundle install
           bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
