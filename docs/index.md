@@ -6,8 +6,10 @@ permalink: /
 ---
 
 # 🧠 noidea
+{: .fs-9 }
 
 Git assistant with AI commit messages and sassy feedback
+{: .fs-6 .fw-300 }
 
 [Get Started](./docs/getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/AccursedGalaxy/noidea){: .btn .fs-5 .mb-4 .mb-md-0 }

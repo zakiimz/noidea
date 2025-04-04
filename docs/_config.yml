@@ -5,11 +5,11 @@ url: "https://accursedgalaxy.github.io" # use your GitHub username instead
 
 # Build settings
 markdown: kramdown
-highlighter: rouge
+remote_theme: just-the-docs/just-the-docs
+color_scheme: dark
 
-# Theme settings - comment out to use our custom theme
-# remote_theme: just-the-docs/just-the-docs
-# color_scheme: dark
+# Enable search
+search_enabled: true
 
 # Plugins
 plugins:

@@ -1,11 +1,10 @@
 source "https://rubygems.org"
 
-# Comment out the Jekyll gem
-# gem "jekyll", "~> 4.3.2"
-# gem "just-the-docs", "~> 0.5.0"
-
-# Use github-pages gem for GitHub Pages
+# Use GitHub Pages gem for compatibility
 gem "github-pages", group: :jekyll_plugins
+
+# Add Just-the-Docs theme
+gem "just-the-docs"
 
 # Jekyll plugins
 group :jekyll_plugins do
@@ -15,7 +14,7 @@ end
 
 # Windows and JRuby fixes
 platforms :mingw, :x64_mingw, :mswin, :jruby do
-  gem "tzinfo", ">= 1", "< 3"
+  gem "tzinfo", ">=1", "< 3"
   gem "tzinfo-data"
 end
 
