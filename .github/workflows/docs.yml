@@ -38,7 +38,7 @@ jobs:
         run: cd docs && bundle install
         
       - name: Build site
-        run: cd docs && bundle exec jekyll build --baseurl "${{ github.event.repository.name }}"
+        run: cd docs && bundle exec jekyll build --baseurl "/${{ github.event.repository.name }}"
         
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
@@ -46,11 +46,11 @@ jobs:
           path: docs/_site
 
   deploy:
+    runs-on: ubuntu-latest
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

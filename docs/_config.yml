@@ -7,13 +7,26 @@ url: "https://accursedgalaxy.github.io" # use your GitHub username instead
 remote_theme: just-the-docs/just-the-docs
 color_scheme: dark
 
+# Plugins
+plugins:
+  - jekyll-remote-theme
+  - jekyll-feed
+
 # Aux links for the upper right navigation
 aux_links:
   "noidea on GitHub":
     - "//github.com/AccursedGalaxy/noidea"
 
 # Footer content
-footer_content: "Copyright &copy; 2025 AccursedGalaxy. Distributed under an MIT license."
+footer_content: "Copyright &copy; 2023 AccursedGalaxy. Distributed under an MIT license."
+
+# Default layout for pages
+defaults:
+  -
+    scope:
+      path: "" # an empty string here means all files in the project
+    values:
+      layout: "default"
 
 # Collections for site structure
 collections:
