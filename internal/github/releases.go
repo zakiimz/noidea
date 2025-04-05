@@ -44,6 +44,9 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 		prevTagName = ""
 	}
 
+	// Get release title formatted nicely
+	releaseTitle := formatReleaseTitle(tagName)
+
 	// Get commit messages between tags
 	commitMessages, err := getCommitMessagesBetweenTags(prevTagName, tagName)
 	if err != nil {
@@ -120,6 +123,9 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 	// Use the approved notes (which might have been edited)
 	releaseNotes = approvedNotes
 
+	// Check for breaking changes to mark as prerelease if needed
+	isBreaking := detectBreakingChanges(commitMessages)
+
 	if err == nil {
 		// Release exists, update it
 		releaseID, ok := releases["id"].(float64)
@@ -144,10 +150,11 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 
 	// Release doesn't exist, create a new one
 	payload := map[string]interface{}{
-		"tag_name": tagName,
-		"name":     fmt.Sprintf("Release %s", tagName),
-		"body":     releaseNotes,
-		"draft":    false,
+		"tag_name":   tagName,
+		"name":       releaseTitle,
+		"body":       releaseNotes,
+		"draft":      false,
+		"prerelease": isBreaking, // Mark as prerelease if it contains breaking changes
 	}
 
 	_, err = m.client.post(fmt.Sprintf("/repos/%s/%s/releases", owner, repo), payload)
@@ -412,4 +419,44 @@ func showAndApproveReleaseNotes(notes, tag string) (string, bool) {
 	// Default case - ask again
 	fmt.Println("Invalid choice. Please try again.")
 	return showAndApproveReleaseNotes(notes, tag)
+}
+
+// formatReleaseTitle formats a release title nicely
+func formatReleaseTitle(tagName string) string {
+	// If tag name is already properly formatted (e.g., "v1.2.3"), add a prefix
+	if strings.HasPrefix(tagName, "v") && len(tagName) > 1 {
+		// Check if it looks like a semver tag (vX.Y.Z)
+		parts := strings.Split(tagName[1:], ".")
+		if len(parts) >= 2 {
+			// Return a nicely formatted title
+			return fmt.Sprintf("Release %s", tagName)
+		}
+	}
+
+	// For other formats, just return the tag name
+	return tagName
+}
+
+// detectBreakingChanges looks for indications of breaking changes in commits
+func detectBreakingChanges(commitMessages []string) bool {
+	breakingPatterns := []string{
+		"BREAKING CHANGE",
+		"breaking change",
+		"BREAKING-CHANGE",
+		"BREAKING_CHANGE",
+		"!:",     // Conventional commit breaking change marker
+		"feat!:", // Exclamation mark indicates breaking change
+		"fix!:",
+		"refactor!:",
+	}
+
+	for _, msg := range commitMessages {
+		for _, pattern := range breakingPatterns {
+			if strings.Contains(msg, pattern) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
