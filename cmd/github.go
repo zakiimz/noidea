@@ -98,6 +98,14 @@ This command uses LLM (if enabled) to create comprehensive, user-friendly releas
 		tag, _ := cmd.Flags().GetString("tag")
 		useAI, _ := cmd.Flags().GetBool("ai")
 		skipApproval, _ := cmd.Flags().GetBool("skip-approval")
+		auto, _ := cmd.Flags().GetBool("auto")
+
+		// If auto flag is provided, enable both AI and skip approval
+		if auto {
+			useAI = true
+			skipApproval = true
+		}
+
 		runGitHubReleaseNotes(tag, useAI, skipApproval)
 	},
 }
@@ -127,6 +135,7 @@ func init() {
 	githubReleaseNotesCmd.Flags().String("tag", "", "Tag name to generate notes for (defaults to latest tag)")
 	githubReleaseNotesCmd.Flags().Bool("ai", false, "Force AI-generated notes even if LLM is disabled in config")
 	githubReleaseNotesCmd.Flags().Bool("skip-approval", false, "Skip approval before updating release notes")
+	githubReleaseNotesCmd.Flags().Bool("auto", false, "Automatically generate and update notes without interaction (enables --ai and --skip-approval)")
 }
 
 // runGitHubAuth handles the GitHub authentication flow
