@@ -81,6 +81,7 @@ nav:
       - AI Personalities: user-guide/features/personalities.md
       - API Key Management: user-guide/features/api-key-management.md
       - Git Integration: user-guide/features/git-integration.md
+      - GitHub Integration: user-guide/features/github-integration.md
     - Troubleshooting: user-guide/troubleshooting.md
   - Developer Guide:
     - Overview: dev-guide/overview.md

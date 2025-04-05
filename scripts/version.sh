@@ -110,10 +110,31 @@ bump_version() {
             git push
             git push origin "$new_version"
             echo -e "${GREEN}✓${NC} Pushed changes to remote repository"
-            echo -e "${YELLOW}Note:${NC} GitHub Actions will automatically create a release from the tag"
+            
+            # Check if noidea is installed and GitHub integration is available
+            if command -v noidea >/dev/null 2>&1; then
+                # Check if user has GitHub token
+                if noidea github status >/dev/null 2>&1; then
+                    echo ""
+                    echo -e "${CYAN}Generating enhanced release notes...${NC}"
+                    noidea github release notes --tag="$new_version"
+                else
+                    echo ""
+                    echo -e "${YELLOW}Note:${NC} To generate enhanced AI release notes, run:"
+                    echo "  noidea github auth        # Authenticate with GitHub"
+                    echo "  noidea github release notes --tag=$new_version  # Generate release notes"
+                fi
+            else
+                echo ""
+                echo -e "${YELLOW}Note:${NC} To generate enhanced AI release notes, make sure noidea is installed and run:"
+                echo "  noidea github release notes --tag=$new_version"
+            fi
         else
             echo -e "${YELLOW}Remember to push your changes:${NC}"
             echo "  git push && git push origin $new_version"
+            echo ""
+            echo -e "${YELLOW}After pushing, you can generate enhanced release notes:${NC}"
+            echo "  noidea github release notes --tag=$new_version"
         fi
     else
         echo -e "${YELLOW}Changes made locally. Don't forget to commit and create a tag.${NC}"
