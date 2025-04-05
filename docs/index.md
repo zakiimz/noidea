@@ -76,7 +76,7 @@ hide:
   git config noidea.suggest true
   ```
   </div>
-  
+
   <div class="admonition tip">
     <p class="admonition-title">Pro Tip</p>
     <p>Use <code>noidea config --init</code> to set up your configuration interactively!</p>
@@ -117,7 +117,7 @@ hide:
   <h3>Weekly Summaries & Git Insights</h3>
 
   <p>Track your coding patterns and get insights about your work habits with detailed summaries:</p>
-  
+
   <div class="terminal">
   ```bash
   # Generate a summary of the last 30 days
@@ -237,9 +237,9 @@ hide:
 
 <div class="content-section">
   <h2 id="security">🔒 Security & Privacy</h2>
-  
+
   <p>NoIdea takes your security seriously:</p>
-  
+
   <ul>
     <li>API keys are stored securely on your local machine</li>
     <li>No data is sent to our servers - all AI processing happens via your own API keys</li>
@@ -262,9 +262,9 @@ hide:
 
 <div class="content-section">
   <h2 id="contribution">🤝 Contribution & Support</h2>
-  
+
   <p>We welcome contributions from the community! Whether you want to report a bug, suggest a feature, or contribute code, we'd love your help.</p>
-  
+
   <div class="contribution-links">
     <a href="https://github.com/AccursedGalaxy/noidea/issues/new" class="contribution-link">
       <span class="icon">🐛</span>

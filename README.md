@@ -11,7 +11,7 @@
   <a href="https://golang.org/doc/go1.18"><img src="https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go" alt="Go Version"></a>
 </p>
 
-<img src="docs/assets/images/demo.gif" alt="noidea in action" width="80%">
+<img src="docs/assets/noidea_preview.png" alt="noidea in action" width="80%">
 
 </div>
 
