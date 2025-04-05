@@ -85,7 +85,7 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 	var releaseNotes string
 	if hasGitHubContent {
 		// Generate AI content for the overview section only
-		overviewContent, err := generateAIOverview(m.config, tagName, commitMessages, prevTagName, diffContent)
+		overviewContent, err := generateAIOverview(m.config, tagName, commitMessages)
 		if err != nil {
 			fmt.Printf("Warning: Failed to generate AI overview: %s\n", err)
 			// Keep the existing overview if AI generation fails
@@ -253,7 +253,7 @@ func parseGitHubReleaseNotes(notes string) (overview, whatsChanged, summary stri
 }
 
 // generateAIOverview generates AI-enhanced content for the overview section only
-func generateAIOverview(cfg config.Config, tagName string, commitMessages []string, prevTag, diffContent string) (string, error) {
+func generateAIOverview(cfg config.Config, tagName string, commitMessages []string) (string, error) {
 	if !cfg.LLM.Enabled {
 		return "", fmt.Errorf("LLM not enabled")
 	}
