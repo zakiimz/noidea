@@ -2,12 +2,15 @@
 set -euo pipefail
 
 # Determine which directories to lint
+# Always include the root directory (for main.go and other root-level Go files)
+ROOT_DIR="."
+
 if [ -d "./cmd" ] || [ -d "./internal" ]; then
-  # Only check cmd and internal directories if they exist
-  DIRS="./cmd/... ./internal/..."
+  # Include both root dir and cmd/internal directories
+  DIRS="$ROOT_DIR ./cmd/... ./internal/..."
 else
-  # Otherwise check all Go files in the current directory but skip deps
-  DIRS="."
+  # If no cmd/internal dirs, just check the root directory
+  DIRS="$ROOT_DIR"
 fi
 
 # Run go vet first
