@@ -9,6 +9,8 @@ theme:
   favicon: assets/logo.png
   icon:
     repo: fontawesome/brands/git-alt
+    edit: material/pencil
+    view: material/eye
   palette:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
@@ -42,11 +44,15 @@ theme:
     - content.code.copy
     - content.code.annotate
     - content.tooltips
+    - content.action.edit
     - announce.dismiss
 
 plugins:
   - privacy
   - search
+  - git-committers:
+      repository: accursedgalaxy/noidea
+      branch: main
   - blog:
       blog_dir: blog
       post_url_format: "{slug}"
