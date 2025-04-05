@@ -238,23 +238,48 @@ func (c *Client) WaitForWorkflowsToComplete(owner, repo, ref string, maxWaitSeco
 
 	// Start a timeout context
 	timeoutChan := time.After(time.Duration(maxWaitSeconds) * time.Second)
-	ticker := time.NewTicker(5 * time.Second) // Check every 5 seconds
+	ticker := time.NewTicker(2 * time.Second) // Check every 2 seconds
 	defer ticker.Stop()
+
+	// Spinner animation chars
+	spinChars := []string{"⋮", "⋰", "⋮", "⋱"}
+	spinIdx := 0
+	count := 0
 
 	for {
 		select {
 		case <-timeoutChan:
+			// Clear the current line before error message
+			fmt.Print("\r\033[K")
 			return fmt.Errorf("timed out waiting for workflows to complete after %d seconds", maxWaitSeconds)
 		case <-ticker.C:
 			complete, err := c.AreAllWorkflowsComplete(owner, repo, ref)
 			if err != nil {
+				// Clear the current line
+				fmt.Print("\r\033[K")
 				fmt.Printf("Warning: Failed to check workflow status: %s\n", err)
 				// Continue checking despite errors
 			} else if complete {
-				fmt.Println("✅ All GitHub workflows completed successfully.")
+				// Clear the current line
+				fmt.Print("\r\033[K")
+				fmt.Println("✅ All GitHub workflows completed successfully!")
 				return nil
 			} else {
-				fmt.Print("⏳ Workflows still running... waiting...")
+				// Increment the spinner index
+				spinIdx = (spinIdx + 1) % len(spinChars)
+				count++
+
+				// Calculate elapsed time
+				elapsedSecs := count * 2
+				timeStr := ""
+				if elapsedSecs >= 60 {
+					timeStr = fmt.Sprintf(" (%dm%02ds)", elapsedSecs/60, elapsedSecs%60)
+				} else {
+					timeStr = fmt.Sprintf(" (%ds)", elapsedSecs)
+				}
+
+				// Clear line and show spinning animation with elapsed time
+				fmt.Printf("\r\033[K⏳ Workflows still running... %s %s", spinChars[spinIdx], timeStr)
 			}
 		}
 	}

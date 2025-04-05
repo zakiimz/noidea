@@ -130,8 +130,15 @@ bump_version() {
                     echo ""
                     
                     if [[ $GENERATE_NOW =~ ^[Yy]$ ]]; then
-                        echo -e "${CYAN}Waiting for GitHub workflows and generating enhanced release notes...${NC}"
-                        # We've enhanced the system to wait for GitHub workflows and then
+                        echo ""
+                        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                        echo -e "${CYAN}  Starting Release Notes Generation Process${NC}"
+                        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                        echo ""
+                        echo -e "1. Waiting for GitHub workflows to complete"
+                        echo -e "2. Generating enhanced release notes"
+                        echo ""
+                        # Enhanced system to wait for GitHub workflows and then
                         # enhance the Overview section while preserving GitHub's content
                         noidea github release notes --tag="$new_version" --wait-for-workflows
                     else

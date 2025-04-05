@@ -376,6 +376,7 @@ func runGitHubReleaseNotes(tag string, forceAI bool, skipApproval bool, waitForW
 			return
 		}
 		tag = latestTag
+		fmt.Printf("Using latest tag: %s\n", tag)
 	}
 
 	// Load config
@@ -393,9 +394,13 @@ func runGitHubReleaseNotes(tag string, forceAI bool, skipApproval bool, waitForW
 		return
 	}
 
-	// Generate and update release notes
-	fmt.Printf("Generating %s release notes for tag %s...\n", getGenerationTypeString(cfg.LLM.Enabled), tag)
+	if waitForWorkflows {
+		fmt.Printf("🚀 Starting release notes generation for %s with workflow check...\n", tag)
+	} else {
+		fmt.Printf("🚀 Generating %s release notes for tag %s...\n", getGenerationTypeString(cfg.LLM.Enabled), tag)
+	}
 
+	// Generate and update release notes
 	if waitForWorkflows {
 		// Use the workflow check method
 		err = manager.UpdateReleaseNotesWithWorkflowCheck(tag, skipApproval, waitForWorkflows, maxWaitSeconds)
@@ -405,7 +410,9 @@ func runGitHubReleaseNotes(tag string, forceAI bool, skipApproval bool, waitForW
 	}
 
 	if err != nil {
-		fmt.Printf("Error generating or updating release notes: %s\n", err)
+		fmt.Printf("\n❌ Error generating or updating release notes: %s\n", err)
+	} else if !skipApproval {
+		fmt.Printf("\n🎉 Release notes for %s successfully updated!\n", tag)
 	}
 }
 
