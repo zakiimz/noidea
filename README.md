@@ -11,6 +11,8 @@
   <a href="https://golang.org/doc/go1.18"><img src="https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go" alt="Go Version"></a>
 </p>
 
+<img src="docs/assets/images/demo.gif" alt="noidea in action" width="80%">
+
 </div>
 
 ## 🗿 What is noidea?
@@ -21,17 +23,20 @@
 - **Receive sassy feedback** from a judgmental Moai after each commit
 - **Analyze your Git history** for insights and patterns
 
-<div align="center">
-<img src="docs/assets/images/demo.gif" alt="noidea in action" width="80%">
-</div>
+## ✨ Key Features
 
-## ⚡ Quick Start
+- 🧠 **AI-Powered Suggestions** - Get professional commit messages based on your staged changes
+- 🗿 **Moai Feedback** - Receive witty, personalized feedback on your commits
+- 📊 **Git Insights** - Track coding patterns and get weekly summaries
+- 🎭 **Multiple Personalities** - Choose from several AI personalities for feedback
+- 🔒 **Secure API Key Management** - Keep your AI provider keys safe
+
+## 🚀 Quick Start
 
 ```bash
 # Install noidea
 git clone https://github.com/AccursedGalaxy/noidea
 cd noidea
-
 ./install.sh # (might require sudo)
 
 # Set up in your Git repo
@@ -42,119 +47,72 @@ noidea init
 git config noidea.suggest true
 
 # Add your API key for AI features
-echo "XAI_API_KEY=your_api_key_here" > ~/.noidea/.env
+noidea config apikey
 ```
 
-**your new commit workflow with noidea:**
+### 📝 Commit Workflow With noidea
+
 ```bash
-# Commit Workflow With noidea
+# Stage your changes
 git add .
+
+# Commit (noidea will suggest a message)
 git commit
 ```
-This will open your default editor with the suggested commit message. saving and closing will approve and commit.
+This will open your default editor with the suggested commit message. Save and close to approve and commit.
 
-## 🧠 Features in Action
+## 📚 Documentation
 
-### 1. Commit Message Suggestions
-
-When you're ready to commit, run:
-
-```bash
-noidea suggest
-```
-
-And get professional commit messages:
-
-```
-───────────────────────────────────────────────────
-🧠 Analyzing staged changes...
-───────────────────────────────────────────────────
-✨ Suggested commit message:
-feat(user-auth): implement password reset functionality with email verification
-───────────────────────────────────────────────────
-```
-
-### 2. Post-Commit Feedback
-
-After each commit, the Moai will judge your work:
-
-```
-───────────────────────────────────────────────────
-🗿  (ಠ_ಠ) Your commit message was 'fix final final pls real'
-"You've entered the 2AM hotfix arc. A legendary time."
-───────────────────────────────────────────────────
-```
-
-### 3. Weekly Summaries
-
-Get insights about your work:
-
-```bash
-noidea summary
-```
-
-## 🚀 Setup Options
-
-### Installation
+### 🔧 Installation Options
 
 Choose one of these methods:
 
 ```bash
-# One-line quick install
+# Option 1: One-line quick install
 curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | bash
 
-# OR Clone and install
+# Option 2: Clone and install
 git clone https://github.com/AccursedGalaxy/noidea.git
 cd noidea
 ./install.sh
 ```
 
-### AI Configuration
+### 🤖 AI Configuration
 
 For AI-powered features, add your API key:
 
-1. Securely store your API key (recommended):
+1. **Securely store your API key (recommended):**
    ```bash
    noidea config apikey
    ```
 
-2. Add to environment (alternative):
+2. **Add to environment (alternative):**
    ```bash
    export XAI_API_KEY=your_api_key_here
    ```
 
-3. Or create `~/.noidea/.env` (not recommended):
-   ```
-   XAI_API_KEY=your_api_key_here
-   ```
-
-4. Configure interactively:
+3. **Configure interactively:**
    ```bash
    noidea config --init
    ```
 
-See [API Key Management](./docs/api-key-management.md) for best practices and secure storage details.
+See [API Key Management](./docs/api-key-management.md) for secure storage details.
 
-## 🔧 Commands
+### 📋 Available Commands
 
-```bash
-# Set up noidea in your repo
-noidea init
+| Command | Description |
+|---------|-------------|
+| `noidea init` | Set up Git hooks in your repository |
+| `noidea suggest` | Get commit message suggestions |
+| `noidea moai` | Display Moai feedback for the last commit |
+| `noidea summary [--days 30]` | Generate summary of recent Git activity |
+| `noidea feedback [--count 5]` | Analyze specific commits |
+| `noidea config --init` | Configure noidea interactively |
+| `noidea moai --list-personalities` | List all available personalities |
 
-# Get commit message suggestions
-noidea suggest
+Run `noidea --help` for more information.
 
-# View weekly summary
-noidea summary [--days 30]
-
-# Get feedback on recent commits
-noidea feedback [--count 5]
-
-# Configure noidea
-noidea config --init
-```
-
-## 🤖 AI Personalities
+### 🎭 AI Personalities
 
 noidea has several AI personalities for feedback:
 
@@ -164,17 +122,11 @@ noidea has several AI personalities for feedback:
 - **Motivational Speaker** - Energetic enthusiasm
 
 ```bash
-# List all personalities
-noidea moai --list-personalities
-
 # Use a specific personality
 noidea moai --personality supportive_mentor
 ```
 
-## 📘 More Information
-
-<details>
-<summary>Advanced Configuration</summary>
+### ⚙️ Advanced Configuration
 
 Create a `~/.noidea/config.toml` file:
 
@@ -192,43 +144,37 @@ faces_mode = "random"
 personality = "snarky_reviewer"
 include_history = true
 ```
-</details>
 
-<details>
-<summary>Available Commands</summary>
+## 🛠️ Feature Status
 
-- `noidea init` - Set up Git hooks in your repository
-- `noidea suggest` - Get commit message suggestions
-- `noidea moai` - Display Moai feedback for the last commit
-- `noidea summary` - Generate summary of recent Git activity
-- `noidea feedback` - Analyze specific commits
-- `noidea config` - Configure noidea
+| Feature | Status |
+|---------|--------|
+| Moai face after commit | ✅ Done |
+| AI-based commit feedback | ✅ Done |
+| Config file support | ✅ Done |
+| Weekly summaries | ✅ Done |
+| On-demand commit analysis | ✅ Done |
+| Commit message suggestions | ✅ Done |
+| Enhanced terminal output | ✅ Done |
+| POSIX-compatible hooks | ✅ Done |
+| Lint feedback | 🛠️ In progress |
+| AI GitHub issue management | 🔜 Coming Soon |
 
-Run `noidea --help` for more information.
-</details>
+## 🤝 Contributing
 
-<details>
-<summary>Feature Status</summary>
+Contributions are welcome! Whether you have ideas for new features, have encountered bugs, or want to improve documentation, we'd love your input.
 
-| Feature                   | Status          |
-|---------------------------|-----------------|
-| Moai face after commit    | ✅ Done         |
-| AI-based commit feedback  | ✅ Done         |
-| Config file support       | ✅ Done         |
-| Weekly summaries          | ✅ Done         |
-| On-demand commit analysis | ✅ Done         |
-| Commit message suggestions| ✅ Done         |
-| Enhanced terminal output  | ✅ Done         |
-| POSIX-compatible hooks    | ✅ Done         |
-| Lint feedback             | 🛠️ In progress  |
-| Commit streak insights    | 🔜 Coming Soon  |
-</details>
+Please feel free to submit an issue or join the discussions. Each contribution helps us make noidea better.
 
-## 🤯 Why tho?
+## 🤯 Why noidea?
 
 Because Git is too serious. Coding is chaos. Let's embrace it.
 
 This tool won't improve your Git hygiene, but it will make it more entertaining.
+
+## 📃 License
+
+This project is distributed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
 

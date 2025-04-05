@@ -49,7 +49,7 @@ hide:
 </div>
 
 <div class="content-section">
-  <h2 id="installation">Installation</h2>
+  <h2 id="installation">⚡ Installation</h2>
 
   <div class="terminal">
   ```bash
@@ -76,10 +76,15 @@ hide:
   git config noidea.suggest true
   ```
   </div>
+  
+  <div class="admonition tip">
+    <p class="admonition-title">Pro Tip</p>
+    <p>Use <code>noidea config --init</code> to set up your configuration interactively!</p>
+  </div>
 </div>
 
 <div class="content-section">
-  <h2 id="features">Features</h2>
+  <h2 id="features">✨ Core Features</h2>
 
   <h3>AI-powered Commit Suggestions</h3>
 
@@ -109,26 +114,45 @@ hide:
   ```
   </div>
 
+  <h3>Weekly Summaries & Git Insights</h3>
+
+  <p>Track your coding patterns and get insights about your work habits with detailed summaries:</p>
+  
+  <div class="terminal">
+  ```bash
+  # Generate a summary of the last 30 days
+  noidea summary --days 30
+  ```
+  </div>
+
   <h3>AI Personalities</h3>
 
   <p>NoIdea offers several AI personalities for feedback:</p>
 
-  <ul>
-    <li><strong>Snarky Code Reviewer</strong> - Witty, sarcastic feedback</li>
-    <li><strong>Supportive Mentor</strong> - Encouraging, positive feedback</li>
-    <li><strong>Git Expert</strong> - Technical, professional feedback</li>
-    <li><strong>Motivational Speaker</strong> - Energetic enthusiasm</li>
-  </ul>
+  <div class="personalities-grid">
+    <div class="personality">
+      <h4>Snarky Code Reviewer</h4>
+      <p>Witty, sarcastic feedback that doesn't hold back</p>
+    </div>
+    <div class="personality">
+      <h4>Supportive Mentor</h4>
+      <p>Encouraging, positive feedback to keep you motivated</p>
+    </div>
+    <div class="personality">
+      <h4>Git Expert</h4>
+      <p>Technical, professional feedback focused on best practices</p>
+    </div>
+    <div class="personality">
+      <h4>Motivational Speaker</h4>
+      <p>Energetic enthusiasm to pump you up</p>
+    </div>
+  </div>
 
-  <p>You can create your own personality easily via our configuration system.
-
-  <h3>Weekly Summaries</h3>
-
-  <p>Track your coding patterns and get insights about your work habits with detailed summaries.</p>
+  <p>You can create your own personality easily via our configuration system.</p>
 </div>
 
 <div class="content-section">
-  <h2 id="commands">Commands</h2>
+  <h2 id="commands">🔧 Commands Reference</h2>
 
   <table>
     <thead>
@@ -175,7 +199,7 @@ hide:
 </div>
 
 <div class="content-section">
-  <h2 id="configuration">Configuration</h2>
+  <h2 id="configuration">⚙️ Configuration</h2>
 
   <p>Configure NoIdea to match your workflow:</p>
 
@@ -209,22 +233,61 @@ hide:
   include_history = true
   ```
   </div>
+</div>
 
-  <div class="admonition tip">
-    <p class="admonition-title">Pro Tip</p>
-    <p>Enable auto-commit suggestions with <code>git config noidea.suggest true</code> to get suggestions every time you commit!</p>
+<div class="content-section">
+  <h2 id="security">🔒 Security & Privacy</h2>
+  
+  <p>NoIdea takes your security seriously:</p>
+  
+  <ul>
+    <li>API keys are stored securely on your local machine</li>
+    <li>No data is sent to our servers - all AI processing happens via your own API keys</li>
+    <li>Your commit history and code never leaves your system without your explicit permission</li>
+  </ul>
+
+  <div class="admonition note">
+    <p class="admonition-title">Note</p>
+    <p>When using AI features, your code diffs are sent to the AI provider you've configured. Choose a provider you trust.</p>
   </div>
 </div>
 
 <div class="content-section">
-  <h2 id="why-noidea">Why NoIdea?</h2>
+  <h2 id="why-noidea">🤔 Why NoIdea?</h2>
 
   <p>Because Git is too serious. Coding is chaos. Let's embrace it.</p>
 
   <p>This tool won't improve your Git hygiene, but it will make it more entertaining.</p>
+</div>
 
+<div class="content-section">
+  <h2 id="contribution">🤝 Contribution & Support</h2>
+  
+  <p>We welcome contributions from the community! Whether you want to report a bug, suggest a feature, or contribute code, we'd love your help.</p>
+  
+  <div class="contribution-links">
+    <a href="https://github.com/AccursedGalaxy/noidea/issues/new" class="contribution-link">
+      <span class="icon">🐛</span>
+      <span class="text">Report a Bug</span>
+    </a>
+    <a href="https://github.com/AccursedGalaxy/noidea/issues/new" class="contribution-link">
+      <span class="icon">💡</span>
+      <span class="text">Suggest a Feature</span>
+    </a>
+    <a href="https://github.com/AccursedGalaxy/noidea/fork" class="contribution-link">
+      <span class="icon">🔄</span>
+      <span class="text">Fork the Project</span>
+    </a>
+    <a href="https://github.com/AccursedGalaxy/noidea/pulls" class="contribution-link">
+      <span class="icon">🚀</span>
+      <span class="text">Submit a PR</span>
+    </a>
+  </div>
+</div>
+
+<div class="content-section">
   <div class="feature-status">
-  <h3>Project Status</h3>
+  <h2 id="project-status">📊 Project Status</h2>
 
   <table>
     <thead>
@@ -285,5 +348,8 @@ hide:
   </a>
   <a href="https://github.com/AccursedGalaxy/noidea/issues">
     <img src="https://img.shields.io/github/issues/AccursedGalaxy/noidea" alt="GitHub issues">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
   </a>
 </div>
