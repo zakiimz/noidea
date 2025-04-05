@@ -26,16 +26,17 @@
 
 ## 👥 Usability Improvements
 - [ ] Add version checking and update notification mechanism
-- [ ] Complete "Make sure users can easily update" roadmap item
+- [ ] Make sure users can easily update the tool
 - [x] Fix handling of multi-line commit messages
 - [x] Implement proper command feedback when API calls fail
 - [x] Add clear error messages for common configuration issues
 - [ ] Make personality system more customizable
+- [ ] Improve Terminal Output formatting where possible
 
 ## 🏗️ Project Infrastructure
 - [x] Create semantic versioning strategy
 - [x] Set up proper release workflow with changelogs
-- [x] Add version badges to README
+- [ ] Add version badges to README
 - [ ] Set up project discussions on GitHub
 - [ ] Create project roadmap visible to community
 
@@ -46,7 +47,7 @@
 
 ## 🏁 Final Preparations
 - [ ] Audit code for hardcoded values or personal references
-- [x] Clean up any debug code or TODOs
+- [ ] Clean up any debug code or TODOs
 - [ ] Create a pre-release checklist
 - [ ] Check license compatibility for all dependencies
 - [ ] Prepare announcement strategy for the release
