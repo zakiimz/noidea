@@ -215,22 +215,25 @@ hide:
 
   <h3>Advanced Configuration</h3>
 
-  <p>For more advanced setup, you can create a <code>~/.noidea/config.toml</code> file:</p>
+  <p>For more advanced setup, you can create a <code>~/.noidea/config.json</code> file:</p>
 
   <div class="terminal">
-  ```toml
-  [llm]
-  enabled = true
-  provider = "xai"
-  api_key = "your_api_key_here"
-  model = "grok-2-1212"
-  temperature = 0.7
-
-  [moai]
-  use_lint = false
-  faces_mode = "random"
-  personality = "snarky_reviewer"
-  include_history = true
+  ```json
+  {
+    "llm": {
+      "enabled": true,
+      "provider": "xai",
+      "api_key": "",
+      "model": "grok-2-1212",
+      "temperature": 0.7
+    },
+    "moai": {
+      "use_lint": false,
+      "faces_mode": "random",
+      "personality": "snarky_reviewer",
+      "personality_file": "~/.noidea/personalities.toml"
+    }
+  }
   ```
   </div>
 </div>

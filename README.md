@@ -128,21 +128,24 @@ noidea moai --personality supportive_mentor
 
 ### ⚙️ Advanced Configuration
 
-Create a `~/.noidea/config.toml` file:
+Create a `~/.noidea/config.json` file:
 
-```toml
-[llm]
-enabled = true
-provider = "xai"
-api_key = "your_api_key_here"
-model = "grok-2-1212"
-temperature = 0.7
-
-[moai]
-use_lint = false
-faces_mode = "random"
-personality = "snarky_reviewer"
-include_history = true
+```json
+{
+  "llm": {
+    "enabled": true,
+    "provider": "xai",
+    "api_key": "",
+    "model": "grok-2-1212",
+    "temperature": 0.7
+  },
+  "moai": {
+    "use_lint": false,
+    "faces_mode": "random",
+    "personality": "snarky_reviewer",
+    "personality_file": "~/.noidea/personalities.toml"
+  }
+}
 ```
 
 ## 🛠️ Feature Status

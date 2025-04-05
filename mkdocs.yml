@@ -66,8 +66,26 @@ plugins:
 
 nav:
   - Home: index.md
-  - Documentation:
-    - API Key Management: api-key-management.md
+  - User Guide:
+    - Getting Started: user-guide/getting-started.md
+    - Installation: user-guide/installation.md
+    - Configuration: user-guide/configuration.md
+    - Command Reference:
+      - Overview: user-guide/commands/overview.md
+      - init: user-guide/commands/init.md
+      - suggest: user-guide/commands/suggest.md
+      - moai: user-guide/commands/moai.md
+      - summary: user-guide/commands/summary.md
+      - config: user-guide/commands/config.md
+    - Features:
+      - AI Personalities: user-guide/features/personalities.md
+      - API Key Management: api-key-management.md
+      - Git Integration: user-guide/features/git-integration.md
+    - Troubleshooting: user-guide/troubleshooting.md
+  - Developer Guide:
+    - Overview: dev-guide/overview.md
+    - Architecture: dev-guide/architecture.md
+    - Contributing: dev-guide/contributing.md
   - Blog: blog/index.md
 
 markdown_extensions:
