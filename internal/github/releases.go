@@ -53,8 +53,12 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 		}
 	}
 
-	// Extract GitHub's auto-generated changelog if it exists
-	githubChangelog := extractChangelog(existingBody)
+	// Parse the existing GitHub-generated release notes
+	var hasGitHubContent bool
+	var overviewSection, whatsChangedSection, summarySection string
+	if existingBody != "" {
+		overviewSection, whatsChangedSection, summarySection, hasGitHubContent = parseGitHubReleaseNotes(existingBody)
+	}
 
 	// Get the previous tag name
 	prevTagName, err := getPreviousTag(tagName)
@@ -62,9 +66,6 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 		// Not a critical error, we can proceed without previous tag
 		prevTagName = ""
 	}
-
-	// Get release title formatted nicely
-	releaseTitle := formatReleaseTitle(tagName)
 
 	// Get commit messages between tags
 	commitMessages, err := getCommitMessagesBetweenTags(prevTagName, tagName)
@@ -79,62 +80,63 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 		// We can continue without diffs, it's not critical
 	}
 
-	// Generate AI release notes if LLM is enabled
+	// If there's existing GitHub-generated content and it has our expected structure,
+	// we'll only replace the Overview section, preserving the rest
 	var releaseNotes string
-	if m.config.LLM.Enabled {
-		generator, err := releaseai.NewReleaseNotesGenerator(m.config)
+	if hasGitHubContent {
+		// Generate AI content for the overview section only
+		overviewContent, err := generateAIOverview(m.config, tagName, commitMessages, prevTagName, diffContent)
 		if err != nil {
-			// Fallback to basic notes if AI generation fails
-			releaseNotes = generateBasicReleaseNotes(tagName, commitMessages)
-			fmt.Printf("Warning: Could not initialize AI release notes generator: %s\n", err)
-			fmt.Println("Falling back to basic release notes.")
-		} else {
-			aiNotes, err := generator.GenerateReleaseNotes(tagName, commitMessages, prevTagName, diffContent)
+			fmt.Printf("Warning: Failed to generate AI overview: %s\n", err)
+			// Keep the existing overview if AI generation fails
+			if overviewSection == "" {
+				overviewSection = "## Overview\n\nThis release includes several improvements and updates."
+			}
+		} else if overviewContent != "" {
+			overviewSection = "## Overview\n\n" + overviewContent
+		}
+
+		// Combine the AI-enhanced overview with GitHub's What's Changed and Summary sections
+		releaseNotes = overviewSection
+		if whatsChangedSection != "" {
+			releaseNotes += "\n\n" + whatsChangedSection
+		}
+		if summarySection != "" {
+			releaseNotes += "\n\n" + summarySection
+		}
+
+		fmt.Println("Enhanced the Overview section of GitHub-generated release notes.")
+	} else {
+		// No existing GitHub content with expected structure, generate complete notes
+		if m.config.LLM.Enabled {
+			generator, err := releaseai.NewReleaseNotesGenerator(m.config)
 			if err != nil {
 				// Fallback to basic notes if AI generation fails
 				releaseNotes = generateBasicReleaseNotes(tagName, commitMessages)
-				fmt.Printf("Warning: AI release notes generation failed: %s\n", err)
+				fmt.Printf("Warning: Could not initialize AI release notes generator: %s\n", err)
 				fmt.Println("Falling back to basic release notes.")
 			} else {
-				releaseNotes = aiNotes
-			}
-		}
-	} else {
-		// Generate basic release notes if LLM is not enabled
-		releaseNotes = generateBasicReleaseNotes(tagName, commitMessages)
-	}
-
-	// Combine our generated notes with GitHub's changelog if it exists
-	if githubChangelog != "" {
-		releaseNotes = combineNotesWithChangelog(releaseNotes, githubChangelog)
-	} else if releaseID > 0 {
-		// If there's an existing release but no changelog identified, be cautious
-		// We'll add our AI notes at the top but preserve the rest of the content
-		if existingBody != "" && !strings.Contains(existingBody, releaseNotes) {
-			// Check if existing body already has a title that matches our format
-			hasTitle := false
-			for _, line := range strings.Split(existingBody, "\n") {
-				if strings.HasPrefix(line, "# Release ") || strings.HasPrefix(line, "## Release ") {
-					hasTitle = true
-					break
-				}
-			}
-
-			if hasTitle {
-				// If existing body already has a title, add our notes after it
-				lines := strings.SplitN(existingBody, "\n", 2)
-				if len(lines) > 1 {
-					// Keep the first line (title) and inject our content after it
-					titleLine := lines[0]
-					restOfContent := lines[1]
-					releaseNotes = titleLine + "\n" + releaseNotes + "\n\n---\n\nGitHub Generated Content:\n" + restOfContent
+				aiNotes, err := generator.GenerateReleaseNotes(tagName, commitMessages, prevTagName, diffContent)
+				if err != nil {
+					// Fallback to basic notes if AI generation fails
+					releaseNotes = generateBasicReleaseNotes(tagName, commitMessages)
+					fmt.Printf("Warning: AI release notes generation failed: %s\n", err)
+					fmt.Println("Falling back to basic release notes.")
 				} else {
-					// Just combine if splitting didn't work as expected
-					releaseNotes = releaseNotes + "\n\n---\n\nGitHub Generated Content:\n\n" + existingBody
+					releaseNotes = aiNotes
 				}
-			} else {
-				// No title found, just prepend our notes
-				releaseNotes = releaseNotes + "\n\n---\n\nGitHub Generated Content:\n\n" + existingBody
+			}
+		} else {
+			// Generate basic release notes if LLM is not enabled
+			releaseNotes = generateBasicReleaseNotes(tagName, commitMessages)
+		}
+
+		// If there's existing content, but not in our expected format,
+		// still try to preserve any GitHub-generated changelog
+		if existingBody != "" {
+			githubChangelog := extractChangelog(existingBody)
+			if githubChangelog != "" {
+				releaseNotes = combineNotesWithChangelog(releaseNotes, githubChangelog)
 			}
 		}
 	}
@@ -181,7 +183,7 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 	// Release doesn't exist, create a new one
 	payload := map[string]interface{}{
 		"tag_name":   tagName,
-		"name":       releaseTitle,
+		"name":       formatReleaseTitle(tagName),
 		"body":       releaseNotes,
 		"draft":      false,
 		"prerelease": isBreaking, // Mark as prerelease if it contains breaking changes
@@ -194,6 +196,93 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 
 	fmt.Printf("✅ Created release for %s with enhanced notes\n", tagName)
 	return nil
+}
+
+// parseGitHubReleaseNotes parses GitHub-generated release notes to extract sections
+func parseGitHubReleaseNotes(notes string) (overview, whatsChanged, summary string, structured bool) {
+	// Check for the expected sections in GitHub's workflow-generated notes
+	lines := strings.Split(notes, "\n")
+
+	var currentSection string
+	var overviewLines, whatsChangedLines, summaryLines []string
+
+	for _, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+
+		// Detect section headers
+		if strings.HasPrefix(trimmedLine, "## Overview") {
+			currentSection = "overview"
+			overviewLines = append(overviewLines, line)
+			continue
+		} else if strings.HasPrefix(trimmedLine, "## What's Changed") {
+			currentSection = "whatsChanged"
+			whatsChangedLines = append(whatsChangedLines, line)
+			continue
+		} else if strings.HasPrefix(trimmedLine, "## Summary") {
+			currentSection = "summary"
+			summaryLines = append(summaryLines, line)
+			continue
+		}
+
+		// Add lines to their respective sections
+		switch currentSection {
+		case "overview":
+			overviewLines = append(overviewLines, line)
+		case "whatsChanged":
+			whatsChangedLines = append(whatsChangedLines, line)
+		case "summary":
+			summaryLines = append(summaryLines, line)
+		}
+	}
+
+	// Convert sections back to strings
+	if len(overviewLines) > 0 {
+		overview = strings.Join(overviewLines, "\n")
+	}
+	if len(whatsChangedLines) > 0 {
+		whatsChanged = strings.Join(whatsChangedLines, "\n")
+	}
+	if len(summaryLines) > 0 {
+		summary = strings.Join(summaryLines, "\n")
+	}
+
+	// Determine if we found the expected GitHub-generated structure
+	structured = overview != "" && whatsChanged != ""
+
+	return overview, whatsChanged, summary, structured
+}
+
+// generateAIOverview generates AI-enhanced content for the overview section only
+func generateAIOverview(cfg config.Config, tagName string, commitMessages []string, prevTag, diffContent string) (string, error) {
+	if !cfg.LLM.Enabled {
+		return "", fmt.Errorf("LLM not enabled")
+	}
+
+	// Create a new generator
+	generator, err := releaseai.NewReleaseNotesGenerator(cfg)
+	if err != nil {
+		return "", err
+	}
+
+	// Create a prompt specifically for generating just the overview
+	prompt := fmt.Sprintf(`Generate a concise, user-friendly overview paragraph (3-5 sentences) for release %s.
+Focus exclusively on explaining the key changes, improvements, or fixes in non-technical, straightforward language.
+DO NOT include section headers, bullet points, emojis, or detailed descriptions of individual changes.
+Just provide the paragraph text that would go under an "Overview" section.
+
+Based on these commits:
+%s`, tagName, strings.Join(commitMessages, "\n"))
+
+	// Generate the overview content
+	overview, err := generator.GenerateCustomContent(prompt)
+	if err != nil {
+		return "", err
+	}
+
+	// Clean up the result - remove any accidentally included headers or formatting
+	overview = cleanGeneratedOverview(overview)
+
+	return overview, nil
 }
 
 // getPreviousTag returns the tag before the specified tag
@@ -524,4 +613,68 @@ func detectBreakingChanges(commitMessages []string) bool {
 	}
 
 	return false
+}
+
+// cleanGeneratedOverview removes unwanted formatting from AI-generated overview text
+func cleanGeneratedOverview(text string) string {
+	// Remove common header prefixes AI might add
+	headerPrefixes := []string{
+		"# Overview",
+		"## Overview",
+		"### Overview",
+		"Overview:",
+		"Overview",
+	}
+
+	lines := strings.Split(text, "\n")
+	var cleaned []string
+
+	for i, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+
+		// Skip empty lines
+		if trimmedLine == "" {
+			continue
+		}
+
+		// Skip header lines
+		isHeader := false
+		for _, prefix := range headerPrefixes {
+			if strings.HasPrefix(trimmedLine, prefix) {
+				isHeader = true
+				break
+			}
+		}
+
+		if isHeader {
+			continue
+		}
+
+		// Skip bullet points or numbering
+		if strings.HasPrefix(trimmedLine, "- ") ||
+			strings.HasPrefix(trimmedLine, "* ") ||
+			strings.HasPrefix(trimmedLine, "+ ") ||
+			(len(trimmedLine) > 2 && trimmedLine[0] >= '0' && trimmedLine[0] <= '9' && trimmedLine[1] == '.') {
+			// Extract just the content after the bullet/number
+			parts := strings.SplitN(trimmedLine, " ", 2)
+			if len(parts) > 1 {
+				trimmedLine = parts[1]
+			}
+		}
+
+		// Add line if it's not a header or empty
+		if i == 0 && strings.Contains(trimmedLine, "This release") {
+			// Keep the first line as is if it starts a proper description
+			cleaned = append(cleaned, trimmedLine)
+		} else if i > 0 || len(trimmedLine) > 0 {
+			cleaned = append(cleaned, trimmedLine)
+		}
+	}
+
+	result := strings.Join(cleaned, " ")
+
+	// Replace multiple spaces with single space
+	result = strings.Join(strings.Fields(result), " ")
+
+	return result
 }

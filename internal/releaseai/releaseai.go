@@ -86,6 +86,27 @@ func (g *ReleaseNotesGenerator) GenerateReleaseNotes(
 	return notes, nil
 }
 
+// GenerateCustomContent generates content using a custom prompt
+func (g *ReleaseNotesGenerator) GenerateCustomContent(prompt string) (string, error) {
+	// Use direct LLM client for custom content generation
+	client, err := NewDirectLLMClientFromConfig(g.config)
+	if err != nil {
+		return "", fmt.Errorf("failed to create LLM client: %w", err)
+	}
+
+	// Set maximum tokens to a reasonable value for a paragraph
+	client.SetMaxTokens(1000)
+
+	// Generate content
+	response, err := client.GenerateContent(prompt)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate custom content: %w", err)
+	}
+
+	// Clean up the response
+	return cleanReleaseNotes(response), nil
+}
+
 // cleanReleaseNotes removes any self-introduction or AI mentions from notes
 func cleanReleaseNotes(notes string) string {
 	if notes == "" {

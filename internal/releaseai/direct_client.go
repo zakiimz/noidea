@@ -8,6 +8,8 @@ import (
 	"time"
 
 	openai "github.com/sashabaranov/go-openai"
+
+	"github.com/AccursedGalaxy/noidea/internal/config"
 )
 
 // DirectLLMClient provides direct access to LLM APIs for release notes generation
@@ -57,9 +59,48 @@ func NewDirectLLMClient(provider, model, apiKey string, temperature float64) *Di
 	}
 }
 
+// NewDirectLLMClientFromConfig creates a new LLM client using configuration
+func NewDirectLLMClientFromConfig(cfg config.Config) (*DirectLLMClient, error) {
+	provider := cfg.LLM.Provider
+	apiKey := cfg.LLM.APIKey
+	model := cfg.LLM.Model
+	temperature := cfg.LLM.Temperature
+
+	if apiKey == "" {
+		return nil, fmt.Errorf("no API key configured for provider %s", provider)
+	}
+
+	// Set default model if not specified
+	if model == "" {
+		switch provider {
+		case "openai":
+			model = "gpt-4o"
+		case "xai":
+			model = "grok-1"
+		case "deepseek":
+			model = "deepseek-chat"
+		default:
+			return nil, fmt.Errorf("unsupported provider: %s", provider)
+		}
+	}
+
+	return NewDirectLLMClient(provider, model, apiKey, temperature), nil
+}
+
 // SetSystemPrompt sets a custom system prompt
 func (c *DirectLLMClient) SetSystemPrompt(prompt string) {
 	c.systemPrompt = prompt
+}
+
+// SetMaxTokens overrides the default max tokens limit
+func (c *DirectLLMClient) SetMaxTokens(maxTokens int) {
+	c.maxTokens = maxTokens
+}
+
+// GenerateContent is a simpler version of GenerateReleaseNotes for general content
+func (c *DirectLLMClient) GenerateContent(prompt string) (string, error) {
+	// Just call GenerateReleaseNotes with a single attempt
+	return c.GenerateReleaseNotes(prompt, 1)
 }
 
 // GenerateReleaseNotes generates release notes directly using the LLM API

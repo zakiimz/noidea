@@ -116,11 +116,29 @@ bump_version() {
                 # Check if user has GitHub token
                 if noidea github status >/dev/null 2>&1; then
                     echo ""
-                    echo -e "${CYAN}Generating enhanced release notes...${NC}"
-                    # We've enhanced the system to preserve GitHub's auto-generated changelog
-                    # instead of using a delay. The AI-generated content will be added to the top
-                    # of the release notes while maintaining GitHub's content intact.
-                    noidea github release notes --tag="$new_version"
+                    echo -e "${CYAN}GitHub tag created and pushed. Release notes generation options:${NC}"
+                    echo -e "1. ${YELLOW}Wait for GitHub Actions workflows to complete${NC} (recommended)"
+                    echo -e "   Then run: ${GREEN}noidea github release notes --tag=\"$new_version\"${NC}"
+                    echo -e "   This will preserve GitHub's changelog and only enhance the overview."
+                    echo ""
+                    echo -e "2. ${YELLOW}Generate AI release notes now${NC} (quick but may be overwritten by GitHub)"
+                    echo -e "   Run: ${GREEN}noidea github release notes --tag=\"$new_version\"${NC}"
+                    
+                    # Ask if the user wants to generate now or wait
+                    echo ""
+                    read -p "Would you like to generate release notes now? (y/n): " -n 1 -r GENERATE_NOW
+                    echo ""
+                    
+                    if [[ $GENERATE_NOW =~ ^[Yy]$ ]]; then
+                        echo -e "${CYAN}Generating enhanced release notes...${NC}"
+                        # We've enhanced the system to preserve GitHub's auto-generated changelog
+                        # The AI-generated content will enhance the Overview section while
+                        # maintaining GitHub's content intact.
+                        noidea github release notes --tag="$new_version"
+                    else
+                        echo -e "${GREEN}✓${NC} GitHub tag pushed. Remember to generate release notes after workflows complete:"
+                        echo -e "  ${GREEN}noidea github release notes --tag=\"$new_version\"${NC}"
+                    fi
                 else
                     echo ""
                     echo -e "${YELLOW}Note:${NC} To generate enhanced AI release notes, run:"

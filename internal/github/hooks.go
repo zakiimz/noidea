@@ -50,20 +50,25 @@ func InstallPostTagHook() error {
 	hookContent := fmt.Sprintf(`#!/bin/sh
 #
 # noidea - Post-tag hook
-# This hook creates a GitHub release with AI-enhanced release notes after a tag is created
+# This hook provides information about GitHub release generation after a tag is created
 
 # Get the tag name
 TAG_NAME=$(git describe --tags --exact-match 2>/dev/null)
 if [ -z "$TAG_NAME" ]; then
-    echo "No tag found, skipping GitHub release"
+    echo "No tag found, skipping GitHub release info"
     exit 0
 fi
 
-# Call noidea to create GitHub release with enhanced release notes
-# Using --skip-approval for automated execution
-# The release notes generator will preserve GitHub's auto-generated content
-echo "Generating release notes for $TAG_NAME..."
-%s github release notes --tag="$TAG_NAME" %s--skip-approval
+# Information about GitHub release and recommended workflow
+echo "============================================================="
+echo "🏷️  Tag '$TAG_NAME' created successfully!"
+echo "GitHub Actions workflows may have been triggered."
+echo ""
+echo "📝 For best results, wait for GitHub workflows to complete"
+echo "   before generating enhanced release notes with:"
+echo ""
+echo "   %s github release notes --tag=\"$TAG_NAME\" %s"
+echo "============================================================="
 
 # Exit with success
 exit 0
