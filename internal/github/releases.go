@@ -37,6 +37,25 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 		return fmt.Errorf("failed to determine repository info: %w", err)
 	}
 
+	// Check if a release for this tag already exists
+	releases, err := m.client.get(fmt.Sprintf("/repos/%s/%s/releases/tags/%s", owner, repo, tagName))
+
+	// Get the existing release body if available
+	var existingBody string
+	var releaseID float64 = 0
+	if err == nil {
+		if body, ok := releases["body"].(string); ok {
+			existingBody = body
+		}
+		// Store release ID for later
+		if id, ok := releases["id"].(float64); ok {
+			releaseID = id
+		}
+	}
+
+	// Extract GitHub's auto-generated changelog if it exists
+	githubChangelog := extractChangelog(existingBody)
+
 	// Get the previous tag name
 	prevTagName, err := getPreviousTag(tagName)
 	if err != nil {
@@ -85,23 +104,39 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 		releaseNotes = generateBasicReleaseNotes(tagName, commitMessages)
 	}
 
-	// Check if a release for this tag already exists
-	releases, err := m.client.get(fmt.Sprintf("/repos/%s/%s/releases/tags/%s", owner, repo, tagName))
+	// Combine our generated notes with GitHub's changelog if it exists
+	if githubChangelog != "" {
+		releaseNotes = combineNotesWithChangelog(releaseNotes, githubChangelog)
+	} else if releaseID > 0 {
+		// If there's an existing release but no changelog identified, be cautious
+		// We'll add our AI notes at the top but preserve the rest of the content
+		if existingBody != "" && !strings.Contains(existingBody, releaseNotes) {
+			// Check if existing body already has a title that matches our format
+			hasTitle := false
+			for _, line := range strings.Split(existingBody, "\n") {
+				if strings.HasPrefix(line, "# Release ") || strings.HasPrefix(line, "## Release ") {
+					hasTitle = true
+					break
+				}
+			}
 
-	// Get the existing release body if available
-	var existingBody string
-	if err == nil {
-		if body, ok := releases["body"].(string); ok {
-			existingBody = body
+			if hasTitle {
+				// If existing body already has a title, add our notes after it
+				lines := strings.SplitN(existingBody, "\n", 2)
+				if len(lines) > 1 {
+					// Keep the first line (title) and inject our content after it
+					titleLine := lines[0]
+					restOfContent := lines[1]
+					releaseNotes = titleLine + "\n" + releaseNotes + "\n\n---\n\nGitHub Generated Content:\n" + restOfContent
+				} else {
+					// Just combine if splitting didn't work as expected
+					releaseNotes = releaseNotes + "\n\n---\n\nGitHub Generated Content:\n\n" + existingBody
+				}
+			} else {
+				// No title found, just prepend our notes
+				releaseNotes = releaseNotes + "\n\n---\n\nGitHub Generated Content:\n\n" + existingBody
+			}
 		}
-	}
-
-	// If there's an existing body, extract the changelog
-	changelog := extractChangelog(existingBody)
-
-	// Combine our generated notes with the changelog if it exists
-	if changelog != "" {
-		releaseNotes = combineNotesWithChangelog(releaseNotes, changelog)
 	}
 
 	// Show the release notes to the user and ask for approval, unless skipped
@@ -126,13 +161,8 @@ func (m *ReleaseManager) UpdateReleaseNotes(tagName string, skipApproval bool) e
 	// Check for breaking changes to mark as prerelease if needed
 	isBreaking := detectBreakingChanges(commitMessages)
 
-	if err == nil {
+	if releaseID > 0 {
 		// Release exists, update it
-		releaseID, ok := releases["id"].(float64)
-		if !ok {
-			return fmt.Errorf("failed to extract release ID")
-		}
-
 		// Prepare update payload
 		payload := map[string]interface{}{
 			"body": releaseNotes,
@@ -313,21 +343,51 @@ func limitDiffOutput(diff string) string {
 }
 
 // extractChangelog extracts the auto-generated GitHub changelog from release notes
+// This ensures GitHub's auto-generated changelog content (with links to commits and PRs)
+// is preserved when we update the release with AI-generated content
 func extractChangelog(notes string) string {
 	if notes == "" {
 		return ""
 	}
 
 	// Try to find the GitHub-generated changelog section
+	// GitHub uses several different markers depending on the repo settings
 	changelogMarkers := []string{
 		"## What's Changed",
 		"**Full Changelog**",
+		"## Changelog",
+		"### Changelog",
+		"<!-- Release notes generated using",
+		"<details><summary>Changelog</summary>",
 	}
 
 	for _, marker := range changelogMarkers {
 		index := strings.Index(notes, marker)
 		if index >= 0 {
 			return notes[index:]
+		}
+	}
+
+	// If we can't find specific markers, look for common GitHub auto-generated patterns
+	// GitHub often includes links to compare views or PR lists
+	commonPatterns := []string{
+		"compare/",
+		"commits/",
+		"pull/",
+		"Full Changelog:",
+	}
+
+	for _, pattern := range commonPatterns {
+		if strings.Contains(notes, pattern) {
+			// The entire content might be GitHub-generated
+			// Try to find a reasonable split point
+			lines := strings.Split(notes, "\n")
+			for i, line := range lines {
+				if strings.Contains(line, pattern) {
+					// Return from this line to the end
+					return strings.Join(lines[i:], "\n")
+				}
+			}
 		}
 	}
 
@@ -340,7 +400,12 @@ func combineNotesWithChangelog(notes, changelog string) string {
 		return notes
 	}
 
-	// Ensure there's a separator between our notes and the changelog
+	// Check if the AI-generated notes already contain the changelog
+	if strings.Contains(notes, changelog) {
+		return notes
+	}
+
+	// Ensure there's a clear separator between our notes and the GitHub changelog
 	return notes + "\n\n---\n\n" + changelog
 }
 

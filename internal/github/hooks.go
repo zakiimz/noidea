@@ -61,6 +61,7 @@ fi
 
 # Call noidea to create GitHub release with enhanced release notes
 # Using --skip-approval for automated execution
+# The release notes generator will preserve GitHub's auto-generated content
 echo "Generating release notes for $TAG_NAME..."
 %s github release notes --tag="$TAG_NAME" %s--skip-approval
 

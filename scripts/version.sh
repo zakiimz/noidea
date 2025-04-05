@@ -117,6 +117,9 @@ bump_version() {
                 if noidea github status >/dev/null 2>&1; then
                     echo ""
                     echo -e "${CYAN}Generating enhanced release notes...${NC}"
+                    # We've enhanced the system to preserve GitHub's auto-generated changelog
+                    # instead of using a delay. The AI-generated content will be added to the top
+                    # of the release notes while maintaining GitHub's content intact.
                     noidea github release notes --tag="$new_version"
                 else
                     echo ""
