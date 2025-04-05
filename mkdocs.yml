@@ -47,6 +47,28 @@ theme:
 plugins:
   - privacy
   - search
+  - blog:
+      blog_dir: blog
+      post_url_format: "{slug}"
+      post_readtime: true
+      post_readtime_words_per_minute: 265
+      post_excerpt: required
+      authors_file: "{blog}/.authors.yml"
+      categories_file: "{blog}/.categories.yml"
+  # Temporarily commenting out RSS plugin until we fix the installation issue
+  # - rss:
+  #     match_path: blog/posts/.*
+  #     date_from_meta:
+  #       as_creation: date
+  #     categories:
+  #       - categories
+  #       - tags
+
+nav:
+  - Home: index.md
+  - Documentation:
+    - API Key Management: api-key-management.md
+  - Blog: blog/index.md
 
 markdown_extensions:
   - admonition

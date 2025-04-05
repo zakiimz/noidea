@@ -1,0 +1,15 @@
+Security:
+  name: Security
+  description: Posts about secure credential management and best practices for protecting sensitive data.
+
+Development:
+  name: Development
+  description: Technical insights into Go development patterns and practices used in NoIdea.
+
+AI:
+  name: Artificial Intelligence
+  description: Discussions about integrating AI services and models into developer tools.
+
+Git:
+  name: Git & Version Control
+  description: Tips, tricks, and best practices for Git and version control workflows. 

@@ -71,6 +71,47 @@ While still supported for backward compatibility, we recommend transitioning awa
 XAI_API_KEY=your_api_key_here
 ```
 
+## Provider Aliases
+
+NoIdea supports a flexible provider aliasing system that maps different names to standard provider identifiers. This is helpful for users who might refer to the same provider by different names.
+
+### Built-in Aliases
+
+The system comes with default aliases for common providers:
+
+| Standard Name | Recognized Aliases |
+|---------------|-------------------|
+| `openai`      | `open-ai`, `gpt`, `chatgpt`, `davinci` |
+| `xai`         | `x-ai`, `grok`, `x.ai` |
+| `deepseek`    | `deep-seek`, `deepseek-ai` |
+| `anthropic`   | `claude`, `anthropic-ai` |
+| `mistral`     | `mistral-ai`, `mistralai` |
+
+### Custom Provider Aliases
+
+You can define your own aliases by creating or editing the file `~/.noidea/secure/provider_aliases.json`:
+
+```json
+{
+  "openai": ["openai-custom", "my-gpt"],
+  "custom-provider": ["custom1", "custom2"]
+}
+```
+
+When you first use the secure storage system, a template file is automatically created with examples.
+
+Custom aliases are merged with the built-in ones, with your custom aliases taking precedence in case of conflicts.
+
+For example, with the configuration above:
+- `openai-custom` would be normalized to `openai`
+- `custom1` would be normalized to `custom-provider`
+- You can add entirely new providers not included in the built-in list
+
+This feature is especially useful for:
+- Teams with custom naming conventions
+- Using providers not officially supported yet
+- Creating shortcuts for commonly used providers
+
 ## API Key Priority Order
 
 The system uses the following order of precedence when looking for API keys:
@@ -139,6 +180,10 @@ If you encounter issues with secure storage:
    - Check if your API key is correct
    - Ensure you have an active subscription with the provider
    - Check if your network can reach the provider's API servers
+
+5. **Provider alias issues**
+   - If your provider isn't being recognized correctly, check or customize the aliases in `~/.noidea/secure/provider_aliases.json`
+   - Ensure the JSON file is valid and properly formatted
 
 ## Migration from Previous Versions
 

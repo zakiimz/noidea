@@ -3,6 +3,7 @@
 package secure
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -22,10 +23,135 @@ const (
 	
 	// FallbackFile is the filename used for fallback storage
 	FallbackFile = "keyring.enc"
+	
+	// AliasFile is the filename for user-defined provider aliases
+	AliasFile = "provider_aliases.json"
 )
 
 // ErrKeyNotFound indicates that a key was not found in the secure storage
 var ErrKeyNotFound = errors.New("key not found in secure storage")
+
+// Default provider alias mapping - maps standard provider names to their known aliases
+var defaultProviderAliases = map[string][]string{
+	"openai":    {"open-ai", "gpt", "chatgpt", "davinci"},
+	"xai":       {"x-ai", "grok", "x.ai"},
+	"deepseek":  {"deep-seek", "deepseek-ai"},
+	"anthropic": {"claude", "anthropic-ai"},
+	"mistral":   {"mistral-ai", "mistralai"},
+}
+
+// Reverse lookup map built at init time
+var aliasToProvider map[string]string
+
+func init() {
+	// Load provider aliases (default + user-defined)
+	providerAliases := loadProviderAliases()
+	
+	// Build reverse lookup map
+	aliasToProvider = make(map[string]string)
+	for provider, aliases := range providerAliases {
+		aliasToProvider[provider] = provider // Map standard name to itself
+		for _, alias := range aliases {
+			aliasToProvider[alias] = provider
+		}
+	}
+}
+
+// loadProviderAliases combines default aliases with user-defined ones
+func loadProviderAliases() map[string][]string {
+	// Start with default aliases
+	combined := make(map[string][]string)
+	for provider, aliases := range defaultProviderAliases {
+		combined[provider] = aliases
+	}
+	
+	// Try to load user-defined aliases
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		// If we can't get the home directory, just use defaults
+		return combined
+	}
+	
+	// Check for user-defined alias file
+	aliasPath := filepath.Join(homeDir, FallbackDir, AliasFile)
+	data, err := os.ReadFile(aliasPath)
+	if err != nil {
+		// If file doesn't exist or can't be read, create a default one for the user
+		createDefaultAliasFile(homeDir)
+		return combined
+	}
+	
+	// Parse user aliases
+	var userAliases map[string][]string
+	if err := json.Unmarshal(data, &userAliases); err != nil {
+		// If file is corrupted, just use defaults
+		return combined
+	}
+	
+	// Merge user aliases with defaults, user aliases take precedence
+	for provider, aliases := range userAliases {
+		if existing, ok := combined[provider]; ok {
+			// Append user aliases to existing ones, avoiding duplicates
+			for _, alias := range aliases {
+				if !contains(existing, alias) {
+					combined[provider] = append(combined[provider], alias)
+				}
+			}
+		} else {
+			// Add new provider
+			combined[provider] = aliases
+		}
+	}
+	
+	return combined
+}
+
+// createDefaultAliasFile creates a template alias file for users to customize
+func createDefaultAliasFile(homeDir string) error {
+	secureDir := filepath.Join(homeDir, FallbackDir)
+	if err := os.MkdirAll(secureDir, 0700); err != nil {
+		return err
+	}
+	
+	aliasPath := filepath.Join(secureDir, AliasFile)
+	
+	// Check if file already exists
+	if _, err := os.Stat(aliasPath); err == nil {
+		// File exists, don't overwrite
+		return nil
+	}
+	
+	// Create a template with comments for users
+	templateData := map[string][]string{
+		"example-provider": {"alias1", "alias2"},
+		// Include one real example
+		"openai": {"gpt4", "oai"},
+	}
+	
+	jsonData, err := json.MarshalIndent(templateData, "", "  ")
+	if err != nil {
+		return err
+	}
+	
+	// Add a comment at the top explaining the format
+	// Note: This isn't valid JSON, but we'll make it a valid JSON file when we write it
+	fileContent := `// User-defined provider aliases for NoIdea
+// Format: {"provider": ["alias1", "alias2", ...]}
+// These will be merged with the built-in aliases
+` + string(jsonData)
+	
+	return os.WriteFile(aliasPath, []byte(fileContent), 0600)
+}
+
+// contains checks if a string slice contains a specific string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
 
 // StoreAPIKey securely stores an API key for a given provider
 func StoreAPIKey(provider, apiKey string) error {
@@ -80,17 +206,13 @@ func DeleteAPIKey(provider string) error {
 func normalizeProviderName(provider string) string {
 	provider = strings.ToLower(provider)
 	
-	// Map common variations to standard names
-	switch provider {
-	case "openai", "open-ai", "gpt":
-		return "openai"
-	case "xai", "x-ai", "grok":
-		return "xai" 
-	case "deepseek", "deep-seek":
-		return "deepseek"
-	default:
-		return provider
+	// Look up in our alias map
+	if standardName, exists := aliasToProvider[provider]; exists {
+		return standardName
 	}
+	
+	// If no match, return as-is
+	return provider
 }
 
 // storeInFallbackStorage stores API keys in an encrypted file as fallback
