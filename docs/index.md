@@ -32,7 +32,7 @@ hide:
 
     Get AI-powered commit message suggestions that accurately describe your changes, making your commit history more professional and useful
 
-    [:octicons-arrow-right-24: Learn more](api-key-management.md)
+    [:octicons-arrow-right-24: Learn more](user-guide/features/api-key-management.md)
 
 - :material-message-text: __Sassy Feedback__
 

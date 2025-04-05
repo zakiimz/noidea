@@ -91,8 +91,6 @@ nav:
     - Troubleshooting: user-guide/troubleshooting.md
   - Developer Guide:
     - Overview: dev-guide/overview.md
-    - Architecture: dev-guide/architecture.md
-    - Contributing: dev-guide/contributing.md
   - Blog: blog/index.md
 
 markdown_extensions:
