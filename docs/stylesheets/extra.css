@@ -31,7 +31,7 @@
 
 /* Homepage Hero Section */
 .hero {
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
   padding: 3rem 2rem;
   text-align: center;
   background: linear-gradient(45deg, var(--md-primary-fg-color--dark), var(--md-primary-fg-color));
@@ -212,20 +212,172 @@
   content: "🗿 ";
 }
 
-/* Dark mode specific overrides */
-[data-md-color-scheme="noidea-dark"] .hero {
-  background: linear-gradient(45deg, #1a4785, #3B82F6);
+/* Feature status table */
+.feature-status {
+  margin: 2rem 0;
 }
 
-[data-md-color-scheme="noidea-dark"] .hero .md-button--primary {
-  color: #3B82F6 !important;
+.feature-status table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-[data-md-color-scheme="noidea-dark"] .grid.cards > * {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  background-color: #232833;
+.feature-status table th {
+  background-color: var(--md-primary-fg-color);
+  color: white;
+  font-weight: bold;
+  text-align: left;
+  padding: 0.75rem 1rem;
 }
 
-[data-md-color-scheme="noidea-dark"] .grid.cards > *:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+.feature-status table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.feature-status table tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Content layout improvements */
+.md-content__inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 0.5rem;
+}
+
+/* Section styling with minimal vertical spacing */
+.md-typeset h2 {
+  margin-top: 1.2rem;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  font-size: 1.7rem;
+}
+
+.md-typeset h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+[data-md-color-scheme="noidea-dark"] .md-typeset h2 {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Content section styling */
+.content-section {
+  margin: 0.8rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  background-color: var(--md-default-bg-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+[data-md-color-scheme="noidea-dark"] .content-section {
+  background-color: rgba(255, 255, 255, 0.02);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Ultra compact grid cards */
+.grid.cards {
+  margin: 1rem auto;
+  gap: 0.8rem;
+}
+
+.grid.cards > * {
+  margin-bottom: 1rem;
+}
+
+/* Code blocks - improve visual consistency */
+.md-typeset pre {
+  border-radius: 6px;
+  margin: 1.5em 0;
+}
+
+.highlight {
+  background-color: var(--md-code-bg-color);
+  border-radius: 6px;
+}
+
+/* Terminal code blocks - better styling */
+.terminal {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Add better visual hierarchy to bullet points */
+.md-typeset ul li {
+  margin-bottom: 0.3rem;
+}
+
+.md-typeset ul li p {
+  margin: 0;
+}
+
+/* Highlight important text */
+.highlight-text {
+  font-weight: 500;
+  color: var(--md-primary-fg-color);
+}
+
+/* Tighten up spacing after paragraphs */
+.md-typeset p {
+  margin-bottom: 0.6rem;
+}
+
+/* Further reduce spacing for lists and paragraphs */
+.md-typeset ul {
+  margin-top: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+/* Reduce table margins */
+.md-typeset table {
+  margin: 0.8rem 0;
+}
+
+/* First major heading after hero - reduce top space */
+.hero + h2, 
+.hero + .content-section h2:first-child {
+  margin-top: 0.5rem;
+}
+
+/* First content section after hero - minimize space completely */
+.hero + .content-section {
+  margin-top: 0.25rem;
+}
+
+/* Empty space element for h2 with icon - make it less pronounced */
+h2 .twemoji, 
+h2 .md-icon,
+h2 .emoji {
+  vertical-align: middle;
+  margin-right: 0.3rem;
+}
+
+/* Reduce global spacing between all related sections */
+.md-content__inner > * + * {
+  margin-top: 0.5rem;
+}
+
+/* Address space above h2 in content sections */
+.md-content__inner h2[id]:not(:first-child) {
+  margin-top: 0.9rem;
+}
+
+/* Add spacing between feedback section and footer */
+.md-feedback {
+  margin-bottom: 1rem !important;
+}
+
+/* Alternative selector if the above doesn't work */
+.md-typeset > .md-feedback {
+  margin-bottom: 1rem !important;
+}
+
+/* Final fallback for feedback area */
+.md-main__inner > .md-content > .md-content__inner > :last-child {
+  margin-bottom: 2rem;
 } 
