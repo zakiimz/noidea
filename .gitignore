@@ -29,6 +29,11 @@ pkg/
 *.swo
 .DS_Store
 
+# cache files
+.cache
+*.cache
+/cache
+
 # Environment variables
 .env
 .envrc
