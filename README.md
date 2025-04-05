@@ -31,6 +31,7 @@
 - 📊 **Git Insights** - Track coding patterns and get weekly summaries
 - 🎭 **Multiple Personalities** - Choose from several AI personalities for feedback
 - 🔒 **Secure API Key Management** - Keep your AI provider keys safe
+- 🚀 **GitHub Integration** - Manage GitHub releases with AI-enhanced release notes and smart workflow awareness
 
 ## 🚀 Quick Start
 
@@ -49,6 +50,10 @@ git config noidea.suggest true
 
 # Add your API key for AI features
 noidea config apikey
+
+# Set up GitHub integration (optional)
+noidea github auth
+noidea github hook-install
 ```
 
 ### 📝 Commit Workflow With noidea
@@ -99,6 +104,42 @@ For AI-powered features, add your API key:
 
 See [API Key Management](./docs/api-key-management.md) for secure storage details.
 
+### 🚀 GitHub Integration
+
+noidea provides seamless GitHub integration for managing releases and generating release notes:
+
+1. **Set up GitHub integration:**
+   ```bash
+   # Authenticate with GitHub
+   noidea github auth
+   
+   # Install GitHub hooks (optional)
+   noidea github hook-install
+   ```
+
+2. **Generate enhanced release notes:**
+   ```bash
+   # Generate release notes for the latest tag
+   noidea github release notes
+   
+   # Wait for GitHub workflows to complete before generating notes
+   noidea github release notes --wait-for-workflows
+   
+   # Generate notes for a specific tag
+   noidea github release notes --tag=v1.2.3
+   ```
+
+3. **Automatic version management** with the version script:
+   ```bash
+   # Bump patch version (0.0.x)
+   ./scripts/version.sh patch
+   
+   # Bump minor version (0.x.0)
+   ./scripts/version.sh minor
+   ```
+
+The release notes generator enhances GitHub's standard release notes with AI-powered descriptions while preserving GitHub's changelog with commit links.
+
 ### 📋 Available Commands
 
 | Command | Description |
@@ -110,6 +151,11 @@ See [API Key Management](./docs/api-key-management.md) for secure storage detail
 | `noidea feedback [--count 5]` | Analyze specific commits |
 | `noidea config --init` | Configure noidea interactively |
 | `noidea moai --list-personalities` | List all available personalities |
+| `noidea github auth` | Authenticate with GitHub using a PAT |
+| `noidea github status` | Check GitHub authentication status |
+| `noidea github hook-install` | Install GitHub integration hooks |
+| `noidea github release notes` | Generate AI-enhanced release notes |
+| `noidea github release notes --wait-for-workflows` | Wait for GitHub Actions to complete before generating notes |
 
 Run `noidea --help` for more information.
 
@@ -161,7 +207,7 @@ Create a `~/.noidea/config.json` file:
 | Commit message suggestions | ✅ Done |
 | Enhanced terminal output | ✅ Done |
 | POSIX-compatible hooks | ✅ Done |
-| Lint feedback | 🛠️ In progress |
+| AI generated release notes | ✅ Done |
 | AI GitHub issue management | 🔜 Coming Soon |
 
 ## 🤝 Contributing

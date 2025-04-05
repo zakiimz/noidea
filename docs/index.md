@@ -46,6 +46,12 @@ hide:
 
     [:octicons-arrow-right-24: Commands](#commands)
 
+- :fontawesome-brands-github: __GitHub Integration__
+
+    Generate AI-enhanced release notes, manage releases, and integrate with GitHub Actions workflows
+
+    [:octicons-arrow-right-24: GitHub Features](#github-integration)
+
 </div>
 
 <div class="content-section">
@@ -152,6 +158,57 @@ hide:
 </div>
 
 <div class="content-section">
+  <h2 id="github-integration">🚀 GitHub Integration</h2>
+
+  <p>NoIdea provides seamless GitHub integration for managing releases and generating enhanced release notes:</p>
+
+  <h3>Authentication & Setup</h3>
+
+  <div class="terminal">
+  ```bash
+  # Authenticate with GitHub
+  noidea github auth
+  
+  # Install GitHub hooks (optional)
+  noidea github hook-install
+  ```
+  </div>
+
+  <h3>Enhanced Release Notes</h3>
+
+  <p>Generate AI-powered release notes that enhance GitHub's standard format:</p>
+
+  <div class="terminal">
+  ```bash
+  # Generate notes for the latest tag
+  noidea github release notes
+  
+  # Wait for GitHub Actions workflows to complete before generating
+  noidea github release notes --wait-for-workflows
+  ```
+  </div>
+  
+  <div class="admonition tip">
+    <p class="admonition-title">Workflow Awareness</p>
+    <p>The <code>--wait-for-workflows</code> flag makes NoIdea monitor GitHub Actions status and automatically generate notes once workflows complete, preserving GitHub's generated content while enhancing it with AI.</p>
+  </div>
+
+  <h3>Version Management</h3>
+
+  <p>Manage version numbers and create releases with one command:</p>
+
+  <div class="terminal">
+  ```bash
+  # Bump patch version (0.0.x)
+  ./scripts/version.sh patch
+  
+  # Bump minor version (0.x.0)
+  ./scripts/version.sh minor
+  ```
+  </div>
+</div>
+
+<div class="content-section">
   <h2 id="commands">🔧 Commands Reference</h2>
 
   <table>
@@ -193,6 +250,26 @@ hide:
       <tr>
         <td><code>noidea config</code></td>
         <td>Configure noidea</td>
+      </tr>
+      <tr>
+        <td><code>noidea github auth</code></td>
+        <td>Authenticate with GitHub using a Personal Access Token</td>
+      </tr>
+      <tr>
+        <td><code>noidea github status</code></td>
+        <td>Check GitHub authentication status</td>
+      </tr>
+      <tr>
+        <td><code>noidea github hook-install</code></td>
+        <td>Install GitHub integration Git hooks</td>
+      </tr>
+      <tr>
+        <td><code>noidea github release notes</code></td>
+        <td>Generate AI-enhanced release notes</td>
+      </tr>
+      <tr>
+        <td><code>noidea github release notes --wait-for-workflows</code></td>
+        <td>Wait for GitHub Actions to complete before generating notes</td>
       </tr>
     </tbody>
   </table>

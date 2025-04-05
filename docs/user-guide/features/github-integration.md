@@ -45,12 +45,32 @@ When you create a new Git tag (either manually or using `./scripts/version.sh`),
 
 The enhanced release notes feature integrates seamlessly with your existing workflow:
 
-1. When running `./scripts/version.sh` to bump a version, enhanced release notes are generated automatically when you push the tag
-2. If you create tags manually, the post-tag hook will trigger release note generation automatically
+1. When running `./scripts/version.sh` to bump a version, you are prompted whether to generate release notes immediately or wait for GitHub workflows
+2. If you create tags manually, the post-tag hook will suggest the best command to run for release notes generation
 3. You can manually generate or update release notes for any tag:
    ```bash
    noidea github release notes --tag=v1.2.3
    ```
+
+### Workflow-Aware Release Notes
+
+One of the most powerful features is the ability to wait for GitHub Actions workflows to complete before generating release notes:
+
+```bash
+noidea github release notes --wait-for-workflows
+```
+
+This command:
+1. Checks the status of GitHub workflow runs for the specified tag
+2. Displays a live progress indicator with elapsed time
+3. Once all workflows complete, generates release notes that preserve GitHub's auto-generated content
+4. Enhances only the overview section with AI-generated content while keeping all commit links intact
+
+You can adjust the maximum wait time (default: 5 minutes):
+
+```bash
+noidea github release notes --wait-for-workflows --max-wait=600  # Wait up to 10 minutes
+```
 
 ### AI-Powered Release Notes
 
@@ -65,6 +85,24 @@ To force AI-generation even if LLM is disabled in your config:
 
 ```bash
 noidea github release notes --tag=v1.2.3 --ai
+```
+
+### Integration with GitHub's Release Notes
+
+When using the `--wait-for-workflows` flag, NoIdea intelligently preserves GitHub's auto-generated content:
+
+1. It waits for GitHub Actions workflows to complete, including any that generate release notes
+2. It preserves GitHub's "What's Changed" section with commit links and PR references
+3. It enhances only the "Overview" section with AI-generated content for better readability
+
+This gives you the best of both worlds: GitHub's detailed changelog with commit links, and an AI-enhanced overview that's more user-friendly.
+
+### Automatic Mode
+
+For complete automation, you can use the `--auto` flag, which enables both AI generation and skips approval:
+
+```bash
+noidea github release notes --auto
 ```
 
 ### Examples
@@ -109,4 +147,6 @@ This release adds GitHub integration capabilities, fixes several configuration b
 | `noidea github logout` | Remove stored GitHub credentials |
 | `noidea github release create --tag=TAG` | Manually create a GitHub release |
 | `noidea github release notes --tag=TAG` | Generate enhanced release notes |
+| `noidea github release notes --wait-for-workflows` | Wait for GitHub Actions to complete before generating notes |
+| `noidea github release notes --auto` | Automatically generate and update notes without interaction |
 | `noidea github hook-install` | Install GitHub hooks for automation | 
