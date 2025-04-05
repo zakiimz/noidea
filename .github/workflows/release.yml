@@ -74,7 +74,7 @@ jobs:
           echo "$CHANGELOG" >> changelog.md
           echo "" >> changelog.md
           echo "## Summary" >> changelog.md
-          echo "This release was automatically generated and enhanced with GitHub Copilot." >> changelog.md
+          echo "This release was automatically generated and enhanced with GitHub Copilot and NoIdea." >> changelog.md
           
           # Escape newlines for GitHub Actions
           CHANGELOG_ESCAPED="${CHANGELOG//'%'/'%25'}"
