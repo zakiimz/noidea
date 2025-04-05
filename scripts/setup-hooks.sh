@@ -23,14 +23,25 @@ set -e
 
 echo "Running pre-commit checks..."
 
-# Stash any changes not added to the index
-git stash -q --keep-index || true
+# Only stash if there are unstaged changes
+if git diff --quiet; then
+  NEED_STASH=0
+else
+  NEED_STASH=1
+  echo "Stashing unstaged changes..."
+  git stash push -q --keep-index --include-untracked --message "pre-commit-hook"
+fi
 
 # Ensure we clean up on exit
 function cleanup {
-  # Restore the stashed changes regardless of outcome
-  git stash pop -q 2>/dev/null || true
+  # Only pop the stash if we needed to stash
+  if [ $NEED_STASH -eq 1 ]; then
+    echo "Restoring unstaged changes..."
+    git stash pop -q
+  fi
 }
+
+# Use ERR trap instead of EXIT to keep stashed changes if there's an error
 trap cleanup EXIT
 
 # Run go mod tidy to manage dependencies
@@ -54,9 +65,9 @@ make format
 make script-lint
 
 # If there are any changes after formatting, add them
-if git diff --name-only | grep -q "\.go$"; then
+if ! git diff --quiet; then
   echo "Adding automatically formatted files..."
-  git add $(git diff --name-only | grep "\.go$")
+  git add -u
 fi
 
 echo "✅ Pre-commit checks passed."
