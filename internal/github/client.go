@@ -172,3 +172,90 @@ func getOriginRemoteURL() (string, error) {
 	}
 	return strings.TrimSpace(string(output)), nil
 }
+
+// GetWorkflowRunsForRef gets the workflow runs triggered by a specific git ref (tag/branch)
+func (c *Client) GetWorkflowRunsForRef(owner, repo, ref string) ([]map[string]interface{}, error) {
+	url := fmt.Sprintf("/repos/%s/%s/actions/runs?event=push&branch=%s", owner, repo, ref)
+	response, err := c.get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get workflow runs: %w", err)
+	}
+
+	// Extract workflow runs from response
+	workflowRunsObj, ok := response["workflow_runs"]
+	if !ok {
+		return nil, fmt.Errorf("unexpected response format: workflow_runs not found")
+	}
+
+	workflowRuns, ok := workflowRunsObj.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected response format: workflow_runs is not an array")
+	}
+
+	// Convert to maps
+	result := make([]map[string]interface{}, 0, len(workflowRuns))
+	for _, run := range workflowRuns {
+		if runMap, ok := run.(map[string]interface{}); ok {
+			result = append(result, runMap)
+		}
+	}
+
+	return result, nil
+}
+
+// AreAllWorkflowsComplete checks if all workflows for a ref have completed (success or failure)
+func (c *Client) AreAllWorkflowsComplete(owner, repo, ref string) (bool, error) {
+	runs, err := c.GetWorkflowRunsForRef(owner, repo, ref)
+	if err != nil {
+		return false, err
+	}
+
+	// If no runs found, assume workflows are complete
+	if len(runs) == 0 {
+		return true, nil
+	}
+
+	// Check if all runs have a conclusive status
+	for _, run := range runs {
+		status, ok := run["status"].(string)
+		if !ok {
+			continue
+		}
+
+		// If any workflow is still in progress, return false
+		if status == "queued" || status == "in_progress" || status == "waiting" {
+			return false, nil
+		}
+	}
+
+	// All workflows have completed
+	return true, nil
+}
+
+// WaitForWorkflowsToComplete waits for all workflows to complete with a max wait time
+func (c *Client) WaitForWorkflowsToComplete(owner, repo, ref string, maxWaitSeconds int) error {
+	fmt.Printf("Checking GitHub workflow status for %s...\n", ref)
+
+	// Start a timeout context
+	timeoutChan := time.After(time.Duration(maxWaitSeconds) * time.Second)
+	ticker := time.NewTicker(5 * time.Second) // Check every 5 seconds
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-timeoutChan:
+			return fmt.Errorf("timed out waiting for workflows to complete after %d seconds", maxWaitSeconds)
+		case <-ticker.C:
+			complete, err := c.AreAllWorkflowsComplete(owner, repo, ref)
+			if err != nil {
+				fmt.Printf("Warning: Failed to check workflow status: %s\n", err)
+				// Continue checking despite errors
+			} else if complete {
+				fmt.Println("✅ All GitHub workflows completed successfully.")
+				return nil
+			} else {
+				fmt.Print("⏳ Workflows still running... waiting...")
+			}
+		}
+	}
+}

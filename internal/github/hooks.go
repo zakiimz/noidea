@@ -64,10 +64,10 @@ echo "============================================================="
 echo "🏷️  Tag '$TAG_NAME' created successfully!"
 echo "GitHub Actions workflows may have been triggered."
 echo ""
-echo "📝 For best results, wait for GitHub workflows to complete"
-echo "   before generating enhanced release notes with:"
+echo "📝 Use this command to automatically wait for workflows to complete"
+echo "   and then generate enhanced release notes:"
 echo ""
-echo "   %s github release notes --tag=\"$TAG_NAME\" %s"
+echo "   %s github release notes --tag=\"$TAG_NAME\" %s--wait-for-workflows"
 echo "============================================================="
 
 # Exit with success

@@ -99,6 +99,8 @@ This command uses LLM (if enabled) to create comprehensive, user-friendly releas
 		useAI, _ := cmd.Flags().GetBool("ai")
 		skipApproval, _ := cmd.Flags().GetBool("skip-approval")
 		auto, _ := cmd.Flags().GetBool("auto")
+		waitForWorkflows, _ := cmd.Flags().GetBool("wait-for-workflows")
+		maxWaitSeconds, _ := cmd.Flags().GetInt("max-wait")
 
 		// If auto flag is provided, enable both AI and skip approval
 		if auto {
@@ -106,7 +108,7 @@ This command uses LLM (if enabled) to create comprehensive, user-friendly releas
 			skipApproval = true
 		}
 
-		runGitHubReleaseNotes(tag, useAI, skipApproval)
+		runGitHubReleaseNotes(tag, useAI, skipApproval, waitForWorkflows, maxWaitSeconds)
 	},
 }
 
@@ -136,6 +138,8 @@ func init() {
 	githubReleaseNotesCmd.Flags().Bool("ai", false, "Force AI-generated notes even if LLM is disabled in config")
 	githubReleaseNotesCmd.Flags().Bool("skip-approval", false, "Skip approval before updating release notes")
 	githubReleaseNotesCmd.Flags().Bool("auto", false, "Automatically generate and update notes without interaction (enables --ai and --skip-approval)")
+	githubReleaseNotesCmd.Flags().Bool("wait-for-workflows", false, "Wait for GitHub Actions workflows to complete before generating notes")
+	githubReleaseNotesCmd.Flags().Int("max-wait", 300, "Maximum time in seconds to wait for workflows to complete (default: 5 minutes)")
 }
 
 // runGitHubAuth handles the GitHub authentication flow
@@ -354,7 +358,7 @@ func runGitHubHookInstall() {
 }
 
 // runGitHubReleaseNotes handles generating and updating release notes
-func runGitHubReleaseNotes(tag string, forceAI bool, skipApproval bool) {
+func runGitHubReleaseNotes(tag string, forceAI bool, skipApproval bool, waitForWorkflows bool, maxWaitSeconds int) {
 	// Check if we're authenticated with GitHub
 	_, err := secure.GetGitHubToken()
 	if err != nil {
@@ -365,19 +369,19 @@ func runGitHubReleaseNotes(tag string, forceAI bool, skipApproval bool) {
 
 	// If no tag specified, try to get the latest tag
 	if tag == "" {
-		var err error
-		tag, err = getLatestTag()
+		latestTag, err := getLatestTag()
 		if err != nil {
-			fmt.Printf("Error: Please specify a tag with --tag or ensure you're in a Git repository with tags: %s\n", err)
+			fmt.Printf("Error getting latest tag: %s\n", err)
+			fmt.Println("Please specify a tag with --tag flag.")
 			return
 		}
-		fmt.Printf("No tag specified, using latest tag: %s\n", tag)
+		tag = latestTag
 	}
 
-	// Load configuration
+	// Load config
 	cfg := config.LoadConfig()
 
-	// Override LLM enabled setting if --ai flag is provided
+	// Override LLM enabled flag if forceAI is true
 	if forceAI {
 		cfg.LLM.Enabled = true
 	}
@@ -385,18 +389,23 @@ func runGitHubReleaseNotes(tag string, forceAI bool, skipApproval bool) {
 	// Create release manager
 	manager, err := github.NewReleaseManager(cfg)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err)
+		fmt.Printf("Error creating release manager: %s\n", err)
 		return
 	}
 
-	fmt.Printf("Generating %s release notes for tag %s...\n",
-		getGenerationTypeString(cfg.LLM.Enabled), tag)
+	// Generate and update release notes
+	fmt.Printf("Generating %s release notes for tag %s...\n", getGenerationTypeString(cfg.LLM.Enabled), tag)
 
-	// Update the release notes
-	err = manager.UpdateReleaseNotes(tag, skipApproval)
+	if waitForWorkflows {
+		// Use the workflow check method
+		err = manager.UpdateReleaseNotesWithWorkflowCheck(tag, skipApproval, waitForWorkflows, maxWaitSeconds)
+	} else {
+		// Use the regular method
+		err = manager.UpdateReleaseNotes(tag, skipApproval)
+	}
+
 	if err != nil {
-		fmt.Printf("Error: %s\n", err)
-		return
+		fmt.Printf("Error generating or updating release notes: %s\n", err)
 	}
 }
 

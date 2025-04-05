@@ -678,3 +678,25 @@ func cleanGeneratedOverview(text string) string {
 
 	return result
 }
+
+// UpdateReleaseNotesWithWorkflowCheck creates or updates GitHub release notes after checking workflow status
+func (m *ReleaseManager) UpdateReleaseNotesWithWorkflowCheck(tagName string, skipApproval bool, waitForWorkflows bool, maxWaitSeconds int) error {
+	// Extract owner and repo from git remote
+	owner, repo, err := ExtractRepoInfo("")
+	if err != nil {
+		return fmt.Errorf("failed to determine repository info: %w", err)
+	}
+
+	// Wait for workflows to complete if requested
+	if waitForWorkflows {
+		// Wait for GitHub workflows to finish
+		err := m.client.WaitForWorkflowsToComplete(owner, repo, tagName, maxWaitSeconds)
+		if err != nil {
+			fmt.Printf("Warning: %s\n", err)
+			fmt.Println("Proceeding anyway...")
+		}
+	}
+
+	// Call the regular update method
+	return m.UpdateReleaseNotes(tagName, skipApproval)
+}

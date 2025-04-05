@@ -118,25 +118,24 @@ bump_version() {
                     echo ""
                     echo -e "${CYAN}GitHub tag created and pushed. Release notes generation options:${NC}"
                     echo -e "1. ${YELLOW}Wait for GitHub Actions workflows to complete${NC} (recommended)"
-                    echo -e "   Then run: ${GREEN}noidea github release notes --tag=\"$new_version\"${NC}"
-                    echo -e "   This will preserve GitHub's changelog and only enhance the overview."
+                    echo -e "   Run: ${GREEN}noidea github release notes --tag=\"$new_version\" --wait-for-workflows${NC}"
+                    echo -e "   This will automatically wait for workflows to finish and enhance the overview."
                     echo ""
-                    echo -e "2. ${YELLOW}Generate AI release notes now${NC} (quick but may be overwritten by GitHub)"
+                    echo -e "2. ${YELLOW}Generate AI release notes immediately${NC} (quick but may be overwritten by GitHub)"
                     echo -e "   Run: ${GREEN}noidea github release notes --tag=\"$new_version\"${NC}"
                     
                     # Ask if the user wants to generate now or wait
                     echo ""
-                    read -p "Would you like to generate release notes now? (y/n): " -n 1 -r GENERATE_NOW
+                    read -p "Would you like to generate release notes with workflow waiting? (y/n): " -n 1 -r GENERATE_NOW
                     echo ""
                     
                     if [[ $GENERATE_NOW =~ ^[Yy]$ ]]; then
-                        echo -e "${CYAN}Generating enhanced release notes...${NC}"
-                        # We've enhanced the system to preserve GitHub's auto-generated changelog
-                        # The AI-generated content will enhance the Overview section while
-                        # maintaining GitHub's content intact.
-                        noidea github release notes --tag="$new_version"
+                        echo -e "${CYAN}Waiting for GitHub workflows and generating enhanced release notes...${NC}"
+                        # We've enhanced the system to wait for GitHub workflows and then
+                        # enhance the Overview section while preserving GitHub's content
+                        noidea github release notes --tag="$new_version" --wait-for-workflows
                     else
-                        echo -e "${GREEN}✓${NC} GitHub tag pushed. Remember to generate release notes after workflows complete:"
+                        echo -e "${GREEN}✓${NC} GitHub tag pushed. Remember to generate release notes:"
                         echo -e "  ${GREEN}noidea github release notes --tag=\"$new_version\"${NC}"
                     fi
                 else
