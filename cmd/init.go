@@ -7,10 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/AccursedGalaxy/noidea/internal/config"
-	"github.com/AccursedGalaxy/noidea/internal/git"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+
+	"github.com/AccursedGalaxy/noidea/internal/config"
+	"github.com/AccursedGalaxy/noidea/internal/git"
 )
 
 var (
@@ -103,7 +104,7 @@ var initCmd = &cobra.Command{
 		if err := gitConfigRunner("noidea.suggest", fmt.Sprintf("%t", enableSuggestions)); err != nil {
 			fmt.Println(color.YellowString("Warning:"), "Failed to set git config:", err)
 		}
-		
+
 		status := "enabled"
 		if !enableSuggestions {
 			status = "disabled"
@@ -131,7 +132,7 @@ var initCmd = &cobra.Command{
 		execPath, _ := os.Executable()
 		fmt.Println(color.GreenString("Success!"), "noidea hooks installed - executable at:", execPath)
 		fmt.Println(color.BlueString("Note:"), "To change settings, run 'git config noidea.suggest [true|false]'")
-		
+
 		// Load config and check if API key is set
 		cfg := config.LoadConfig()
 		if cfg.LLM.Enabled && cfg.LLM.APIKey == "" {
@@ -158,16 +159,16 @@ func checkGitVersion() error {
 	if err != nil {
 		return fmt.Errorf("git not found or not executable: %w", err)
 	}
-	
+
 	// Parse git version (example output: "git version 2.34.1")
 	versionStr := string(output)
 	parts := strings.Fields(versionStr)
 	if len(parts) < 3 {
 		return fmt.Errorf("unexpected git version format: %s", versionStr)
 	}
-	
+
 	// We could add version checking here if needed in the future
 	// For now, just ensure git is available
-	
+
 	return nil
 }

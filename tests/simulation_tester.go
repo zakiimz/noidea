@@ -79,8 +79,8 @@ func RunTestSuite(suite TestSuite) error {
 	// Helper function to log debug messages
 	logDebug := func(format string, args ...interface{}) {
 		msg := fmt.Sprintf(format, args...)
-		fmt.Println(msg)  // Print to console
-		
+		fmt.Println(msg) // Print to console
+
 		if debugLog != nil {
 			timestamp := time.Now().Format("2006-01-02 15:04:05")
 			fmt.Fprintf(debugLog, "[%s] %s\n", timestamp, msg)
@@ -120,19 +120,19 @@ func RunTestSuite(suite TestSuite) error {
 	logDebug("NOIDEA_LLM_ENABLED set to: true")
 
 	// Check if this is a suggest test suite
-	isSuggestTestSuite := strings.Contains(strings.ToLower(suite.Name), "suggestion") || 
-	                       strings.Contains(strings.ToLower(suite.Name), "suggest")
-	
+	isSuggestTestSuite := strings.Contains(strings.ToLower(suite.Name), "suggestion") ||
+		strings.Contains(strings.ToLower(suite.Name), "suggest")
+
 	// If this is a suggest test suite, set up the test repository
 	if isSuggestTestSuite {
 		logDebug("Detected suggest test suite, setting up test repository...")
-		
+
 		// Make setup script executable
 		chmod := exec.Command("chmod", "+x", "./setup_test_repo.sh")
 		if chmodOut, err := chmod.CombinedOutput(); err != nil {
 			logDebug("Error making setup script executable: %v\n%s", err, string(chmodOut))
 		}
-		
+
 		// Run setup script
 		setupCmd := exec.Command("./setup_test_repo.sh")
 		setupOutput, err := setupCmd.CombinedOutput()
@@ -140,7 +140,7 @@ func RunTestSuite(suite TestSuite) error {
 			logDebug("Error setting up test repository: %v\n%s", err, string(setupOutput))
 			return fmt.Errorf("failed to set up test repository: %w", err)
 		}
-		
+
 		logDebug("Test repository setup output:\n%s", string(setupOutput))
 
 		// Check if the test repo has been initialized properly
@@ -202,87 +202,87 @@ func RunTestSuite(suite TestSuite) error {
 					logDebug("Error getting absolute path: %v", err)
 					absPath = "../noidea" // Fallback
 				}
-				
+
 				// Special handling for interactive mode
 				if testCase.Name == "suggest_interactive_mode" {
 					logDebug("  Special handling for interactive mode")
-					
+
 					// Use a different approach for interactive mode with pipes
 					cmd = exec.Command(absPath, testCase.Args...)
 					cmd.Dir = "test_repo"
-					
+
 					// Create pipes for stdin/stdout/stderr
 					stdin, err := cmd.StdinPipe()
 					if err != nil {
 						logDebug("  Error creating stdin pipe: %v", err)
 						continue
 					}
-					
+
 					stdout, err := cmd.StdoutPipe()
 					if err != nil {
 						logDebug("  Error creating stdout pipe: %v", err)
 						continue
 					}
-					
+
 					stderr, err := cmd.StderrPipe()
 					if err != nil {
 						logDebug("  Error creating stderr pipe: %v", err)
 						continue
 					}
-					
+
 					// Start the command
 					if err := cmd.Start(); err != nil {
 						logDebug("  Error starting interactive command: %v", err)
 						continue
 					}
-					
+
 					logDebug("  Interactive command started, waiting to send input")
-					
+
 					// Create buffers for output
 					var stdoutBuf, stderrBuf strings.Builder
-					
+
 					// Start goroutines to read output
 					outputDone := make(chan bool, 2)
-					
+
 					go func() {
 						io.Copy(&stdoutBuf, stdout)
 						outputDone <- true
 					}()
-					
+
 					go func() {
 						io.Copy(&stderrBuf, stderr)
 						outputDone <- true
 					}()
-					
+
 					// Wait for some output before sending input
 					time.Sleep(1 * time.Second)
-					
+
 					// Write "y" to simulate user input
 					logDebug("  Sending 'y' input to interactive command")
 					io.WriteString(stdin, "y\n")
 					stdin.Close()
-					
+
 					// Wait for command to complete
 					err = cmd.Wait()
 					if err != nil {
 						logDebug("  Error during interactive command execution: %v", err)
 					}
-					
+
 					// Wait for output goroutines to finish
 					for i := 0; i < 2; i++ {
 						<-outputDone
 					}
-					
+
 					// Combine output
 					output := stdoutBuf.String() + stderrBuf.String()
-					
+
 					// Save output to file
 					outputFile := filepath.Join(testCaseDir, fmt.Sprintf("run_%d.txt", i))
 					err = os.WriteFile(outputFile, []byte(output), 0644)
 					if err != nil {
 						logDebug("  Error saving interactive output: %v", err)
 					}
-					
+
 					logDebug("  Interactive test completed for run %d", i)
 					continue
 				} else {
@@ -295,11 +295,11 @@ func RunTestSuite(suite TestSuite) error {
 				cmd = exec.Command(testCase.Command, testCase.Args...)
 				logDebug("  Using command: %s %s", testCase.Command, strings.Join(testCase.Args, " "))
 			}
-			
+
 			// For regular (non-interactive) command execution
 			// Capture environment for debugging
 			cmd.Env = os.Environ()
-			
+
 			// Capture output
 			output, err := cmd.CombinedOutput()
 
@@ -865,7 +865,7 @@ func prepareTestRepo(testCaseName string) error {
 	case "default_suggest", "suggest_with_history", "suggest_with_file_output", "suggest_with_type_prefix":
 		// Simple change - single file modification
 		writeFile(filepath.Join(testRepoDir, "README.md"), "# Test Repository\n\nThis is a simple change for testing commit suggestions.")
-		
+
 		// Stage the change
 		cmd := exec.Command("git", "add", "README.md")
 		cmd.Dir = testRepoDir
@@ -875,10 +875,10 @@ func prepareTestRepo(testCaseName string) error {
 
 	case "suggest_with_full_diff", "suggest_for_complex_change":
 		// Complex changes - multiple files with substantive changes that should generate a multi-line commit message
-		
+
 		// 1. A new module with multiple components for a user authentication system
 		os.MkdirAll(filepath.Join(testRepoDir, "auth"), 0755)
-		
+
 		// User model file
 		userGoContent := `package auth
 
@@ -1095,7 +1095,7 @@ go get golang.org/x/crypto/bcrypt
 See the app.go file for a complete example of using the authentication system.
 `
 		writeFile(filepath.Join(testRepoDir, "README.md"), readmeContent)
-		
+
 		// Stage all changes
 		cmd := exec.Command("git", "add", ".")
 		cmd.Dir = testRepoDir
@@ -1106,7 +1106,7 @@ See the app.go file for a complete example of using the authentication system.
 	case "suggest_for_simple_change":
 		// Very simple change - single line modification
 		writeFile(filepath.Join(testRepoDir, "simple.txt"), "This is a simple text file with a small change.")
-		
+
 		// Stage the change
 		cmd := exec.Command("git", "add", "simple.txt")
 		cmd.Dir = testRepoDir
@@ -1147,16 +1147,16 @@ func CreateUser(username, email string) UserData {
 const APIVersion = "v1.0"`
 
 		writeFile(filepath.Join(testRepoDir, "api.go"), apiV1Content)
-		
+
 		// Add and commit initial version
 		cmd := exec.Command("git", "add", "api.go")
 		cmd.Dir = testRepoDir
 		cmd.Run()
-		
+
 		cmd = exec.Command("git", "commit", "-m", "Initial API implementation")
 		cmd.Dir = testRepoDir
 		cmd.Run()
-		
+
 		// Now create the breaking changes version
 		apiV2Content := `package api
 
@@ -1201,7 +1201,7 @@ func DeleteUser(id string) error {
 const APIVersion = "v2.0"`
 
 		writeFile(filepath.Join(testRepoDir, "api.go"), apiV2Content)
-		
+
 		// Add explicit breaking change notice in a CHANGELOG file
 		changelogContent := `# Changelog
 
@@ -1213,7 +1213,7 @@ const APIVersion = "v2.0"`
 - **Added DeleteUser function**: New functionality to remove users
 `
 		writeFile(filepath.Join(testRepoDir, "CHANGELOG.md"), changelogContent)
-		
+
 		// Stage the breaking changes
 		cmd = exec.Command("git", "add", "api.go", "CHANGELOG.md")
 		cmd.Dir = testRepoDir
@@ -1224,7 +1224,7 @@ const APIVersion = "v2.0"`
 	case "suggest_interactive_mode":
 		// For interactive mode, create a small feature implementation
 		// Note: The test framework will handle the interactive part separately
-		
+
 		// First create a base file and commit it
 		featureV1Content := `package feature
 
@@ -1255,16 +1255,16 @@ func (f *Feature) IsEnabled() bool {
 }`
 
 		writeFile(filepath.Join(testRepoDir, "feature.go"), featureV1Content)
-		
+
 		// Add and commit initial version
 		cmd := exec.Command("git", "add", "feature.go")
 		cmd.Dir = testRepoDir
 		cmd.Run()
-		
+
 		cmd = exec.Command("git", "commit", "-m", "Initial feature implementation")
 		cmd.Dir = testRepoDir
 		cmd.Run()
-		
+
 		// Now implement a new feature enhancement
 		featureV2Content := `package feature
 
@@ -1314,14 +1314,14 @@ func (f *Feature) HasTag(tag string) bool {
 }`
 
 		writeFile(filepath.Join(testRepoDir, "feature.go"), featureV2Content)
-		
+
 		// Stage the changes
 		cmd = exec.Command("git", "add", "feature.go")
 		cmd.Dir = testRepoDir
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("failed to stage feature changes: %w", err)
 		}
-		
+
 		// For interactive mode testing, we need to provide input to the command
 		// Add a special flag to a file for the test framework to detect
 		writeFile(filepath.Join(testRepoDir, ".interactive_test"), "yes\n")

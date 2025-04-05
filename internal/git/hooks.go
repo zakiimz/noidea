@@ -18,12 +18,12 @@ func FindGitDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("not in a git repository: %w", err)
 	}
-	
+
 	gitDir := strings.TrimSpace(string(output))
 	if gitDir == "" {
 		return "", fmt.Errorf("unable to determine git directory")
 	}
-	
+
 	// If the git dir is relative (usually .git), make it absolute
 	if !filepath.IsAbs(gitDir) {
 		workDir, err := os.Getwd()
@@ -32,7 +32,7 @@ func FindGitDir() (string, error) {
 		}
 		gitDir = filepath.Join(workDir, gitDir)
 	}
-	
+
 	return gitDir, nil
 }
 
@@ -58,34 +58,34 @@ func GetScriptPath() (string, error) {
 // feedback about the commit message.
 func InstallPostCommitHook(hooksDir string) error {
 	postCommitPath := filepath.Join(hooksDir, "post-commit")
-	
+
 	// Create hooks directory if it doesn't exist
 	if err := os.MkdirAll(hooksDir, 0755); err != nil {
 		return fmt.Errorf("failed to create hooks directory: %w", err)
 	}
-	
+
 	// Get the absolute path to the noidea executable
 	execPath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
-	
+
 	// Load configuration
 	cfg := config.LoadConfig()
-	
+
 	// Build command flags
 	flags := ""
-	
+
 	// Add AI flag if enabled
 	if cfg.LLM.Enabled {
 		flags += "--ai "
 	}
-	
+
 	// Add personality flag if set
 	if cfg.Moai.Personality != "" {
 		flags += fmt.Sprintf("--personality=%s ", cfg.Moai.Personality)
 	}
-	
+
 	// Create the post-commit hook content
 	hookContent := fmt.Sprintf(`#!/bin/sh
 #
@@ -102,12 +102,12 @@ COMMIT_MSG=$(git log -1 --pretty=%%B)
 # Always exit with success so git continues normally
 exit 0
 `, execPath, flags)
-	
+
 	// Write the hook file
 	if err := os.WriteFile(postCommitPath, []byte(hookContent), 0755); err != nil {
 		return fmt.Errorf("failed to write post-commit hook: %w", err)
 	}
-	
+
 	fmt.Println("Installed post-commit hook at:", postCommitPath)
 	return nil
 }
@@ -117,18 +117,18 @@ exit 0
 // based on the staged changes.
 func InstallPrepareCommitMsgHook(hooksDir string) error {
 	hookPath := filepath.Join(hooksDir, "prepare-commit-msg")
-	
+
 	// Create hooks directory if it doesn't exist
 	if err := os.MkdirAll(hooksDir, 0755); err != nil {
 		return fmt.Errorf("failed to create hooks directory: %w", err)
 	}
-	
+
 	// Get the absolute path to the noidea executable
 	execPath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
-	
+
 	// Create the hook content
 	hookContent := fmt.Sprintf(`#!/bin/sh
 #
@@ -194,12 +194,12 @@ echo "${CYAN}🧠 Generating commit message suggestion...${RESET}"
 
 exit 0
 `, execPath)
-	
+
 	// Write the hook file
 	if err := os.WriteFile(hookPath, []byte(hookContent), 0755); err != nil {
 		return fmt.Errorf("failed to write prepare-commit-msg hook: %w", err)
 	}
-	
+
 	fmt.Println("Installed prepare-commit-msg hook at:", hookPath)
 	return nil
 }

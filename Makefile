@@ -1,4 +1,4 @@
-.PHONY: build install uninstall clean lint test release
+.PHONY: build install uninstall clean lint test release format lint-tools fmt tidy lint-ci pre-commit
 
 # Binary name
 BINARY=noidea
@@ -82,16 +82,54 @@ release:
 	@cd dist && sha256sum * > checksums-$(VERSION).txt
 	@echo "✅ Checksums file created."
 
-# Run go vet and golint
-lint:
-	@echo "Running linters..."
-	$(GO) vet ./...
-	@if command -v golint >/dev/null 2>&1; then \
-		golint -set_exit_status ./...; \
-	else \
-		echo "Warning: golint not installed. Skipping."; \
+# Check if required linting tools are installed and install them if missing
+lint-tools:
+	@echo "Checking linting tools..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "Installing golangci-lint..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin; \
 	fi
+	@if ! command -v goimports >/dev/null 2>&1; then \
+		echo "Installing goimports..."; \
+		$(GO) install golang.org/x/tools/cmd/goimports@latest; \
+	fi
+	@echo "✅ Linting tools ready."
+
+# Run comprehensive linting with golangci-lint
+lint: lint-tools
+	@echo "Running linters..."
+	@echo "Running go vet..."
+	@$(GO) vet ./...
+	@echo "Running golangci-lint..."
+	@golangci-lint run ./...
 	@echo "✅ Lint complete."
+
+# Run linting in CI mode (fails on any issue)
+lint-ci: lint-tools
+	@echo "Running linters in CI mode..."
+	@$(GO) vet ./...
+	@golangci-lint run --timeout=5m ./...
+	@echo "✅ Lint CI check passed."
+
+# Format all Go code
+fmt: lint-tools
+	@echo "Formatting code..."
+	@goimports -w -local github.com/AccursedGalaxy/noidea .
+	@echo "✅ Formatting complete."
+
+# Clean up go.mod and go.sum
+tidy:
+	@echo "Tidying dependencies..."
+	@$(GO) mod tidy
+	@echo "✅ Dependencies tidied."
+
+# Format the entire codebase
+format: fmt tidy
+	@echo "✅ Code formatted and dependencies tidied."
+
+# Run pre-commit checks (useful for git hooks)
+pre-commit: format lint-ci test
+	@echo "✅ Pre-commit checks passed."
 
 # Install dependencies for development
 deps:
@@ -125,7 +163,12 @@ help:
 	@echo "  make install    - Install noidea to $(BINDIR)"
 	@echo "  make uninstall  - Remove noidea from $(BINDIR)"
 	@echo "  make release    - Build binaries for all platforms"
-	@echo "  make lint       - Run linters"
+	@echo "  make lint       - Run comprehensive linters"
+	@echo "  make lint-ci    - Run linters in CI mode (fails on any issue)"
+	@echo "  make fmt        - Format Go code with goimports"
+	@echo "  make tidy       - Clean up go.mod and go.sum"
+	@echo "  make format     - Format code and tidy dependencies"
+	@echo "  make pre-commit - Run all pre-commit checks (format, lint, test)"
 	@echo "  make test       - Run tests"
 	@echo "  make clean      - Remove built binaries"
 	@echo "  make deps       - Install dependencies"

@@ -26,28 +26,28 @@ type Config struct {
 
 	// Moai contains settings for the Moai feedback system
 	Moai struct {
-		UseLint         bool   `json:"use_lint"`          // Include linting feedback
-		FacesMode       string `json:"faces_mode"`        // "random", "sequential", "mood"
-		Personality     string `json:"personality"`       // Selected personality
-		PersonalityFile string `json:"personality_file"`  // Custom personality definitions
+		UseLint         bool   `json:"use_lint"`         // Include linting feedback
+		FacesMode       string `json:"faces_mode"`       // "random", "sequential", "mood"
+		Personality     string `json:"personality"`      // Selected personality
+		PersonalityFile string `json:"personality_file"` // Custom personality definitions
 	} `json:"moai"`
 }
 
 // DefaultConfig returns a default configuration
 func DefaultConfig() Config {
 	var cfg Config
-	
+
 	// LLM settings
 	cfg.LLM.Enabled = false
 	cfg.LLM.Provider = "xai"
 	cfg.LLM.Model = "grok-2-1212"
 	cfg.LLM.Temperature = 0.7
-	
+
 	// Moai settings
 	cfg.Moai.UseLint = false
 	cfg.Moai.FacesMode = "random"
 	cfg.Moai.Personality = "professional_sass"
-	
+
 	// Get home directory for default personality file path
 	homeDir, err := os.UserHomeDir()
 	if err == nil {
@@ -56,7 +56,7 @@ func DefaultConfig() Config {
 		// Fallback to current directory if we can't get home dir
 		cfg.Moai.PersonalityFile = "personalities.json"
 	}
-	
+
 	return cfg
 }
 
@@ -65,7 +65,7 @@ func DefaultConfig() Config {
 func LoadConfig() Config {
 	// Start with default config
 	cfg := DefaultConfig()
-	
+
 	// Try to get user home directory
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -73,13 +73,13 @@ func LoadConfig() Config {
 		// Continue with defaults
 		return applyEnvironmentOverrides(cfg)
 	}
-	
+
 	// Config directory path
 	configDir := filepath.Join(homeDir, ".noidea")
-	
+
 	// Config file path
 	configFile := filepath.Join(configDir, "config.json")
-	
+
 	// Check if config file exists
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "Info: No config file found at %s, using defaults\n", configFile)
@@ -90,14 +90,14 @@ func LoadConfig() Config {
 		}
 		configFile = tomlConfigFile
 	}
-	
+
 	// Read config file
 	data, err := os.ReadFile(configFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: Could not read config file %s: %v\n", configFile, err)
 		return applyEnvironmentOverrides(cfg)
 	}
-	
+
 	// Parse config based on file extension
 	if filepath.Ext(configFile) == ".toml" {
 		// Handle TOML format if needed
@@ -111,7 +111,7 @@ func LoadConfig() Config {
 			return applyEnvironmentOverrides(DefaultConfig())
 		}
 	}
-	
+
 	// Try to load API key from secure storage if it's not already set
 	// Note: This happens BEFORE environment variable overrides to prioritize secure storage
 	if cfg.LLM.APIKey == "" {
@@ -121,7 +121,7 @@ func LoadConfig() Config {
 			cfg.LLM.APIKey = apiKey
 		}
 	}
-	
+
 	// Check if we should log a warning about environment variables overriding secure storage
 	secureApiKey, secureErr := secure.GetAPIKey(cfg.LLM.Provider)
 	apiKeyFromEnv := false
@@ -133,16 +133,16 @@ func LoadConfig() Config {
 				break
 			}
 		}
-		
+
 		if apiKeyFromEnv {
 			fmt.Fprintf(os.Stderr, "Warning: API key in environment variables will override securely stored key.\n")
 			fmt.Fprintf(os.Stderr, "Consider removing API key environment variables to use secure storage.\n")
 		}
 	}
-	
+
 	// Ensure all fields are set properly
 	ensureDefaults(&cfg)
-	
+
 	// Apply environment variable overrides
 	// Note: In a future version, you might want to reverse this priority
 	// by having secure storage override environment variables
@@ -155,16 +155,16 @@ func applyEnvironmentOverrides(cfg Config) Config {
 	if val := os.Getenv("NOIDEA_LLM_ENABLED"); val != "" {
 		cfg.LLM.Enabled = val == "true" || val == "1" || val == "yes"
 	}
-	
+
 	if val := os.Getenv("NOIDEA_LLM_PROVIDER"); val != "" {
 		cfg.LLM.Provider = val
 	}
-	
+
 	// API keys from multiple possible environment variables
 	if val := os.Getenv("NOIDEA_API_KEY"); val != "" {
 		cfg.LLM.APIKey = strings.TrimSpace(val)
 	}
-	
+
 	// Provider-specific API keys take precedence
 	switch cfg.LLM.Provider {
 	case "xai":
@@ -185,34 +185,34 @@ func applyEnvironmentOverrides(cfg Config) Config {
 			cfg.LLM.APIKey = strings.TrimSpace(val)
 		}
 	}
-	
+
 	if val := os.Getenv("NOIDEA_MODEL"); val != "" {
 		cfg.LLM.Model = val
 	}
-	
+
 	if val := os.Getenv("NOIDEA_TEMPERATURE"); val != "" {
 		if temp, err := strconv.ParseFloat(val, 64); err == nil {
 			cfg.LLM.Temperature = temp
 		}
 	}
-	
+
 	// Moai settings
 	if val := os.Getenv("NOIDEA_USE_LINT"); val != "" {
 		cfg.Moai.UseLint = val == "true" || val == "1" || val == "yes"
 	}
-	
+
 	if val := os.Getenv("NOIDEA_FACES_MODE"); val != "" {
 		cfg.Moai.FacesMode = val
 	}
-	
+
 	if val := os.Getenv("NOIDEA_PERSONALITY"); val != "" {
 		cfg.Moai.Personality = val
 	}
-	
+
 	if val := os.Getenv("NOIDEA_PERSONALITY_FILE"); val != "" {
 		cfg.Moai.PersonalityFile = val
 	}
-	
+
 	return cfg
 }
 
@@ -220,29 +220,29 @@ func applyEnvironmentOverrides(cfg Config) Config {
 // by applying defaults to any missing or invalid values
 func ensureDefaults(cfg *Config) {
 	defaultCfg := DefaultConfig()
-	
+
 	// Ensure LLM defaults
 	if cfg.LLM.Provider == "" {
 		cfg.LLM.Provider = defaultCfg.LLM.Provider
 	}
-	
+
 	if cfg.LLM.Model == "" {
 		cfg.LLM.Model = defaultCfg.LLM.Model
 	}
-	
+
 	if cfg.LLM.Temperature <= 0 || cfg.LLM.Temperature > 1.0 {
 		cfg.LLM.Temperature = defaultCfg.LLM.Temperature
 	}
-	
+
 	// Ensure Moai defaults
 	if cfg.Moai.FacesMode == "" {
 		cfg.Moai.FacesMode = defaultCfg.Moai.FacesMode
 	}
-	
+
 	if cfg.Moai.Personality == "" {
 		cfg.Moai.Personality = defaultCfg.Moai.Personality
 	}
-	
+
 	if cfg.Moai.PersonalityFile == "" {
 		cfg.Moai.PersonalityFile = defaultCfg.Moai.PersonalityFile
 	}
@@ -255,27 +255,27 @@ func SaveConfig(cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to get user home directory: %w", err)
 	}
-	
+
 	// Create config directory if it doesn't exist
 	configDir := filepath.Join(homeDir, ".noidea")
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
-	
+
 	// Config file path
 	configFile := filepath.Join(configDir, "config.json")
-	
+
 	// Marshal config to JSON
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to encode config: %w", err)
 	}
-	
+
 	// Write config file
 	if err := os.WriteFile(configFile, data, 0644); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -283,7 +283,7 @@ func SaveConfig(cfg Config) error {
 // Returns a list of issues or an empty slice if the config is valid
 func ValidateConfig(config Config) []string {
 	var issues []string
-	
+
 	// Validate LLM settings
 	if config.LLM.Enabled {
 		// Check that provider is valid
@@ -292,46 +292,46 @@ func ValidateConfig(config Config) []string {
 			"openai":   true,
 			"deepseek": true,
 		}
-		
+
 		if !validProviders[config.LLM.Provider] {
 			issues = append(issues, fmt.Sprintf("Unknown provider: %s", config.LLM.Provider))
 		}
-		
+
 		// Check that API key is set
 		if config.LLM.APIKey == "" {
 			issues = append(issues, "API key is required when LLM is enabled")
 		}
-		
+
 		// Check temperature range
 		if config.LLM.Temperature < 0 || config.LLM.Temperature > 1.0 {
-			issues = append(issues, fmt.Sprintf("Temperature value must be between 0.0 and 1.0 (got %.1f)", 
+			issues = append(issues, fmt.Sprintf("Temperature value must be between 0.0 and 1.0 (got %.1f)",
 				config.LLM.Temperature))
 		}
 	}
-	
+
 	// Validate Moai settings
 	validFacesModes := map[string]bool{
 		"random":     true,
 		"sequential": true,
 		"mood":       true,
 	}
-	
+
 	if !validFacesModes[config.Moai.FacesMode] {
 		issues = append(issues, fmt.Sprintf("Unknown faces mode: %s", config.Moai.FacesMode))
 	}
-	
+
 	// Check that personality file exists if a custom personality is set
-	if config.Moai.Personality != "default" && 
-	   config.Moai.Personality != "friendly" && 
-	   config.Moai.Personality != "professional" && 
-	   config.Moai.Personality != "sarcastic" {
-		
+	if config.Moai.Personality != "default" &&
+		config.Moai.Personality != "friendly" &&
+		config.Moai.Personality != "professional" &&
+		config.Moai.Personality != "sarcastic" {
+
 		// Check if the file exists
 		if _, err := os.Stat(config.Moai.PersonalityFile); os.IsNotExist(err) {
-			issues = append(issues, "Custom personality file not found: " + config.Moai.PersonalityFile)
+			issues = append(issues, "Custom personality file not found: "+config.Moai.PersonalityFile)
 		}
 	}
-	
+
 	return issues
 }
 
@@ -350,32 +350,32 @@ func ParseFloat(s string, defaultVal float64) float64 {
 func SaveAPIKey(provider, apiKey string) error {
 	// Trim the API key first
 	apiKey = strings.TrimSpace(apiKey)
-	
+
 	// Don't save empty keys
 	if apiKey == "" {
 		return fmt.Errorf("cannot save empty API key")
 	}
-	
+
 	// Load current config
 	cfg := LoadConfig()
-	
+
 	// Update provider if necessary
 	if cfg.LLM.Provider != provider && provider != "" {
 		cfg.LLM.Provider = provider
 	}
-	
+
 	// Store in secure storage
 	if err := secure.StoreAPIKey(provider, apiKey); err != nil {
 		return fmt.Errorf("failed to store API key securely: %w", err)
 	}
-	
+
 	// Update in-memory config with new API key
 	cfg.LLM.APIKey = apiKey
-	
+
 	// Save config, but WITHOUT the API key
 	configToSave := cfg
 	configToSave.LLM.APIKey = "" // Don't save the key in the config file
-	
+
 	return SaveConfig(configToSave)
 }
 
@@ -386,16 +386,16 @@ func DeleteAPIKey(provider string) error {
 		// Non-fatal, continue
 		fmt.Fprintf(os.Stderr, "Warning: Could not delete API key from secure storage: %v\n", err)
 	}
-	
+
 	// Load current config
 	cfg := LoadConfig()
-	
+
 	// Check if we're deleting the current provider's key
 	if cfg.LLM.Provider == provider {
 		cfg.LLM.APIKey = ""
 		// Save config without the API key
 		return SaveConfig(cfg)
 	}
-	
+
 	return nil
 }

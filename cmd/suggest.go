@@ -24,11 +24,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
+
 	"github.com/AccursedGalaxy/noidea/internal/config"
 	"github.com/AccursedGalaxy/noidea/internal/feedback"
 	"github.com/AccursedGalaxy/noidea/internal/history"
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -37,7 +38,7 @@ var (
 	fullDiffFlag      bool
 	interactiveFlag   bool
 	commitMsgFileFlag string
-	quietFlag         bool  // Flag for machine-readable output without UI elements
+	quietFlag         bool // Flag for machine-readable output without UI elements
 
 	// Add divider constant here, grouped with other constants
 	divider = "------------------------------------------------------"
@@ -171,7 +172,7 @@ Example:
 			} else {
 				// Check if we're being called from a git hook (via --file flag)
 				isFromGitHook := commitMsgFileFlag != ""
-				
+
 				// Only print the message preview when NOT called from a git hook
 				// or if called directly by the user
 				if !isFromGitHook {
@@ -211,13 +212,13 @@ Example:
 					}
 					// Success message with the complete commit message
 					fmt.Println(color.GreenString("✅ Commit message suggestion applied:"))
-					
+
 					// Show the full message in the success notification
 					lines := strings.Split(suggestion, "\n")
 					if len(lines) > 1 {
 						// Print the first line (subject) in white
 						fmt.Println(color.HiWhiteString(lines[0]))
-						
+
 						// Print the rest with proper formatting
 						for i := 1; i < len(lines); i++ {
 							if lines[i] == "" {
@@ -232,7 +233,7 @@ Example:
 						// Single line message
 						fmt.Println(color.HiWhiteString(suggestion))
 					}
-					
+
 					fmt.Println(color.HiBlackString(divider))
 				}
 			}
@@ -267,7 +268,7 @@ func summarizeDiff(diff string) string {
 
 	// If the diff is small enough, just return it
 	lines := strings.Split(diff, "\n")
-	if len(lines) <= maxLinesPerFile * 2 {
+	if len(lines) <= maxLinesPerFile*2 {
 		return diff
 	}
 
@@ -290,9 +291,9 @@ func summarizeDiff(diff string) string {
 			// Add the file header
 			result.WriteString(line + "\n")
 		} else if strings.HasPrefix(line, "index ") ||
-				  strings.HasPrefix(line, "---") ||
-				  strings.HasPrefix(line, "+++") ||
-				  strings.HasPrefix(line, "@@") {
+			strings.HasPrefix(line, "---") ||
+			strings.HasPrefix(line, "+++") ||
+			strings.HasPrefix(line, "@@") {
 			// Always include these git metadata lines
 			result.WriteString(line + "\n")
 		} else if linesInCurrentFile < maxLinesPerFile {

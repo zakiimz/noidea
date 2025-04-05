@@ -16,19 +16,19 @@ var (
 
 	// moaiFaces is a collection of Moai ASCII faces with different expressions
 	moaiFaces = []string{
-		"🗿  (ಠ_ಠ)",       // Disapproving
-		"🗿  (¬_¬)",       // Suspicious
-		"🗿  (⊙_⊙)",       // Surprised
+		"🗿  (ಠ_ಠ)",         // Disapproving
+		"🗿  (¬_¬)",         // Suspicious
+		"🗿  (⊙_⊙)",         // Surprised
 		"🗿  (¯\\_(:/)_/¯)", // Confused shrug
-		"🗿  (╯°□°）╯",    // Angry table flip
-		"🗿  (◉_◉)",       // Surprised or shocked
-		"🗿  (⊙﹏⊙)",      // Worried
-		"🗿  (⚆_⚆)",       // Staring
-		"🗿  ( ͡° ͜ʖ ͡°)",   // Smug 
-		"🗿  (ᵔᴥᵔ)",      // Happy
-		"🗿  (•‿•)",       // Pleased
-		"🗿  (≧◡≦)",       // Very happy
-		"🗿  (─‿‿─)",     // Satisfied
+		"🗿  (╯°□°）╯",       // Angry table flip
+		"🗿  (◉_◉)",         // Surprised or shocked
+		"🗿  (⊙﹏⊙)",         // Worried
+		"🗿  (⚆_⚆)",         // Staring
+		"🗿  ( ͡° ͜ʖ ͡°)",   // Smug
+		"🗿  (ᵔᴥᵔ)",         // Happy
+		"🗿  (•‿•)",         // Pleased
+		"🗿  (≧◡≦)",         // Very happy
+		"🗿  (─‿‿─)",        // Satisfied
 	}
 
 	// Feedback templates based on commit message patterns

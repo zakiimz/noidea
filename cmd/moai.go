@@ -6,13 +6,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
+
 	"github.com/AccursedGalaxy/noidea/internal/config"
 	"github.com/AccursedGalaxy/noidea/internal/feedback"
 	"github.com/AccursedGalaxy/noidea/internal/history"
 	"github.com/AccursedGalaxy/noidea/internal/moai"
 	"github.com/AccursedGalaxy/noidea/internal/personality"
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -133,7 +134,7 @@ var moaiCmd = &cobra.Command{
 				// On error, fallback to local feedback
 				fmt.Println(color.YellowString(moai.GetRandomFeedback(commitMsg)))
 				fmt.Println(color.RedString("AI Error:"), err)
-				
+
 				// If debug mode is enabled, show more details
 				if debugMode {
 					fmt.Println(color.CyanString("\nDebug information:"))
@@ -143,7 +144,7 @@ var moaiCmd = &cobra.Command{
 					if cfg.LLM.APIKey != "" {
 						apiKeyLength = len(cfg.LLM.APIKey)
 						fmt.Printf("API key length: %d\n", apiKeyLength)
-						
+
 						// Show a short prefix of the API key for debugging
 						prefixLen := 10
 						if apiKeyLength < prefixLen {

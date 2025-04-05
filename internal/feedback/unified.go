@@ -8,8 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AccursedGalaxy/noidea/internal/personality"
 	openai "github.com/sashabaranov/go-openai"
+
+	"github.com/AccursedGalaxy/noidea/internal/personality"
 )
 
 // ProviderConfig contains configuration for different LLM providers
@@ -124,10 +125,10 @@ func NewUnifiedFeedbackEngineWithCustomPersonality(provider string, model string
 		personalityName: customPersonality.Name,
 		personalityFile: "", // Not used when passing custom personality
 	}
-	
+
 	// Store the custom personality for later use
 	engine.customPersonality = &customPersonality
-	
+
 	return engine
 }
 
@@ -225,13 +226,13 @@ func (e *UnifiedFeedbackEngine) GenerateSummaryFeedback(ctx CommitContext) (stri
 	if strings.Contains(systemPrompt, "one-liner") || strings.Contains(systemPrompt, "one sentence") {
 		// Determine if this is a weekly summary or on-demand feedback
 		isOnDemand := strings.Contains(ctx.Message, "On-Demand")
-		
+
 		// For personalities that are configured for one-liners, override to provide more comprehensive analysis
 		systemPrompt = `You are a professional Git expert named Moai who provides thorough and insightful analysis.
 Your responses should be well-structured, focused on actionable insights, and tailored to the user's Git usage patterns.
 Highlight patterns, suggest improvements, and recognize positive behaviors.
 Be professional but conversational.`
-		
+
 		// For on-demand analysis, adjust to be more targeted
 		if isOnDemand {
 			systemPrompt += `
@@ -241,14 +242,14 @@ Focus specifically on the commits provided and give direct feedback on their qua
 
 	// User prompt
 	var userPrompt string
-	
+
 	// Check for safeGetValue-style access to avoid panics
 	totalCommits := "0"
 	uniqueAuthors := "0"
 	filesChanged := "0"
 	linesAdded := "0"
 	linesRemoved := "0"
-	
+
 	if val, ok := ctx.CommitStats["total_commits"]; ok && val != nil {
 		totalCommits = fmt.Sprintf("%v", val)
 	}
@@ -399,15 +400,15 @@ For major changes (>100 lines or multiple files), ALWAYS use multi-line format w
 	// Simple diff parser to count lines and identify files
 	lines := strings.Split(ctx.Diff, "\n")
 	currentFile := ""
-	
+
 	// Track different types of files
-	docFiles := make(map[string]bool)     // Documentation files (.md, .txt, etc)
-	codeFiles := make(map[string]bool)    // Source code files (.go, .js, etc)
-	configFiles := make(map[string]bool)  // Configuration files (.json, .yaml, etc)
-	buildFiles := make(map[string]bool)   // Build files (Makefile, CMakeLists.txt, etc)
-	testFiles := make(map[string]bool)    // Test files (*_test.go, etc)
-	scriptFiles := make(map[string]bool)  // Scripts (.sh, .bat, etc)
-	
+	docFiles := make(map[string]bool)    // Documentation files (.md, .txt, etc)
+	codeFiles := make(map[string]bool)   // Source code files (.go, .js, etc)
+	configFiles := make(map[string]bool) // Configuration files (.json, .yaml, etc)
+	buildFiles := make(map[string]bool)  // Build files (Makefile, CMakeLists.txt, etc)
+	testFiles := make(map[string]bool)   // Test files (*_test.go, etc)
+	scriptFiles := make(map[string]bool) // Scripts (.sh, .bat, etc)
+
 	// Track file operations
 	changedFiles := make(map[string]bool)
 	addedFiles := make(map[string]bool)
@@ -415,40 +416,40 @@ For major changes (>100 lines or multiple files), ALWAYS use multi-line format w
 	deletedFiles := make(map[string]bool)
 
 	var totalAdditions, totalDeletions int
-	
+
 	// File extension categorization maps for better maintainability
 	extensionCategories := map[string]map[string]bool{
-		"doc": docFiles,
-		"code": codeFiles,
+		"doc":    docFiles,
+		"code":   codeFiles,
 		"config": configFiles,
-		"build": buildFiles,
+		"build":  buildFiles,
 		"script": scriptFiles,
 	}
-	
+
 	// Map extensions to categories
 	extensionMap := map[string]string{
 		// Documentation files
-		".md": "doc", ".txt": "doc", ".rst": "doc", ".adoc": "doc", 
-		".markdown": "doc", ".wiki": "doc", ".org": "doc", 
-		
+		".md": "doc", ".txt": "doc", ".rst": "doc", ".adoc": "doc",
+		".markdown": "doc", ".wiki": "doc", ".org": "doc",
+
 		// Source code files
-		".go": "code", ".js": "code", ".ts": "code", ".py": "code", 
-		".java": "code", ".c": "code", ".cpp": "code", ".cc": "code", 
-		".h": "code", ".hpp": "code", ".cs": "code", ".rb": "code", 
+		".go": "code", ".js": "code", ".ts": "code", ".py": "code",
+		".java": "code", ".c": "code", ".cpp": "code", ".cc": "code",
+		".h": "code", ".hpp": "code", ".cs": "code", ".rb": "code",
 		".php": "code", ".swift": "code", ".kt": "code", ".rs": "code",
-		
+
 		// Configuration files
-		".json": "config", ".yaml": "config", ".yml": "config", ".toml": "config", 
+		".json": "config", ".yaml": "config", ".yml": "config", ".toml": "config",
 		".ini": "config", ".xml": "config", ".properties": "config", ".conf": "config",
-		
+
 		// Build files
 		".bazel": "build", ".bzl": "build", ".mk": "build",
-		
+
 		// Script files
-		".sh": "script", ".bash": "script", ".zsh": "script", 
+		".sh": "script", ".bash": "script", ".zsh": "script",
 		".bat": "script", ".cmd": "script", ".ps1": "script",
 	}
-	
+
 	// Process the diff to collect information
 	for _, line := range lines {
 		if strings.HasPrefix(line, "diff --git") {
@@ -457,14 +458,14 @@ For major changes (>100 lines or multiple files), ALWAYS use multi-line format w
 				filePath := strings.TrimPrefix(parts[2], "a/")
 				currentFile = filePath
 				changedFiles[filePath] = true
-				
+
 				// Categorize by file type
 				ext := filepath.Ext(filePath)
 				baseName := filepath.Base(filePath)
-				
+
 				// Special file handling for common non-extension files
-				if baseName == "Makefile" || baseName == "Dockerfile" || 
-				   baseName == "CMakeLists.txt" || strings.HasPrefix(baseName, "Jenkinsfile") {
+				if baseName == "Makefile" || baseName == "Dockerfile" ||
+					baseName == "CMakeLists.txt" || strings.HasPrefix(baseName, "Jenkinsfile") {
 					buildFiles[filePath] = true
 				} else if strings.Contains(filePath, "_test.") {
 					// Test files get special handling
@@ -481,7 +482,7 @@ For major changes (>100 lines or multiple files), ALWAYS use multi-line format w
 		} else if !deletedFiles[currentFile] && !addedFiles[currentFile] {
 			modifiedFiles[currentFile] = true
 		}
-		
+
 		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
 			totalAdditions++
 		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
@@ -593,10 +594,10 @@ Here's an analysis of the staged changes:
 	if len(truncatedDiff) > maxDiffChars {
 		// Extract the beginning of the diff with meaningful changes
 		fileCount := len(changedFiles)
-		
+
 		// For repositories with many files, limit to showing the first few most important files
 		if fileCount > 5 {
-			// Extract a reasonable snippet from the start 
+			// Extract a reasonable snippet from the start
 			truncatedDiff = TruncateWithEllipsis(truncatedDiff, maxDiffChars)
 		} else {
 			// For fewer files, try to allocate space evenly
@@ -614,15 +615,15 @@ Here's a sample of the staged changes:
 	// Skip the intensive semantic analysis if the diff is large
 	var semanticAnalysis string
 	var structureAnalysis string
-	
+
 	// For small to medium changes, include deeper analysis
 	if len(ctx.Diff) < 30000 {
 		// Extract minimal semantic changes with token limit in mind
 		semantics := extractCodeSemantics(ctx.Diff)
 		semanticAnalysis = formatSemanticChanges(semantics)
-		
+
 		// Extract structure analysis but only include if we have space
-		if len(diffContext) + len(semanticAnalysis) < (maxTokens / 2) {
+		if len(diffContext)+len(semanticAnalysis) < (maxTokens / 2) {
 			structure := analyzeCodeStructure(ctx.Diff)
 			structureAnalysis = formatCodeStructure(structure)
 		}
@@ -630,11 +631,11 @@ Here's a sample of the staged changes:
 
 	// Create a user prompt focused on commit message generation with emphasis on changes
 	isSubstantialChange := len(changedFiles) > 2 || totalAdditions+totalDeletions > 50
-	
+
 	// Limit commit history to save tokens
 	var commitHistoryStr string
 	historyLimit := 5 // Limit to 5 most recent commits
-	
+
 	if len(ctx.CommitHistory) > 0 {
 		historyToUse := ctx.CommitHistory
 		if len(historyToUse) > historyLimit {
@@ -644,7 +645,7 @@ Here's a sample of the staged changes:
 	} else {
 		commitHistoryStr = "(No recent commit history available)"
 	}
-	
+
 	var userPrompt string
 	basePrompt := fmt.Sprintf(`I need a%s commit message for these staged changes.
 
@@ -656,28 +657,28 @@ Here's a sample of the staged changes:
 			return ""
 		}(),
 		diffContext)
-		
+
 	// Only add semantic analysis if not empty and we have token space
 	if semanticAnalysis != "" {
 		basePrompt += fmt.Sprintf(`
 SEMANTIC ANALYSIS:
 %s`, semanticAnalysis)
 	}
-	
+
 	// Only add structure analysis if not empty and we have token space
-	if structureAnalysis != "" && len(basePrompt) < (maxTokens / 2) {
+	if structureAnalysis != "" && len(basePrompt) < (maxTokens/2) {
 		basePrompt += fmt.Sprintf(`
 CODE STRUCTURE ANALYSIS:
 %s`, structureAnalysis)
 	}
-	
+
 	// Add commit history at the end with lowest priority
 	if len(basePrompt) < (maxTokens * 3 / 4) {
 		basePrompt += fmt.Sprintf(`
 Past commit messages for limited context (do not rely heavily on these patterns):
 %s`, commitHistoryStr)
 	}
-		
+
 	// Add instructions based on change size
 	if isSubstantialChange {
 		userPrompt = basePrompt + fmt.Sprintf(`
@@ -688,7 +689,7 @@ Therefore, please provide a multi-line commit message with:
 2. A blank line
 3. 2-4 bullet points that summarize the key components or areas changed
 
-Based primarily on the ACTUAL CODE CHANGES shown above, create a detailed commit message that accurately captures the scope and meaning of these changes:`, 
+Based primarily on the ACTUAL CODE CHANGES shown above, create a detailed commit message that accurately captures the scope and meaning of these changes:`,
 			len(changedFiles), totalAdditions, totalDeletions)
 	} else {
 		userPrompt = basePrompt + `
@@ -745,7 +746,7 @@ func TruncateWithEllipsis(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s
 	}
-	
+
 	// Leave room for the ellipsis
 	return s[:maxLen-3] + "..."
 }
@@ -791,10 +792,10 @@ func extractCommitMessage(response string) string {
 		if len(parts) == 2 {
 			prefix := parts[0]
 			message := strings.TrimSpace(parts[1])
-			
+
 			// Known conventional commit types
 			commitTypes := []string{"feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"}
-			
+
 			// Check if prefix is a valid commit type or a type with scope
 			isValidType := false
 			for _, cType := range commitTypes {
@@ -803,7 +804,7 @@ func extractCommitMessage(response string) string {
 					break
 				}
 			}
-			
+
 			if isValidType {
 				// Proper formatting with no space before colon and one space after
 				firstLine = prefix + ": " + message
@@ -814,18 +815,18 @@ func extractCommitMessage(response string) string {
 	// Process body lines - preserve bullet points and maintain proper multi-line format
 	var bodyLines []string
 	var inBody = false
-	
+
 	for i := 1; i < len(lines); i++ {
 		trimmedLine := strings.TrimSpace(lines[i])
-		
+
 		// Skip empty lines until we reach body content
 		if !inBody && trimmedLine == "" {
 			continue
 		}
-		
+
 		// We've now reached body content
 		inBody = true
-		
+
 		// Skip comment lines and empty lines after we've found body content
 		if trimmedLine != "" && !strings.HasPrefix(trimmedLine, "#") {
 			// Ensure bullet points have proper format
@@ -836,17 +837,17 @@ func extractCommitMessage(response string) string {
 			} else if strings.HasPrefix(trimmedLine, "-") && !strings.HasPrefix(trimmedLine, "- ") {
 				trimmedLine = "- " + trimmedLine[1:]
 			}
-			
+
 			bodyLines = append(bodyLines, trimmedLine)
 		}
 	}
-	
+
 	// For significant changes, keep full body content with all bullet points
 	if len(bodyLines) > 0 {
 		// Ensure blank line after subject
 		return firstLine + "\n\n" + strings.Join(bodyLines, "\n")
 	}
-	
+
 	// If no body lines, return just the first line
 	return firstLine
 }
@@ -916,18 +917,18 @@ func formatCodeChanges(diff string) string {
 	// Initialize a result string with a reasonable capacity to reduce allocations
 	var result strings.Builder
 	result.Grow(len(diff) / 2) // Estimate capacity at half the original diff size
-	
+
 	// Keep track of current file
 	currentFile := ""
-	
+
 	// Capture context lines (unchanged lines around changes)
 	const contextLines = 3
 	lineBuffer := make([]string, 0, contextLines*2+1)
 	inChangeBlock := false
-	
+
 	// Track if we're in a meaningful code section or just metadata
 	inCodeSection := false
-	
+
 	// Iterate over each line
 	for i, line := range lines {
 		// Check if this is a new file
@@ -938,7 +939,7 @@ func formatCodeChanges(diff string) string {
 				if currentFile != "" {
 					result.WriteString("\n-----------------------------------\n\n")
 				}
-				
+
 				// Extract the file name
 				filePath := strings.TrimPrefix(parts[2], "a/")
 				currentFile = filePath
@@ -947,50 +948,50 @@ func formatCodeChanges(diff string) string {
 			}
 			continue
 		}
-		
+
 		// Skip git metadata lines
-		if strings.HasPrefix(line, "index ") || 
-		   strings.HasPrefix(line, "+++") || 
-		   strings.HasPrefix(line, "---") {
+		if strings.HasPrefix(line, "index ") ||
+			strings.HasPrefix(line, "+++") ||
+			strings.HasPrefix(line, "---") {
 			continue
 		}
-		
+
 		// Check for chunk header
 		if strings.HasPrefix(line, "@@") {
 			inCodeSection = true
 			continue
 		}
-		
+
 		// Process only if we're in a code section
 		if !inCodeSection {
 			continue
 		}
-		
+
 		// Handle code lines
 		if strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-") {
 			// If we're starting a new change block, add context before
 			if !inChangeBlock {
 				inChangeBlock = true
-				
+
 				// Add preceding context lines
 				for j := i - contextLines; j < i; j++ {
-					if j >= 0 && !strings.HasPrefix(lines[j], "diff --git") && 
-					   !strings.HasPrefix(lines[j], "index ") && 
-					   !strings.HasPrefix(lines[j], "+++") && 
-					   !strings.HasPrefix(lines[j], "---") &&
-					   !strings.HasPrefix(lines[j], "@@") {
+					if j >= 0 && !strings.HasPrefix(lines[j], "diff --git") &&
+						!strings.HasPrefix(lines[j], "index ") &&
+						!strings.HasPrefix(lines[j], "+++") &&
+						!strings.HasPrefix(lines[j], "---") &&
+						!strings.HasPrefix(lines[j], "@@") {
 						result.WriteString(fmt.Sprintf("  %s\n", lines[j]))
 					}
 				}
 			}
-			
+
 			// Add the changed line with highlighting for better readability
 			if strings.HasPrefix(line, "+") {
 				result.WriteString(fmt.Sprintf("%s\n", line))
 			} else {
 				result.WriteString(fmt.Sprintf("%s\n", line))
 			}
-			
+
 			// Clear the line buffer
 			lineBuffer = lineBuffer[:0]
 		} else {
@@ -998,18 +999,18 @@ func formatCodeChanges(diff string) string {
 			if inChangeBlock {
 				// Add the unchanged line
 				lineBuffer = append(lineBuffer, line)
-				
+
 				// Check if we have enough context lines or reached the end
 				if len(lineBuffer) >= contextLines || i == len(lines)-1 {
 					// Write the context lines
 					for _, bufLine := range lineBuffer {
 						result.WriteString(fmt.Sprintf("  %s\n", bufLine))
 					}
-					
+
 					// Reset the buffer and change block flag
 					lineBuffer = lineBuffer[:0]
 					inChangeBlock = false
-					
+
 					// Add a separator if not at the end
 					if i < len(lines)-1 {
 						result.WriteString("\n")
@@ -1026,29 +1027,29 @@ func formatCodeChanges(diff string) string {
 // for better commit message suggestions
 func extractCodeSemantics(diff string) map[string]interface{} {
 	result := make(map[string]interface{})
-	
+
 	// Track function additions/modifications/removals
 	functionChanges := make(map[string]string)
-	
+
 	// Track package/import changes
 	importChanges := make([]string, 0)
-	
+
 	// Track meaningful variable declarations
 	variableChanges := make(map[string]string)
-	
+
 	// Split the diff into lines
 	lines := strings.Split(diff, "\n")
-	
+
 	// State tracking
 	currentFile := ""
 	inImportBlock := false
-	
+
 	// Regex patterns for semantic analysis
 	functionPattern := regexp.MustCompile(`^[+-](func\s+\w+)`)
 	methodPattern := regexp.MustCompile(`^[+-](func\s+\([^)]+\)\s+\w+)`)
 	importPattern := regexp.MustCompile(`^[+-]\s*import\s+(?:\w+\s+)?"([^"]+)"`)
 	variablePattern := regexp.MustCompile(`^[+-]\s*(\w+)\s*:?=\s*(.+)$`)
-	
+
 	for _, line := range lines {
 		// Track current file
 		if strings.HasPrefix(line, "diff --git") {
@@ -1060,36 +1061,36 @@ func extractCodeSemantics(diff string) map[string]interface{} {
 			inImportBlock = false
 			continue
 		}
-		
+
 		// Skip metadata lines
-		if strings.HasPrefix(line, "index ") || 
-		   strings.HasPrefix(line, "+++") || 
-		   strings.HasPrefix(line, "---") ||
-		   strings.HasPrefix(line, "@@") {
+		if strings.HasPrefix(line, "index ") ||
+			strings.HasPrefix(line, "+++") ||
+			strings.HasPrefix(line, "---") ||
+			strings.HasPrefix(line, "@@") {
 			continue
 		}
-		
+
 		// Detect import block
 		if strings.Contains(line, "import (") {
 			inImportBlock = true
 		} else if inImportBlock && strings.Contains(line, ")") {
 			inImportBlock = false
 		}
-		
+
 		// Check for function changes
 		if matches := functionPattern.FindStringSubmatch(line); len(matches) > 1 {
 			op := string(line[0])
 			funcDecl := matches[1]
 			functionChanges[funcDecl] = op
 		}
-		
+
 		// Check for method changes
 		if matches := methodPattern.FindStringSubmatch(line); len(matches) > 1 {
 			op := string(line[0])
 			methodDecl := matches[1]
 			functionChanges[methodDecl] = op
 		}
-		
+
 		// Check for import changes
 		if matches := importPattern.FindStringSubmatch(line); len(matches) > 1 {
 			importChanges = append(importChanges, matches[1])
@@ -1101,7 +1102,7 @@ func extractCodeSemantics(diff string) map[string]interface{} {
 				importChanges = append(importChanges, importLine)
 			}
 		}
-		
+
 		// Check for variable changes
 		if matches := variablePattern.FindStringSubmatch(line); len(matches) > 1 {
 			varName := matches[1]
@@ -1109,20 +1110,20 @@ func extractCodeSemantics(diff string) map[string]interface{} {
 			variableChanges[varName] = varValue
 		}
 	}
-	
+
 	// Store the collected changes
 	result["files"] = []string{currentFile}
 	result["functions"] = functionChanges
 	result["imports"] = importChanges
 	result["variables"] = variableChanges
-	
+
 	return result
 }
 
 // formatSemanticChanges formats semantic changes for the prompt
 func formatSemanticChanges(semantics map[string]interface{}) string {
 	var result strings.Builder
-	
+
 	// Format files
 	if files, ok := semantics["files"].([]string); ok && len(files) > 0 {
 		result.WriteString("Modified files:\n")
@@ -1131,7 +1132,7 @@ func formatSemanticChanges(semantics map[string]interface{}) string {
 		}
 		result.WriteString("\n")
 	}
-	
+
 	// Format function changes
 	if functions, ok := semantics["functions"].(map[string]string); ok && len(functions) > 0 {
 		result.WriteString("Function changes:\n")
@@ -1146,7 +1147,7 @@ func formatSemanticChanges(semantics map[string]interface{}) string {
 		}
 		result.WriteString("\n")
 	}
-	
+
 	// Format import changes
 	if imports, ok := semantics["imports"].([]string); ok && len(imports) > 0 {
 		result.WriteString("Import changes:\n")
@@ -1155,7 +1156,7 @@ func formatSemanticChanges(semantics map[string]interface{}) string {
 		}
 		result.WriteString("\n")
 	}
-	
+
 	// Format variable changes
 	if variables, ok := semantics["variables"].(map[string]string); ok && len(variables) > 0 {
 		result.WriteString("Variable changes:\n")
@@ -1163,7 +1164,7 @@ func formatSemanticChanges(semantics map[string]interface{}) string {
 			result.WriteString(fmt.Sprintf("- %s = %s\n", varName, varValue))
 		}
 	}
-	
+
 	return result.String()
 }
 
@@ -1173,32 +1174,32 @@ func formatSemanticChanges(semantics map[string]interface{}) string {
 // to provide more semantic understanding of the code changes.
 func analyzeCodeStructure(diff string) map[string]interface{} {
 	result := make(map[string]interface{})
-	
+
 	// Track structural elements
-	interfaces := make(map[string][]string)       // Interface -> list of methods
-	structs := make(map[string][]string)          // Struct -> list of fields
-	typeDeclarations := make(map[string]string)   // Type name -> definition
-	constants := make(map[string]string)          // Const name -> value
-	
+	interfaces := make(map[string][]string)     // Interface -> list of methods
+	structs := make(map[string][]string)        // Struct -> list of fields
+	typeDeclarations := make(map[string]string) // Type name -> definition
+	constants := make(map[string]string)        // Const name -> value
+
 	// Track current file and module
 	currentFile := ""
 	currentPackage := ""
-	
+
 	// State tracking
 	inTypeBlock := false
 	inConstBlock := false
 	currentType := ""
-	
+
 	// Regex patterns for semantic analysis
 	typeDefPattern := regexp.MustCompile(`^[+-]type\s+(\w+)\s+(struct|interface)`)
-	structFieldPattern := regexp.MustCompile(`^[+-]\s*(\w+)(\s+\w+\s*(?:\`+"`"+`[^`+"`"+`]*\`+"`"+`)?)`)
+	structFieldPattern := regexp.MustCompile(`^[+-]\s*(\w+)(\s+\w+\s*(?:\` + "`" + `[^` + "`" + `]*\` + "`" + `)?)`)
 	interfaceMethodPattern := regexp.MustCompile(`^[+-]\s*(\w+\([^)]*\))`)
 	constPattern := regexp.MustCompile(`^[+-]const\s+(\w+)\s+=\s+(.*)`)
 	packagePattern := regexp.MustCompile(`^[+-]package\s+(\w+)`)
-	
+
 	// Split the diff into lines
 	lines := strings.Split(diff, "\n")
-	
+
 	for _, line := range lines {
 		// Track current file
 		if strings.HasPrefix(line, "diff --git") {
@@ -1213,35 +1214,35 @@ func analyzeCodeStructure(diff string) map[string]interface{} {
 			}
 			continue
 		}
-		
+
 		// Skip metadata lines
-		if strings.HasPrefix(line, "index ") || 
-		   strings.HasPrefix(line, "+++") || 
-		   strings.HasPrefix(line, "---") ||
-		   strings.HasPrefix(line, "@@") {
+		if strings.HasPrefix(line, "index ") ||
+			strings.HasPrefix(line, "+++") ||
+			strings.HasPrefix(line, "---") ||
+			strings.HasPrefix(line, "@@") {
 			continue
 		}
-		
+
 		// Only process added or removed lines
 		if !strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "-") {
 			continue
 		}
-		
+
 		// Extract the actual code line without the +/-
 		codeLine := line[1:]
-		
+
 		// Check for package declaration
 		if matches := packagePattern.FindStringSubmatch(line); len(matches) > 1 {
 			currentPackage = matches[1]
 			continue
 		}
-		
+
 		// Check for type declarations
 		if matches := typeDefPattern.FindStringSubmatch(line); len(matches) > 1 {
 			typeName := matches[1]
 			typeKind := matches[2]
 			currentType = typeName
-			
+
 			if typeKind == "struct" {
 				inTypeBlock = true
 				inConstBlock = false
@@ -1251,10 +1252,10 @@ func analyzeCodeStructure(diff string) map[string]interface{} {
 				inConstBlock = false
 				interfaces[typeName] = []string{}
 			}
-			
+
 			continue
 		}
-		
+
 		// Check for const blocks
 		if strings.HasPrefix(codeLine, "const (") {
 			inConstBlock = true
@@ -1265,7 +1266,7 @@ func analyzeCodeStructure(diff string) map[string]interface{} {
 			inTypeBlock = false
 			continue
 		}
-		
+
 		// Process content inside blocks
 		if inTypeBlock {
 			if currentType != "" {
@@ -1299,7 +1300,7 @@ func analyzeCodeStructure(diff string) map[string]interface{} {
 			}
 		}
 	}
-	
+
 	// Store the collected changes
 	result["file"] = currentFile
 	result["package"] = currentPackage
@@ -1307,14 +1308,14 @@ func analyzeCodeStructure(diff string) map[string]interface{} {
 	result["structs"] = structs
 	result["types"] = typeDeclarations
 	result["constants"] = constants
-	
+
 	return result
 }
 
 // formatCodeStructure formats code structure analysis for the prompt
 func formatCodeStructure(structure map[string]interface{}) string {
 	var result strings.Builder
-	
+
 	// Format interfaces
 	if interfaces, ok := structure["interfaces"].(map[string][]string); ok && len(interfaces) > 0 {
 		result.WriteString("Modified interfaces:\n")
@@ -1326,7 +1327,7 @@ func formatCodeStructure(structure map[string]interface{}) string {
 		}
 		result.WriteString("\n")
 	}
-	
+
 	// Format structs
 	if structs, ok := structure["structs"].(map[string][]string); ok && len(structs) > 0 {
 		result.WriteString("Modified structs:\n")
@@ -1338,7 +1339,7 @@ func formatCodeStructure(structure map[string]interface{}) string {
 		}
 		result.WriteString("\n")
 	}
-	
+
 	// Format type declarations
 	if types, ok := structure["types"].(map[string]string); ok && len(types) > 0 {
 		result.WriteString("Modified type declarations:\n")
@@ -1348,7 +1349,7 @@ func formatCodeStructure(structure map[string]interface{}) string {
 		}
 		result.WriteString("\n")
 	}
-	
+
 	// Format constants
 	if constants, ok := structure["constants"].(map[string]string); ok && len(constants) > 0 {
 		result.WriteString("Modified constants:\n")
@@ -1357,6 +1358,6 @@ func formatCodeStructure(structure map[string]interface{}) string {
 		}
 		result.WriteString("\n")
 	}
-	
+
 	return result.String()
 }

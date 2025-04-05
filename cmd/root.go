@@ -9,17 +9,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AccursedGalaxy/noidea/internal/config"
-	"github.com/AccursedGalaxy/noidea/internal/secure"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+
+	"github.com/AccursedGalaxy/noidea/internal/config"
+	"github.com/AccursedGalaxy/noidea/internal/secure"
 )
 
 // Version information
 var (
 	Version   = "v0.2.3" // Will be overridden during build
-	BuildDate = "dev"   // Will be overridden during build
-	Commit    = "none"  // Will be overridden during build
+	BuildDate = "dev"    // Will be overridden during build
+	Commit    = "none"   // Will be overridden during build
 )
 
 // Flag variables
@@ -58,7 +59,7 @@ func init() {
 
 	// Add version flag
 	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Print version information and exit")
-	
+
 	// Check API key validity during startup, but only for certain commands
 	cobra.OnInitialize(func() {
 		// Only validate API key when using commands that need it
@@ -77,8 +78,8 @@ func init() {
 func loadEnvFiles() {
 	// Try to find .env file in several locations
 	locations := []string{
-		".env",                              // Current directory
-		".noidea.env",                       // Alternative name in current directory
+		".env",        // Current directory
+		".noidea.env", // Alternative name in current directory
 	}
 
 	// Try to get home directory for additional locations
@@ -89,7 +90,7 @@ func loadEnvFiles() {
 	// Note: .env files are being deprecated in favor of secure storage.
 	// This is kept for backward compatibility.
 	found := false
-	
+
 	for _, location := range locations {
 		if _, err := os.Stat(location); err == nil {
 			// File exists, try to load it
@@ -131,7 +132,7 @@ func loadEnvFiles() {
 			break // Successfully loaded one file, stop looking
 		}
 	}
-	
+
 	// If we loaded a .env file with API keys, print a deprecation warning
 	if found {
 		for _, key := range []string{"XAI_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "NOIDEA_API_KEY"} {
@@ -166,7 +167,7 @@ func printVersion() {
 func validateApiKeyOnStartup() {
 	// Load config to get API key and provider
 	cfg := config.LoadConfig()
-	
+
 	// Only check if LLM is enabled and API key is set
 	if cfg.LLM.Enabled && cfg.LLM.APIKey != "" {
 		// Try to validate the API key
@@ -175,7 +176,7 @@ func validateApiKeyOnStartup() {
 			fmt.Fprintf(os.Stderr, "\n%s API key validation error: %v\n", color.YellowString("Warning:"), err)
 			fmt.Fprintf(os.Stderr, "You may want to check your API key with 'noidea config apikey-status'\n\n")
 		} else if !isValid {
-			fmt.Fprintf(os.Stderr, "\n%s Your API key for %s appears to be invalid.\n", 
+			fmt.Fprintf(os.Stderr, "\n%s Your API key for %s appears to be invalid.\n",
 				color.RedString("Warning:"), cfg.LLM.Provider)
 			fmt.Fprintf(os.Stderr, "Please update it with 'noidea config apikey'\n\n")
 		}
@@ -202,20 +203,20 @@ func validateXAIKey(apiKey string) (bool, error) {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
-	
+
 	req, err := http.NewRequest("GET", "https://api.groq.com/v1/models", nil)
 	if err != nil {
 		return false, err
 	}
-	
+
 	req.Header.Add("Authorization", "Bearer "+apiKey)
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return false, err
 	}
 	defer resp.Body.Close()
-	
+
 	// Check if the request was successful
 	return resp.StatusCode >= 200 && resp.StatusCode < 300, nil
 }
@@ -226,20 +227,20 @@ func validateOpenAIKey(apiKey string) (bool, error) {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
-	
+
 	req, err := http.NewRequest("GET", "https://api.openai.com/v1/models", nil)
 	if err != nil {
 		return false, err
 	}
-	
+
 	req.Header.Add("Authorization", "Bearer "+apiKey)
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return false, err
 	}
 	defer resp.Body.Close()
-	
+
 	// Check if the request was successful
 	return resp.StatusCode >= 200 && resp.StatusCode < 300, nil
 }
@@ -250,20 +251,20 @@ func validateDeepSeekKey(apiKey string) (bool, error) {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
-	
+
 	req, err := http.NewRequest("GET", "https://api.deepseek.com/v1/models", nil)
 	if err != nil {
 		return false, err
 	}
-	
+
 	req.Header.Add("Authorization", "Bearer "+apiKey)
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return false, err
 	}
 	defer resp.Body.Close()
-	
+
 	// Check if the request was successful
 	return resp.StatusCode >= 200 && resp.StatusCode < 300, nil
 }

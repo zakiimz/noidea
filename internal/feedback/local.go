@@ -43,12 +43,12 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 	lines := strings.Split(ctx.Diff, "\n")
 	var filesChanged []string
 	var fileExtensions = make(map[string]int)
-	
+
 	// Track function and method additions/changes
 	var functionChanges []string
-	
+
 	// Parse the diff to extract semantic information
-	
+
 	for i, line := range lines {
 		if strings.HasPrefix(line, "diff --git") {
 			// Just detect the file boundary, no need to track the current file
@@ -134,8 +134,8 @@ func (e *LocalFeedbackEngine) GenerateCommitSuggestion(ctx CommitContext) (strin
 			return typePrefix + ": add " + functionChanges[0] + " function", nil
 		} else if len(functionChanges) <= 3 {
 			// Multiple function changes, but not too many to list
-			return typePrefix + ": add " + strings.Join(functionChanges[:len(functionChanges)-1], ", ") + 
-				" and " + functionChanges[len(functionChanges)-1] + " functions", nil 
+			return typePrefix + ": add " + strings.Join(functionChanges[:len(functionChanges)-1], ", ") +
+				" and " + functionChanges[len(functionChanges)-1] + " functions", nil
 		} else {
 			// Too many function changes to list individually
 			return typePrefix + ": add multiple new functions including " + functionChanges[0], nil
