@@ -7,6 +7,7 @@ run:
     - ".*testdata"
   skip-files:
     - ".*_test.go"
+  skip-dirs-use-default: true
   modules-download-mode: readonly
   go: "1.21"
   
@@ -35,5 +36,12 @@ issues:
         - gosec
     - path: internal/secure/keyring.go
       text: "mnd" # Exclude the "magic number detector" warnings
+    - path: "^golang.org/toolchain"
+      linters:
+        - all
+    - path: "^github.com/go/pkg/mod"
+      linters:
+        - all
   max-issues-per-linter: 0
   max-same-issues: 0
+  exclude-use-default: true

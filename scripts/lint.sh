@@ -1,78 +1,62 @@
 #!/bin/bash
-# Simple script to run linting only on the project's own code
+set -euo pipefail
 
-set -e
-
-# Change to root directory of project
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
-cd "$ROOT_DIR"
-
-# Ensure dependencies are installed
-echo "Ensuring dependencies are installed..."
-go get -v github.com/zalando/go-keyring
-go mod tidy
-
-# Install golangci-lint if needed
-if ! command -v golangci-lint &> /dev/null; then
-    echo "Installing golangci-lint..."
-    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-fi
-
-echo "Running gofmt..."
-gofmt_output=$(gofmt -l ./cmd ./internal 2>&1)
-if [ -n "$gofmt_output" ]; then
-    echo "⚠️ The following files are not formatted correctly:"
-    echo "$gofmt_output"
-    echo "Running gofmt -w to fix formatting..."
-    gofmt -w ./cmd ./internal
-    echo "✅ Files have been formatted."
+# Determine which directories to lint
+if [ -d "./cmd" ] || [ -d "./internal" ]; then
+  # Only check cmd and internal directories if they exist
+  DIRS="./cmd/... ./internal/..."
 else
-    echo "✅ All Go files are properly formatted."
+  # Otherwise check all Go files in the current directory but skip deps
+  DIRS="."
 fi
 
-echo "Running go vet..."
-go vet ./cmd/... ./internal/... 2>&1
+# Run go vet first
+echo "Running go vet on project files..."
+go vet $DIRS
 
-echo "Running staticcheck..."
-if ! command -v staticcheck &> /dev/null; then
-    echo "Installing staticcheck..."
-    go install honnef.co/go/tools/cmd/staticcheck@latest
-fi
+# Create a temporary YAML configuration file with .yml extension
+TMP_CONFIG=$(mktemp -t golangci-XXXXXX.yml)
 
-# Run staticcheck but don't fail the build for unused function warnings
-staticcheck_output=$(staticcheck ./cmd/... ./internal/... 2>&1)
-if [ -n "$staticcheck_output" ]; then
-    unused_only=true
-    while IFS= read -r line; do
-        if [[ ! "$line" =~ "is unused" ]]; then
-            unused_only=false
-            echo "$line"
-        else
-            echo "⚠️ $line"
-        fi
-    done <<< "$staticcheck_output"
-    
-    if [ "$unused_only" = false ]; then
-        lint_errors=1
-    else
-        echo "⚠️ Only unused functions detected - not failing the build"
-    fi
-else
-    echo "✅ Static check passed with no issues."
-fi
+cat > "$TMP_CONFIG" << 'EOF'
+run:
+  timeout: 5m
+  skip-dirs-use-default: true
+  skip-dirs:
+    - vendor
+    - third_party
+    - node_modules
+    - .git
+    - "pkg/mod"
+  skip-files:
+    - ".*_test.go"
+  allow-parallel-runners: true
+  modules-download-mode: readonly
+  
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofmt
+    - goimports
+  
+linters-settings:
+  goimports:
+    local-prefixes: github.com/AccursedGalaxy/noidea
+EOF
 
-# Project-specific linting
-echo "Running golangci-lint on project files only..."
-SKIP_DIRS="vendor,third_party,node_modules"
-golangci-lint run --timeout=5m \
-    --modules-download-mode=readonly \
-    --skip-dirs-use-default \
-    --skip-dirs="${SKIP_DIRS}" \
-    --skip-files=".*_test.go" \
-    --path-prefix="github.com/AccursedGalaxy/noidea" \
-    ./cmd/... ./internal/...
+# Run linting with our custom config - use --path-prefix to only lint project code
+echo "Linting $DIRS with golangci-lint..."
+golangci-lint run \
+  --config="$TMP_CONFIG" \
+  --path-prefix="github.com/AccursedGalaxy/noidea" \
+  $DIRS
 
-# Return success
-echo "✅ Linting complete."
-exit 0 
+# Clean up temp file
+rm -f "$TMP_CONFIG"
+
+echo "✅ Linting completed successfully" 

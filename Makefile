@@ -108,34 +108,15 @@ lint-tools:
 
 # Run comprehensive linting with golangci-lint
 lint: lint-tools tidy
-	@echo "Running linters..."
-	@echo "Running go vet..."
-	@$(GO) vet ./...
-	@echo "Running golangci-lint..."
-	@golangci-lint run --timeout=5m ./...
+	@echo "Running linters on project files only..."
+	@bash ./scripts/lint.sh
 	@echo "✅ Lint complete."
 
 # Project-only linting (excludes external dependencies)
-project-lint: lint-tools tidy
-	@echo "Running project-only linting..."
-	@echo "Running go vet on project files..."
-	@$(GO) vet ./cmd/... ./internal/...
-	@echo "Running golangci-lint on project files..."
-	@SKIP_DIRS="vendor,third_party,node_modules" && \
-	golangci-lint run --timeout=5m \
-		--modules-download-mode=readonly \
-		--skip-dirs-use-default \
-		--skip-dirs="$$SKIP_DIRS" \
-		--skip-files=".*_test.go" \
-		--path-prefix="github.com/AccursedGalaxy/noidea" \
-		./cmd/... ./internal/...
-	@echo "✅ Project lint complete."
+project-lint: lint
 
 # Script-based linting (more reliable approach)
-script-lint:
-	@echo "Running script-based linting..."
-	@bash ./scripts/lint.sh || true
-	@echo "✅ Script-based lint complete."
+script-lint: lint
 
 # Format all Go code
 fmt: lint-tools
@@ -162,9 +143,7 @@ format: fmt tidy
 	@echo "✅ Code formatted and dependencies tidied."
 
 # Run pre-commit checks (useful for git hooks)
-pre-commit: tidy format script-lint
-	@echo "Running go vet..."
-	@$(GO) vet ./cmd/... ./internal/...
+pre-commit: tidy format lint
 	@echo "Running tests..."
 	@$(GO) test -short ./...
 	@echo "✅ Pre-commit checks passed."
@@ -197,10 +176,7 @@ help:
 	@echo "  make install    - Install noidea to $(BINDIR)"
 	@echo "  make uninstall  - Remove noidea from $(BINDIR)"
 	@echo "  make release    - Build binaries for all platforms"
-	@echo "  make lint       - Run comprehensive linters"
-	@echo "  make project-lint - Run linters only on project files (excludes external dependencies)"
-	@echo "  make script-lint  - Run reliable script-based linting (recommended)"
-	@echo "  make lint-ci    - Run linters in CI mode (fails on any issue)"
+	@echo "  make lint       - Run linters on project files only"
 	@echo "  make fmt        - Format Go code with goimports"
 	@echo "  make tidy       - Clean up go.mod and go.sum"
 	@echo "  make format     - Format code and tidy dependencies"
