@@ -98,7 +98,7 @@ lint-tools:
 	@echo "Checking linting tools..."
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
 		echo "Installing golangci-lint..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.55.2; \
 	fi
 	@if ! command -v goimports >/dev/null 2>&1; then \
 		echo "Installing goimports..."; \
