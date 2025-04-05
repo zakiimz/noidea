@@ -60,7 +60,9 @@ if [ -z "$TAG_NAME" ]; then
 fi
 
 # Call noidea to create GitHub release with enhanced release notes
-%s github release notes %s--tag="$TAG_NAME"
+# Using --skip-approval for automated execution
+echo "Generating release notes for $TAG_NAME..."
+%s github release notes --tag="$TAG_NAME" %s--skip-approval
 
 # Exit with success
 exit 0

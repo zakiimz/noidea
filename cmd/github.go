@@ -97,7 +97,8 @@ This command uses LLM (if enabled) to create comprehensive, user-friendly releas
 	Run: func(cmd *cobra.Command, args []string) {
 		tag, _ := cmd.Flags().GetString("tag")
 		useAI, _ := cmd.Flags().GetBool("ai")
-		runGitHubReleaseNotes(tag, useAI)
+		skipApproval, _ := cmd.Flags().GetBool("skip-approval")
+		runGitHubReleaseNotes(tag, useAI, skipApproval)
 	},
 }
 
@@ -123,9 +124,9 @@ func init() {
 	githubReleaseCreateCmd.MarkFlagRequired("tag")
 
 	// Flags for release notes command
-	githubReleaseNotesCmd.Flags().String("tag", "", "Tag name to generate notes for (required)")
+	githubReleaseNotesCmd.Flags().String("tag", "", "Tag name to generate notes for (defaults to latest tag)")
 	githubReleaseNotesCmd.Flags().Bool("ai", false, "Force AI-generated notes even if LLM is disabled in config")
-	githubReleaseNotesCmd.MarkFlagRequired("tag")
+	githubReleaseNotesCmd.Flags().Bool("skip-approval", false, "Skip approval before updating release notes")
 }
 
 // runGitHubAuth handles the GitHub authentication flow
@@ -344,13 +345,24 @@ func runGitHubHookInstall() {
 }
 
 // runGitHubReleaseNotes handles generating and updating release notes
-func runGitHubReleaseNotes(tag string, forceAI bool) {
+func runGitHubReleaseNotes(tag string, forceAI bool, skipApproval bool) {
 	// Check if we're authenticated with GitHub
 	_, err := secure.GetGitHubToken()
 	if err != nil {
 		fmt.Println("GitHub authentication required.")
 		fmt.Println("Run 'noidea github auth' to authenticate.")
 		return
+	}
+
+	// If no tag specified, try to get the latest tag
+	if tag == "" {
+		var err error
+		tag, err = getLatestTag()
+		if err != nil {
+			fmt.Printf("Error: Please specify a tag with --tag or ensure you're in a Git repository with tags: %s\n", err)
+			return
+		}
+		fmt.Printf("No tag specified, using latest tag: %s\n", tag)
 	}
 
 	// Load configuration
@@ -372,11 +384,21 @@ func runGitHubReleaseNotes(tag string, forceAI bool) {
 		getGenerationTypeString(cfg.LLM.Enabled), tag)
 
 	// Update the release notes
-	err = manager.UpdateReleaseNotes(tag)
+	err = manager.UpdateReleaseNotes(tag, skipApproval)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
+}
+
+// getLatestTag returns the latest tag in the Git repository
+func getLatestTag() (string, error) {
+	cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get latest tag: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
 }
 
 // getGenerationTypeString returns a string describing the type of generation
