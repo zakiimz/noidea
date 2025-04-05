@@ -33,6 +33,7 @@ theme:
     - navigation.sections
     - navigation.expand
     - navigation.top
+    - navigation.footer
     - toc.follow
     - toc.integrate
     - search.suggest
@@ -47,6 +48,7 @@ copyright: >
   <a href="#__consent">Change cookie settings</a>
 
 extra:
+  generator: false
   consent:
     title: Cookie consent
     description: >-
