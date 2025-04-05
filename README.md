@@ -22,6 +22,7 @@
 - **Get smart commit messages** based on your changes
 - **Receive sassy feedback** from a judgmental Moai after each commit
 - **Analyze your Git history** for insights and patterns
+- **Seamless integration** with Git workflows
 
 ## ✨ Key Features
 
