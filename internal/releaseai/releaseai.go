@@ -30,6 +30,18 @@ func NewReleaseNotesGenerator(cfg config.Config) (*ReleaseNotesGenerator, error)
 		cfg.LLM.Temperature,
 	)
 
+	// Set a custom system prompt specifically for release notes
+	directClient.SetSystemPrompt(`You are a professional software release notes writer.
+Your task is to describe changes, features, and fixes in a clear, organized manner.
+IMPORTANT RULES:
+1. NEVER analyze commit message patterns or quality
+2. Focus ONLY on actual software changes and features
+3. Begin with a clear overview of key changes
+4. Organize changes into relevant categories
+5. Keep the tone professional and factual
+6. Remove any sections if there are no relevant changes
+7. Do not introduce yourself or explain your role`)
+
 	return &ReleaseNotesGenerator{
 		directClient: directClient,
 		config:       cfg,
@@ -88,6 +100,13 @@ func cleanReleaseNotes(notes string) string {
 		"Analysis:",
 		"Message analysis",
 		"Analyzing your commit",
+		"1. Commit Message",
+		"2. Commit Message",
+		"# 1. Commit",
+		"# Analysis",
+		"# Overview of Commit",
+		"Looking at your commit",
+		"Based on the commit patterns",
 	}
 
 	for _, pattern := range metaPatterns {
@@ -139,21 +158,7 @@ func cleanReleaseNotes(notes string) string {
 	}
 
 	// Make sure the release notes don't have placeholder text
-	placeholders := []string{
-		"[Brief summary",
-		"[List of",
-		"[Add other",
-	}
-
-	containsPlaceholders := false
-	for _, placeholder := range placeholders {
-		if strings.Contains(notes, placeholder) {
-			containsPlaceholders = true
-			break
-		}
-	}
-
-	if containsPlaceholders {
+	if containsPlaceholderText(notes) {
 		// The model returned our template with placeholders - generate basic notes instead
 		return ""
 	}
@@ -233,4 +238,41 @@ func buildReleaseNotesPrompt(version string, commitMessages []string, previousVe
 	sb.WriteString("\nRemove any section that has no relevant changes. NEVER analyze commit formats or patterns. Replace placeholder text with actual changes.\n")
 
 	return sb.String()
+}
+
+// containsPlaceholderText checks if the generated notes still contain placeholder text
+func containsPlaceholderText(notes string) bool {
+	placeholders := []string{
+		"[Brief summary",
+		"[List of",
+		"[Add other",
+		"[New capabilities",
+		"[Enhancements",
+		"[Fixed issues",
+		"[Brief overview",
+		"[description",
+		"[placeholder",
+	}
+
+	for _, placeholder := range placeholders {
+		if strings.Contains(notes, placeholder) {
+			return true
+		}
+	}
+
+	// Check for sections with no content
+	emptyPatterns := []string{
+		"## Overview\n\n##",
+		"## 🚀 New Features\n\n##",
+		"## 🔧 Improvements\n\n##",
+		"## 🐛 Bug Fixes\n\n##",
+	}
+
+	for _, pattern := range emptyPatterns {
+		if strings.Contains(notes, pattern) {
+			return true
+		}
+	}
+
+	return false
 }
