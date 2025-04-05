@@ -17,6 +17,15 @@ Future Vision Idea:
 -> Need to explore how we could integrate with this nicely code whise
 
 
+Another Idea:
+-> Use AI to improve release notes.
+    -> maybe there is a way where after automatic generation of relesae notes and "Whats Changed" listing all the commits.
+    -> We could pass all that info to the LLM and let it generate a short overview section explaining what changed.
+
+        This would make it a lot easier for non techincal users to understand what a version upgrade has in store for them.
+
+        -> Only issue is how to hook into that process after automatic Changelog generation
+
 # NoIdea → AI Project Assistant: Integration Plan
 
 ## GitHub API Integration
