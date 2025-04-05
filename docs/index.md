@@ -120,6 +120,8 @@ hide:
     <li><strong>Motivational Speaker</strong> - Energetic enthusiasm</li>
   </ul>
 
+  <p>You can create your own personality easily via our configuration system.
+
   <h3>Weekly Summaries</h3>
 
   <p>Track your coding patterns and get insights about your work habits with detailed summaries.</p>
