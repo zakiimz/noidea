@@ -13,12 +13,13 @@ import (
 // DirectLLMClient provides direct access to LLM APIs for release notes generation
 // Completely separate from the feedback system to avoid pattern interference
 type DirectLLMClient struct {
-	client      *openai.Client
-	model       string
-	apiKey      string
-	provider    string
-	maxTokens   int
-	temperature float32
+	client       *openai.Client
+	model        string
+	apiKey       string
+	provider     string
+	maxTokens    int
+	temperature  float32
+	systemPrompt string
 }
 
 // NewDirectLLMClient creates a new LLM client with direct API access
@@ -40,14 +41,25 @@ func NewDirectLLMClient(provider, model, apiKey string, temperature float64) *Di
 		config.BaseURL = baseURL
 	}
 
+	// Set max tokens based on model
+	maxTokens := 2000
+	if strings.Contains(model, "gpt-4") || strings.Contains(model, "grok-1") {
+		maxTokens = 4000
+	}
+
 	return &DirectLLMClient{
 		client:      openai.NewClientWithConfig(config),
 		model:       model,
 		apiKey:      apiKey,
 		provider:    provider,
-		maxTokens:   2000,
+		maxTokens:   maxTokens,
 		temperature: float32(temperature),
 	}
+}
+
+// SetSystemPrompt sets a custom system prompt
+func (c *DirectLLMClient) SetSystemPrompt(prompt string) {
+	c.systemPrompt = prompt
 }
 
 // GenerateReleaseNotes generates release notes directly using the LLM API
@@ -72,10 +84,16 @@ func (c *DirectLLMClient) GenerateReleaseNotes(
 			}
 		}
 
+		// Use custom system prompt if set, otherwise use default
+		systemContent := "You are a professional release notes writer. Generate detailed, accurate release notes for software updates. Your task is to describe changes, features, and fixes. IMPORTANT: Do not analyze commit message patterns or formatting - focus only on the actual software changes. Always begin with a clear overview and organize changes into relevant sections."
+		if c.systemPrompt != "" {
+			systemContent = c.systemPrompt
+		}
+
 		messages := []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleSystem,
-				Content: "You are a professional release notes writer. Generate detailed, accurate release notes for software updates. Your task is to describe changes, features, and fixes. IMPORTANT: Do not analyze commit message patterns or formatting - focus only on the actual software changes. Always begin with a clear overview and organize changes into relevant sections.",
+				Content: systemContent,
 			},
 			{
 				Role:    openai.ChatMessageRoleUser,
