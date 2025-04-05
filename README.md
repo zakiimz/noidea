@@ -67,23 +67,7 @@ git commit
 ```
 This will open your default editor with the suggested commit message. Save and close to approve and commit.
 
-## 📚 Documentation
-
-### 🔧 Installation Options
-
-Choose one of these methods:
-
-```bash
-# Option 1: One-line quick install
-curl -sSL https://raw.githubusercontent.com/AccursedGalaxy/noidea/main/quickinstall.sh | bash
-
-# Option 2: Clone and install
-git clone https://github.com/AccursedGalaxy/noidea.git
-cd noidea
-./install.sh
-```
-
-### 🤖 AI Configuration
+## 🤖 AI Configuration
 
 For AI-powered features, add your API key:
 
@@ -102,9 +86,9 @@ For AI-powered features, add your API key:
    noidea config --init
    ```
 
-See [API Key Management](./docs/api-key-management.md) for secure storage details.
+See [API Key Management](./docs/user-guide/features/api-key-management.md) for secure storage details.
 
-### 🚀 GitHub Integration
+## 🚀 GitHub Integration
 
 noidea provides seamless GitHub integration for managing releases and generating release notes:
 
@@ -140,7 +124,7 @@ noidea provides seamless GitHub integration for managing releases and generating
 
 The release notes generator enhances GitHub's standard release notes with AI-powered descriptions while preserving GitHub's changelog with commit links.
 
-### 📋 Available Commands
+## 📋 Available Commands
 
 | Command | Description |
 |---------|-------------|
@@ -173,7 +157,9 @@ noidea has several AI personalities for feedback:
 noidea moai --personality supportive_mentor
 ```
 
-### ⚙️ Advanced Configuration
+> easily setup your own personality or edit existing ones!
+
+## ⚙️ Advanced Configuration
 
 Create a `~/.noidea/config.json` file:
 
@@ -207,7 +193,7 @@ Create a `~/.noidea/config.json` file:
 | Commit message suggestions | ✅ Done |
 | Enhanced terminal output | ✅ Done |
 | POSIX-compatible hooks | ✅ Done |
-| AI generated release notes | ✅ Done |
+| AI Release notes | ✅ Done |
 | AI GitHub issue management | 🔜 Coming Soon |
 
 ## 🤝 Contributing
