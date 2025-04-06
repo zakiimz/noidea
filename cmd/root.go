@@ -71,6 +71,9 @@ func init() {
 				go validateApiKeyOnStartup()
 			}
 		}
+
+		// Check for updates occasionally
+		go checkForUpdatesInBackground()
 	})
 }
 
@@ -267,4 +270,146 @@ func validateDeepSeekKey(apiKey string) (bool, error) {
 
 	// Check if the request was successful
 	return resp.StatusCode >= 200 && resp.StatusCode < 300, nil
+}
+
+// checkForUpdatesInBackground checks for noidea updates periodically
+func checkForUpdatesInBackground() {
+	// Skip update check if in dev mode
+	if BuildDate == "dev" || strings.Contains(Version, "dev") {
+		return
+	}
+
+	// Only check for updates occasionally (every ~10 commands)
+	// Use a simple heuristic based on timestamp in update file
+	lastCheckedFile := getUpdateCheckFilePath()
+	shouldCheck, _ := shouldCheckForUpdates(lastCheckedFile)
+	if !shouldCheck {
+		return
+	}
+
+	// Check latest version from GitHub (quietly)
+	latestVersion, _, err := getLatestVersionFromGitHub()
+	if err != nil {
+		// Silently fail on error
+		return
+	}
+
+	// Compare versions
+	currentVersion := strings.TrimPrefix(Version, "v")
+	latestVersionStr := strings.TrimPrefix(latestVersion, "v")
+
+	// Only notify if using an older version
+	if isNewerVersion(latestVersionStr, currentVersion) {
+		// Update the last checked file regardless of result
+		updateLastCheckedFile(lastCheckedFile)
+
+		// Print update notification
+		fmt.Println()
+		fmt.Println(color.YellowString("🔔 Update available!"))
+		fmt.Printf("A new version of noidea is available: %s → %s\n", Version, latestVersion)
+		fmt.Println("To update, run: noidea update")
+		fmt.Println()
+	}
+}
+
+// shouldCheckForUpdates determines if we should check for updates
+func shouldCheckForUpdates(filePath string) (bool, error) {
+	// If file doesn't exist, create it and return true
+	info, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	// Check if file is older than 24 hours
+	modTime := info.ModTime()
+	return time.Since(modTime) > 24*time.Hour, nil
+}
+
+// updateLastCheckedFile updates the timestamp of the update check file
+func updateLastCheckedFile(filePath string) {
+	// Create directory if it doesn't exist
+	dir := filepath.Dir(filePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return
+	}
+
+	// Create or touch the file
+	file, err := os.Create(filePath)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+}
+
+// getUpdateCheckFilePath returns the path to the update check file
+func getUpdateCheckFilePath() string {
+	// Get the user's config directory
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		// Fallback to home directory
+		home, err := os.UserHomeDir()
+		if err != nil {
+			// Last resort, use temp directory
+			return filepath.Join(os.TempDir(), ".noidea_update_check")
+		}
+		return filepath.Join(home, ".noidea", ".update_check")
+	}
+	return filepath.Join(configDir, "noidea", ".update_check")
+}
+
+// isNewerVersion compares two version strings
+func isNewerVersion(latest, current string) bool {
+	// If versions are identical, latest is not newer
+	if latest == current {
+		return false
+	}
+
+	// Handle development versions (e.g., v0.4.0-11-g9839b73)
+	// If current has a dash but latest doesn't, current is a dev version
+	// based on the latest version and therefore is newer
+	if strings.Contains(current, "-") && !strings.Contains(latest, "-") {
+		// Get the base version before the dash
+		currentBase := strings.Split(current, "-")[0]
+
+		// If the base version is the same as latest, the dev version is newer
+		if currentBase == latest {
+			return false // latest is NOT newer
+		}
+	}
+
+	// Strip non-semver parts for clean comparison
+	latestClean := strings.Split(latest, "-")[0]
+	currentClean := strings.Split(current, "-")[0]
+
+	// Convert version strings to comparable slices
+	latestParts := strings.Split(latestClean, ".")
+	currentParts := strings.Split(currentClean, ".")
+
+	// Make sure both slices have the same length
+	for len(latestParts) < 3 {
+		latestParts = append(latestParts, "0")
+	}
+	for len(currentParts) < 3 {
+		currentParts = append(currentParts, "0")
+	}
+
+	// Compare major, minor, and patch versions
+	for i := 0; i < 3; i++ {
+		latestNum := 0
+		currentNum := 0
+		fmt.Sscanf(latestParts[i], "%d", &latestNum)
+		fmt.Sscanf(currentParts[i], "%d", &currentNum)
+
+		if latestNum > currentNum {
+			return true // latest is newer
+		}
+		if latestNum < currentNum {
+			return false // latest is older
+		}
+	}
+
+	return false // versions are equal in their numeric parts
 }

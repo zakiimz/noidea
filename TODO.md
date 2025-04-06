@@ -26,8 +26,8 @@
   - [ ] Windows (WSL and native)
 
 ## 👥 Usability Improvements
-- [ ] Add version checking and update notification mechanism
-- [ ] Make sure users can easily update the tool
+- [x] Add version checking and update notification mechanism
+- [x] Make sure users can easily update the tool
 - [x] Fix handling of multi-line commit messages
 - [x] Implement proper command feedback when API calls fail
 - [x] Add clear error messages for common configuration issues

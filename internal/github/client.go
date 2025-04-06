@@ -38,6 +38,22 @@ func NewClient() (*Client, error) {
 	}, nil
 }
 
+// NewClientWithoutAuth creates a new GitHub API client without authentication
+// for accessing public resources
+func NewClientWithoutAuth() *Client {
+	return &Client{
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+		baseURL: "https://api.github.com",
+	}
+}
+
+// GetLatestRelease gets the latest release from a GitHub repository
+func (c *Client) GetLatestRelease(owner, repo string) (map[string]interface{}, error) {
+	return c.get(fmt.Sprintf("/repos/%s/%s/releases/latest", owner, repo))
+}
+
 // GetUser retrieves the authenticated user's information
 func (c *Client) GetUser() (map[string]interface{}, error) {
 	return c.get("/user")
