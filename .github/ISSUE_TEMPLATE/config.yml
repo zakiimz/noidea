@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/user/noidea/docs
+    about: Please check our documentation before opening an issue
+  - name: GitHub Discussions
+    url: https://github.com/user/noidea/discussions
+    about: Please ask and answer questions here 

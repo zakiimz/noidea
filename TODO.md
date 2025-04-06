@@ -2,10 +2,10 @@
 
 ## 📚 Documentation
 - [x] Create `CONTRIBUTING.md` with clear guidelines for contributors
-- [ ] Create issue templates for GitHub:
-  - [ ] Bug report template
-  - [ ] Feature request template
-  - [ ] Question/support template
+- [x] Create issue templates for GitHub:
+  - [x] Bug report template
+  - [x] Feature request template
+  - [x] Question/support template
 
 ## 🔒 Security & Configuration
 - [x] Implement secure API key storage
