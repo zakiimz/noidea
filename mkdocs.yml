@@ -91,12 +91,19 @@ nav:
     - Troubleshooting: user-guide/troubleshooting.md
   - Developer Guide:
     - Overview: dev-guide/overview.md
-    - Plugins:
-      - Plugins: dev-guide/plugins/index.md
+    - Plugin System:
+      - Introduction: dev-guide/plugins/index.md
       - Architecture: dev-guide/plugins/architecture.md
-      - Interfaces: dev-guide/plugins/interfaces.md
-      - Examples: dev-guide/plugins/examples.md
+      - Interface Specifications: dev-guide/plugins/interfaces.md
+      - Implementation Examples: dev-guide/plugins/examples.md
       - Plugin Ideas: dev-guide/plugins/plugins.md
+    - Contributing:
+      - Guidelines: CONTRIBUTING.md
+      - Code Style: dev-guide/code-style.md
+      - Testing: dev-guide/testing.md
+    - Internals:
+      - Project Structure: dev-guide/project-structure.md
+      - Core Components: dev-guide/core-components.md
   - Blog: blog/index.md
 
 markdown_extensions:
