@@ -79,7 +79,6 @@ find_noidea() {
 NOIDEA_BIN=$(find_noidea)
 if [ -z "$NOIDEA_BIN" ]; then
     echo "${YELLOW}⚠️  Warning: noidea binary not found, but noidea.suggest is enabled${RESET}"
-    echo "${YELLOW}   Please ensure noidea is in your PATH or at the repository root${RESET}"
     exit 0
 fi
 
@@ -136,13 +135,8 @@ if [ -s "$COMMIT_MSG_FILE" ] && [ "$ORIGINAL_SIZE" -gt 5 ]; then
     fi
     
     print_divider
-    echo "${GREEN}✅ Commit message suggestion applied:${RESET}"
+    echo "${GREEN}✅ Commit message suggestion applied${RESET}"
     echo "${PREVIEW}"
-    
-    # Indicate if there's more content in the message
-    if [ "$LINE_COUNT" -gt 1 ]; then
-        echo "${CYAN}(+ additional details in commit message)${RESET}"
-    fi
     
     print_divider
     exit 0

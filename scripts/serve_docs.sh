@@ -8,7 +8,7 @@ set -e
 # Change to the docs directory
 cd "$(dirname "$0")/../docs"
 
-echo "🌐 Setting up local Jekyll environment..."
+echo "🌐 Setting up Jekyll environment..."
 
 # Check if Ruby is installed
 if ! command -v ruby &> /dev/null; then
@@ -19,12 +19,12 @@ fi
 # Check if Bundler is installed
 if ! command -v bundle &> /dev/null; then
     echo "Installing Bundler..."
-    gem install bundler
+    gem install bundler >/dev/null
 fi
 
 # Install dependencies
 echo "Installing dependencies..."
-bundle install
+bundle install --quiet
 
 # Run the Jekyll server
 echo "🚀 Starting Jekyll server at http://localhost:4000/noidea/"

@@ -23,7 +23,6 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 # Show help message
 usage() {
     echo -e "${BLUE}noidea Version Manager${NC}"
-    echo "============================="
     echo "Usage: $0 [command]"
     echo ""
     echo "Commands:"
@@ -32,10 +31,6 @@ usage() {
     echo "  minor      Bump minor version (0.x.0)"
     echo "  patch      Bump patch version (0.0.x)"
     echo "  help       Show this help message"
-    echo ""
-    echo "Examples:"
-    echo "  $0 show    # Show current version"
-    echo "  $0 patch   # Bump patch version"
     exit 1
 }
 
@@ -49,7 +44,7 @@ get_current_version() {
 update_version_in_file() {
     local new_version=$1
     sed -i "s/Version   = \"[^\"]*\"/Version   = \"$new_version\"/" "$ROOT_DIR/cmd/root.go"
-    echo -e "${GREEN}✓${NC} Updated version in cmd/root.go to $new_version"
+    echo -e "${GREEN}✓${NC} Updated version in cmd/root.go"
 }
 
 # Bump version according to semantic versioning
@@ -98,17 +93,17 @@ bump_version() {
     read -p "Create git commit and tag for this version? (y/n): " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        git add "$ROOT_DIR/cmd/root.go"
-        git commit -m "Bump version to $new_version"
-        git tag -a "$new_version" -m "Release $new_version"
+        git add "$ROOT_DIR/cmd/root.go" >/dev/null
+        git commit -m "Bump version to $new_version" >/dev/null
+        git tag -a "$new_version" -m "Release $new_version" >/dev/null
         echo -e "${GREEN}✓${NC} Created commit and tag $new_version"
         
         echo ""
         read -p "Push changes and tag to remote repository? (y/n): " -n 1 -r
         echo ""
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            git push
-            git push origin "$new_version"
+            git push >/dev/null
+            git push origin "$new_version" >/dev/null
             echo -e "${GREEN}✓${NC} Pushed changes to remote repository"
             
             # Check if noidea is installed and GitHub integration is available
@@ -116,52 +111,42 @@ bump_version() {
                 # Check if user has GitHub token
                 if noidea github status >/dev/null 2>&1; then
                     echo ""
-                    echo -e "${CYAN}GitHub tag created and pushed. Release notes generation options:${NC}"
-                    echo -e "1. ${YELLOW}Wait for GitHub Actions workflows to complete${NC} (recommended)"
+                    echo -e "${CYAN}GitHub tag created and pushed. Release notes options:${NC}"
+                    echo -e "1. ${YELLOW}Wait for GitHub Actions workflows${NC} (recommended)"
                     echo -e "   Run: ${GREEN}noidea github release notes --tag=\"$new_version\" --wait-for-workflows${NC}"
-                    echo -e "   This will automatically wait for workflows to finish and enhance the overview."
-                    echo ""
-                    echo -e "2. ${YELLOW}Generate AI release notes immediately${NC} (quick but may be overwritten by GitHub)"
+                    
+                    echo -e "2. ${YELLOW}Generate AI release notes now${NC}"
                     echo -e "   Run: ${GREEN}noidea github release notes --tag=\"$new_version\"${NC}"
                     
                     # Ask if the user wants to generate now or wait
                     echo ""
-                    read -p "Would you like to generate release notes with workflow waiting? (y/n): " -n 1 -r GENERATE_NOW
+                    read -p "Generate release notes with workflow waiting? (y/n): " -n 1 -r GENERATE_NOW
                     echo ""
                     
                     if [[ $GENERATE_NOW =~ ^[Yy]$ ]]; then
                         echo ""
-                        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                        echo -e "${CYAN}  Starting Release Notes Generation Process${NC}"
-                        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                        echo ""
-                        echo -e "1. Waiting for GitHub workflows to complete"
-                        echo -e "2. Generating enhanced release notes"
-                        echo ""
+                        echo -e "${CYAN}Generating Release Notes${NC}"
                         # Enhanced system to wait for GitHub workflows and then
                         # enhance the Overview section while preserving GitHub's content
-                        noidea github release notes --tag="$new_version" --wait-for-workflows
+                        noidea github release notes --tag="$new_version" --wait-for-workflows --quiet
                     else
-                        echo -e "${GREEN}✓${NC} GitHub tag pushed. Remember to generate release notes:"
+                        echo -e "${GREEN}✓${NC} Remember to generate release notes:"
                         echo -e "  ${GREEN}noidea github release notes --tag=\"$new_version\"${NC}"
                     fi
                 else
                     echo ""
-                    echo -e "${YELLOW}Note:${NC} To generate enhanced AI release notes, run:"
-                    echo "  noidea github auth        # Authenticate with GitHub"
-                    echo "  noidea github release notes --tag=$new_version  # Generate release notes"
+                    echo -e "${YELLOW}Note:${NC} For AI release notes, run:"
+                    echo "  noidea github auth"
+                    echo "  noidea github release notes --tag=$new_version"
                 fi
             else
                 echo ""
-                echo -e "${YELLOW}Note:${NC} To generate enhanced AI release notes, make sure noidea is installed and run:"
+                echo -e "${YELLOW}Note:${NC} For AI release notes, run:"
                 echo "  noidea github release notes --tag=$new_version"
             fi
         else
             echo -e "${YELLOW}Remember to push your changes:${NC}"
             echo "  git push && git push origin $new_version"
-            echo ""
-            echo -e "${YELLOW}After pushing, you can generate enhanced release notes:${NC}"
-            echo "  noidea github release notes --tag=$new_version"
         fi
     else
         echo -e "${YELLOW}Changes made locally. Don't forget to commit and create a tag.${NC}"

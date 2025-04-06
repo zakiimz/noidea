@@ -46,27 +46,27 @@ trap cleanup EXIT
 
 # Run go mod tidy to manage dependencies
 echo "Checking dependencies..."
-go mod tidy
+go mod tidy -quiet
 
 # Run goimports to format and organize imports
 if command -v goimports &> /dev/null; then
-  echo "Formatting and organizing imports..."
-  find . -name "*.go" -not -path "./vendor/*" | xargs goimports -w -local github.com/AccursedGalaxy/noidea
+  echo "Formatting code..."
+  find . -name "*.go" -not -path "./vendor/*" | xargs goimports -w -local github.com/AccursedGalaxy/noidea >/dev/null 2>&1
 else
   echo "Installing goimports..."
-  go install golang.org/x/tools/cmd/goimports@latest
-  find . -name "*.go" -not -path "./vendor/*" | xargs goimports -w -local github.com/AccursedGalaxy/noidea
+  go install golang.org/x/tools/cmd/goimports@latest >/dev/null 2>&1
+  find . -name "*.go" -not -path "./vendor/*" | xargs goimports -w -local github.com/AccursedGalaxy/noidea >/dev/null 2>&1
 fi
 
 # Format the code
-make format
+make format -s
 
 # Run lint
-make script-lint
+make script-lint -s
 
 # If there are any changes after formatting, add them
 if ! git diff --quiet; then
-  echo "Adding automatically formatted files..."
+  echo "Adding formatted files..."
   git add -u
 fi
 
@@ -85,7 +85,7 @@ echo "Running pre-push checks..."
 
 # Run tests
 echo "Running tests..."
-make test
+make test -s
 
 echo "✅ Pre-push checks passed."
 EOF
@@ -95,6 +95,4 @@ chmod +x "$HOOKS_DIR/pre-commit"
 chmod +x "$HOOKS_DIR/pre-push"
 
 echo "✅ Git hooks setup complete."
-echo "The following hooks are installed:"
-echo "- pre-commit: manages dependencies, formats code, organizes imports, and runs linting checks"
-echo "- pre-push: runs tests before pushing changes" 
+echo "Installed hooks: pre-commit, pre-push" 

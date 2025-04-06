@@ -21,12 +21,9 @@ if ! command -v noidea >/dev/null 2>&1; then
 fi
 
 # Welcome message
-echo -e "${CYAN}===================================================${NC}"
 echo -e "${CYAN}NoIdea - GitHub Integration Setup${NC}"
-echo -e "${CYAN}===================================================${NC}"
 echo ""
-echo -e "This script will help you set up GitHub integration for NoIdea,"
-echo -e "including authentication and automatic release creation."
+echo -e "This script will set up GitHub integration for NoIdea."
 echo ""
 
 # Ask to proceed
@@ -38,30 +35,29 @@ fi
 
 echo ""
 echo -e "${CYAN}Step 1: GitHub Authentication${NC}"
-echo -e "You need a GitHub Personal Access Token (PAT) to use GitHub features."
-echo -e "If you don't have one, create it at: ${YELLOW}https://github.com/settings/tokens${NC}"
+echo -e "You need a GitHub Personal Access Token (PAT)."
+echo -e "Create one at: ${YELLOW}https://github.com/settings/tokens${NC}"
 echo -e "Required scopes: ${YELLOW}repo, read:user${NC}"
 echo ""
 
-read -p "Do you want to authenticate with GitHub now? (y/n): " AUTH
+read -p "Authenticate with GitHub now? (y/n): " AUTH
 if [[ $AUTH =~ ^[Yy]$ ]]; then
     noidea github auth
     if [ $? -ne 0 ]; then
         echo -e "${RED}GitHub authentication failed.${NC}"
-        echo "You can try again later by running: noidea github auth"
+        echo "You can try again later with: noidea github auth"
         exit 1
     fi
 else
-    echo -e "${YELLOW}Skipping authentication. You can run 'noidea github auth' later.${NC}"
+    echo -e "${YELLOW}Skipping authentication.${NC}"
 fi
 
 echo ""
 echo -e "${CYAN}Step 2: GitHub Hook Installation${NC}"
 echo -e "NoIdea can automatically create GitHub releases when you create Git tags."
-echo -e "This requires installing a Git hook in your repository."
 echo ""
 
-read -p "Do you want to install GitHub hooks now? (y/n): " HOOKS
+read -p "Install GitHub hooks now? (y/n): " HOOKS
 if [[ $HOOKS =~ ^[Yy]$ ]]; then
     # Check if we're in a git repository
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
@@ -76,17 +72,12 @@ if [[ $HOOKS =~ ^[Yy]$ ]]; then
         exit 1
     fi
 else
-    echo -e "${YELLOW}Skipping hook installation. You can run 'noidea github hook-install' later.${NC}"
+    echo -e "${YELLOW}Skipping hook installation.${NC}"
 fi
 
 echo ""
 echo -e "${GREEN}GitHub integration setup complete!${NC}"
 echo ""
-echo -e "You can now use the following commands:"
-echo -e "  ${CYAN}noidea github status${NC}       - Check GitHub authentication status"
-echo -e "  ${CYAN}noidea github release create${NC} - Manually create a GitHub release"
-echo ""
-echo -e "When you create a Git tag (if hooks are installed), a GitHub release will be created automatically."
-echo -e "Example: ${YELLOW}git tag -a v1.0.0 -m \"Release v1.0.0\"${NC}"
-echo ""
-echo -e "${CYAN}===================================================${NC}" 
+echo -e "Available commands:"
+echo -e "  ${CYAN}noidea github status${NC}"
+echo -e "  ${CYAN}noidea github release create${NC}" 

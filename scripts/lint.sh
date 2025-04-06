@@ -14,8 +14,8 @@ else
 fi
 
 # Run go vet first
-echo "Running go vet on project files..."
-go vet $DIRS
+echo "Running go vet..."
+go vet $DIRS >/dev/null
 
 # Create a temporary YAML configuration file with .yml extension
 TMP_CONFIG=$(mktemp -t golangci-XXXXXX.yml)
@@ -53,7 +53,7 @@ linters-settings:
 EOF
 
 # Run linting with our custom config - use --path-prefix to only lint project code
-echo "Linting $DIRS with golangci-lint..."
+echo "Linting project code..."
 golangci-lint run \
   --config="$TMP_CONFIG" \
   --path-prefix="github.com/AccursedGalaxy/noidea" \

@@ -52,7 +52,6 @@ find_noidea() {
 NOIDEA_BIN=$(find_noidea)
 if [ -z "$NOIDEA_BIN" ]; then
     echo "${YELLOW}⚠️  Warning: noidea binary not found${RESET}"
-    echo "${YELLOW}   Please ensure noidea is in your PATH or at the repository root${RESET}"
     exit 0
 fi
 
