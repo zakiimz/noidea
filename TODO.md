@@ -40,7 +40,7 @@
 - [x] Create semantic versioning strategy
 - [x] Set up proper release workflow with changelogs
 - [x] Add version badges to README
-- [ ] Set up project discussions on GitHub
+- [x] Set up project discussions on GitHub
 - [ ] Create project roadmap visible to community
 
 ## 🧩 Plugin System Foundation (Future)
