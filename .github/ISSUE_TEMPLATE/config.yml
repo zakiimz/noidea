@@ -1,8 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Documentation
-    url: https://accursedgalaxy.github.io/noidea/
-    about: Please check our documentation before opening an issue
-  - name: GitHub Discussions
-    url: https://github.com/accursedgalaxy/noidea/discussions
-    about: Please ask and answer questions here 
