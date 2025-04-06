@@ -128,7 +128,7 @@ bump_version() {
                         echo -e "${CYAN}Generating Release Notes${NC}"
                         # Enhanced system to wait for GitHub workflows and then
                         # enhance the Overview section while preserving GitHub's content
-                        noidea github release notes --tag="$new_version" --wait-for-workflows --quiet
+                        noidea github release notes --tag="$new_version" --wait-for-workflows --auto
                     else
                         echo -e "${GREEN}✓${NC} Remember to generate release notes:"
                         echo -e "  ${GREEN}noidea github release notes --tag=\"$new_version\"${NC}"
