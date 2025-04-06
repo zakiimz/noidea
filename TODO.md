@@ -39,7 +39,7 @@
 ## 🏗️ Project Infrastructure
 - [x] Create semantic versioning strategy
 - [x] Set up proper release workflow with changelogs
-- [ ] Add version badges to README
+- [x] Add version badges to README
 - [ ] Set up project discussions on GitHub
 - [ ] Create project roadmap visible to community
 
