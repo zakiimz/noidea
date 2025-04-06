@@ -91,6 +91,12 @@ nav:
     - Troubleshooting: user-guide/troubleshooting.md
   - Developer Guide:
     - Overview: dev-guide/overview.md
+    - Plugins:
+      - Plugins: dev-guide/plugins/index.md
+      - Architecture: dev-guide/plugins/architecture.md
+      - Interfaces: dev-guide/plugins/interfaces.md
+      - Examples: dev-guide/plugins/examples.md
+      - Plugin Ideas: dev-guide/plugins/plugins.md
   - Blog: blog/index.md
 
 markdown_extensions:
